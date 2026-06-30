@@ -6,6 +6,7 @@
 import Fastify from "fastify";
 import { config } from "./config.js";
 import { getDb, closeDb } from "./db.js";
+import { registerProofRoutes } from "./routes/proof.js";
 
 // Load dotenv before anything reads config
 try {
@@ -66,6 +67,9 @@ app.get("/api/status", async (_request, reply) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ── Proof routes (Phase C: TEE verification) ──
+registerProofRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];

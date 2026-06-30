@@ -40,6 +40,80 @@ export type RecipientStatus = "locked" | "unlockable" | "paid" | "blocked";
 export type ProofMode = "tee_verification_mode" | "hosted_tee";
 export type ProofStatus = "pending" | "verified" | "failed" | "anchored";
 
+// ── Phase C: Blocky TEE verification types ──
+
+export interface InvoiceRiskInput {
+  task_id: string;
+  invoice_id: string;
+  vendor: string;
+  buyer: string;
+  amount_usd: number;
+  currency: string;
+  due_days: number;
+  line_items: string[];
+  ai_suggested_risk: number;
+}
+
+export interface InvoiceRiskOutput {
+  success: boolean;
+  error: string;
+  value: {
+    task_id: string;
+    invoice_id: string;
+    approved: boolean;
+    risk_score: number;
+    reason_codes: string[];
+    policy: string;
+    ai_score_accepted: boolean;
+  };
+}
+
+export interface VerifiedBlockyClaims {
+  hash_of_code: string;
+  function: string;
+  hash_of_input: string;
+  output: string;
+  hash_of_secrets: string;
+}
+
+export type BlockyErrorCode =
+  | "CLI_NOT_FOUND"
+  | "ATTESTATION_FAILED"
+  | "VERIFICATION_FAILED"
+  | "INVALID_OUTPUT"
+  | "TASK_ID_MISMATCH"
+  | "CODE_HASH_MISSING"
+  | "RETRY_EXHAUSTED"
+  | "HEALTH_CHECK_FAILED"
+  | "TIMEOUT"
+  | "UNKNOWN";
+
+export interface RetryConfig {
+  maxAttempts: number;
+  initialDelayMs: number;
+  backoffMultiplier: number;
+  maxDelayMs: number;
+}
+
+export const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxAttempts: 3,
+  initialDelayMs: 500,
+  backoffMultiplier: 2,
+  maxDelayMs: 5000,
+};
+
+export type VerificationResult =
+  | { status: "verified"; claims: VerifiedBlockyClaims; output: InvoiceRiskOutput }
+  | { status: "failed"; errorCode: BlockyErrorCode; message: string };
+
+export interface BlockyHealthStatus {
+  healthy: boolean;
+  cliAvailable: boolean;
+  cliVersion: string | null;
+  mode: ProofMode;
+  error?: string;
+}
+
 export type VerifierStatus = "draft" | "active" | "deprecated";
 
 export type WorkflowStatus = "active" | "draft";

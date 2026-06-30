@@ -14,6 +14,7 @@ Positioning: No Proof without a Payment.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
 - Backend Phase A: DONE. 20/20 tests passed.
 - Backend Phase B: DONE. 23/23 tests passed (cargo odra test).
+- Backend Phase C: DONE. 30/30 tests passed (vitest).
 
 ## Backend Phase A deliverables
 
@@ -59,6 +60,29 @@ Sentinel pattern: Mapping<String, bool> for agent_registered and payment_registe
 
 Verification gate: cd contracts/verified-agent-payments && cargo odra test → 23/23 passed.
 
+## Backend Phase C deliverables
+
+Files created in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/tee.ts | Blocky AS CLI client: attest-fn-call + verify-fn-call flow, claims parsing, output validation |
+| src/services/blocky.ts | TEE verification wrapper: retry logic, error classification, health check |
+| src/routes/proof.ts | POST /api/proofs/verify endpoint with schema validation |
+| src/types.ts (extended) | Phase C types: InvoiceRiskInput, VerifiedBlockyClaims, VerificationResult, BlockyErrorCode, RetryConfig, BlockyHealthStatus |
+| tests/phase-c.test.ts | 30 tests: happy path, error paths, retry exhaustion, error classification, health check, schema types |
+
+TEE verification flow:
+1. Accept InvoiceRiskInput → build fn-call JSON payload
+2. bky-as attest-fn-call → parse attestation output
+3. Extract enclave_attested_application_public_key + transitive_attested_function_call
+4. bky-as verify-fn-call → parse VerifiedBlockyClaims
+5. Validate claims (hash_of_code, task_id) + build synthetic InvoiceRiskOutput
+6. Return typed VerificationResult (verified | failed)
+
+Verification gate: cd backend && npx vitest run phase-c → 30/30 passed.
+POST /api/proofs/verify registered on Fastify server.
+
 ## Backend stack
 
 | Layer | Choice |
@@ -77,6 +101,7 @@ Verification gate: cd contracts/verified-agent-payments && cargo odra test → 2
 | Senku: backend phase kickoff | t_39582ff2 | done |
 | Senku: Phase A foundation | t_6a63a78d | done |
 | Senku: Phase B contract | t_0d97afe3 | done |
+| Senku: Phase C adapter | t_9803c227 | done |
 
 ## Blocky status
 
@@ -111,4 +136,4 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next
 
-Phase C: Blocky adapter service (backend/src/services/blocky.ts, TEE verification adapter).
+Phase D: Casper anchoring adapter (backend/src/services/casper.ts).
