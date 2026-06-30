@@ -9,6 +9,7 @@ import { getDb, closeDb } from "./db.js";
 import { registerProofRoutes } from "./routes/proof.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPaymentRoutes } from "./routes/payments.js";
+import { registerAgentRoutes } from "./routes/agents.js";
 
 // Load dotenv before anything reads config
 try {
@@ -78,6 +79,9 @@ registerTaskRoutes(app);
 
 // ── Payment routes (Phase E: payment intent, splits, unlock, claim) ──
 registerPaymentRoutes(app);
+
+// ── Agent routes (Phase F: agent registry CRUD, reputation, proofs, Casper sync) ──
+registerAgentRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
