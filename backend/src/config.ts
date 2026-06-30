@@ -1,0 +1,45 @@
+// Sealrail Backend — Environment Config Loader
+// Reads from process.env; callers should load dotenv before importing config.
+
+function envStr(key: string, fallback: string): string {
+  return process.env[key] ?? fallback;
+}
+
+function envInt(key: string, fallback: number): number {
+  const v = process.env[key];
+  if (v === undefined) return fallback;
+  const n = parseInt(v, 10);
+  return isNaN(n) ? fallback : n;
+}
+
+export const config = {
+  // Database
+  databasePath: envStr("DATABASE_PATH", "./data/sealrail.db"),
+
+  // Blocky AS (TEE verification adapter)
+  blockyMode: envStr("BLOCKY_MODE", "tee_adapter"),
+  blockyAsApiKey: envStr("BLOCKY_AS_API_KEY", ""),
+  blockyAsHost: envStr("BLOCKY_AS_HOST", ""),
+  blockyConfigPath: envStr("BLOCKY_CONFIG_PATH", ""),
+  blockyWasmDir: envStr("BLOCKY_WASM_DIR", "../blocky/invoice-verifier"),
+
+  // Casper Network
+  casperRpcUrl: envStr("CASPER_RPC_URL", "http://localhost:11101"),
+  casperChainName: envStr("CASPER_CHAIN_NAME", "casper-net-1"),
+  casperAccountKeyPath: envStr("CASPER_ACCOUNT_KEY_PATH", ""),
+  csprCloudApiKey: envStr("CSPR_CLOUD_API_KEY", ""),
+  csprCloudToken: envStr("CSPR_CLOUD_TOKEN", ""),
+  casperMode: envStr("CASPER_MODE", "dry_run") as "dry_run" | "testnet" | "mainnet",
+
+  // Server
+  port: envInt("PORT", 3001),
+  host: envStr("HOST", "0.0.0.0"),
+  nodeEnv: envStr("NODE_ENV", "development") as "development" | "production" | "test",
+
+  // Security
+  apiKeyScryptSaltLength: envInt("API_KEY_SCRYPT_SALT_LENGTH", 32),
+  apiKeyHashLength: envInt("API_KEY_HASH_LENGTH", 64),
+
+  // Verification mode — TEE verification adapter (no hosted enclave claims)
+  teeVerificationMode: "tee_verification_mode" as const,
+} as const;
