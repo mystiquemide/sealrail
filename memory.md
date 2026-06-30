@@ -73,6 +73,18 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 - No skeleton, no stub, no placeholder — real working code from step one.
 - Kanban: Senku (builder agent) executes Phases A–M. Mide directs via Muzan.
 
+
+## Registration status
+
+- Hackathon: Casper Agentic Buildathon (DoraHacks)
+- Registered: Yes
+- Registration date: 2026-06-30
+- Deadline: 2026-07-07 23:59 UTC
+- GitHub: github.com/mystiquemide/sealrail (private)
+- Notion Hackathon Tracker: https://notion.so/38f1fa84b58f810780f8cff3bdae2523
+- Notion Projects: https://notion.so/38f1fa84b58f81feb61dc136969d5c3b
+- Progress log: cron job eb0a1c420c73 (every 6h)
+
 ## Next
 
 Phase B: Odra proof registry contract (Rust/Odra, cargo odra build, cargo odra test).
