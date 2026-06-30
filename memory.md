@@ -19,6 +19,29 @@ Positioning: No Proof without a Payment.
 - Backend Phase E: DONE. 75/75 tests passed (vitest). Commit 7787fb8.
 - Backend Phase F: DONE. 44/44 tests passed (vitest). Commit 8015233.
 - Backend Phase G: DONE. 30/30 tests passed (vitest). Commit 75d381a.
+- Backend Phase H: DONE. 50/50 tests passed (vitest). Commit TBD.
+
+## Backend Phase H deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/workflows.ts | H1: Workflow template CRUD, H2: Run engine with ordered step execution, H3: Step proof generation and final bundle |
+| src/routes/workflows.ts | H4: 7 endpoints — create/list/get workflow, create run, get run, execute step, finalize |
+| src/index.ts (modified) | Registered workflow routes |
+| tests/phase-h.test.ts | 50 tests: template CRUD, run creation, ordered step execution, out-of-order rejection, finalize, nonexistent IDs, invalid states |
+
+API routes verified via curl:
+- GET /api/workflows — List with filters (category, status, owner)
+- POST /api/workflows — Create template with step validation (agent existence, unique orders)
+- GET /api/workflows/:workflowId — Template detail
+- POST /api/workflows/:workflowId/run — Create run from active template (draft blocked)
+- GET /api/workflow-runs/:runId — Run detail with template + proofs
+- POST /api/workflow-runs/:runId/steps/:stepId/run — Execute ordered step (enforces sequence, agent match, single-execution)
+- POST /api/workflow-runs/:runId/finalize — Bundle all verified step proofs into final proof with real SHA-256 hashes
+
+Full test suite: 284 tests, 7 files, all passing.
 
 ## Backend Phase A deliverables
 
@@ -110,6 +133,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase E task + payment | t_2e989ae5 | done |
 | Senku: Phase F agent registry | t_bb1cb4ee | done |
 | Senku: Phase G marketplace | t_2fe2682c | done |
+| Senku: Phase H workflows | t_c44d9742 | done |
 
 ## Blocky status
 
@@ -144,7 +168,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next Phase
 
-Phase H: Multi-agent orchestration engine (backend/src/services/workflows.ts, backend/src/routes/workflows.ts).
+Phase I: Payment split engine (backend/src/services/splits.ts, extends backend/src/routes/payments.ts).
 
 ## Backend Phase G deliverables
 

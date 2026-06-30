@@ -11,6 +11,7 @@ import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPaymentRoutes } from "./routes/payments.js";
 import { registerAgentRoutes } from "./routes/agents.js";
 import { registerMarketplaceRoutes } from "./routes/marketplace.js";
+import { registerWorkflowRoutes } from "./routes/workflows.js";
 
 // Load dotenv before anything reads config
 try {
@@ -86,6 +87,9 @@ registerAgentRoutes(app);
 
 // ── Marketplace routes (Phase G: listing CRUD, listing-to-task creation) ──
 registerMarketplaceRoutes(app);
+
+// ── Workflow routes (Phase H: multi-agent orchestration engine) ──
+registerWorkflowRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
