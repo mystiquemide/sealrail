@@ -2,11 +2,10 @@
 
 use verified_agent_payments::VerifiedAgentPayments;
 use odra::host::{HostEnv, NoArgs};
-use odra::schema::casper_contract_schema::NamedCLType;
 use odra_cli::{
     deploy::DeployScript,
     scenario::{Args, Error, Scenario, ScenarioMetadata},
-    CommandArg, ContractProvider, DeployedContractsContainer, DeployerExt,
+    CommandArg, DeployedContractsContainer, DeployerExt,
     OdraCli,
 };
 
@@ -19,10 +18,10 @@ impl DeployScript for VerifiedAgentPaymentsDeployScript {
         container: &mut DeployedContractsContainer
     ) -> Result<(), odra_cli::deploy::Error> {
         let _contract = VerifiedAgentPayments::load_or_deploy(
-            &env,
-            VerifiedAgentPaymentsInitArgs {},
-            container,
-            350_000_000_000
+ &env,
+ NoArgs,
+ container,
+ 350_000_000_000,
         )?;
 
         Ok(())

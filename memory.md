@@ -13,6 +13,7 @@ Positioning: No Proof without a Payment.
 - Frontend UI plan: written, not started.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
 - Backend Phase A: DONE. 20/20 tests passed.
+- Backend Phase B: DONE. 23/23 tests passed (cargo odra test).
 
 ## Backend Phase A deliverables
 
@@ -36,6 +37,28 @@ Config defaults patched by Mide:
 - BLOCKY_MODE: "tee_adapter" (was "local-server")
 - CASPER_MODE: "dry_run" (was "local")
 
+## Backend Phase B deliverables
+
+Files created in contracts/verified-agent-payments/:
+
+| File | Purpose |
+|---|---|
+| Cargo.toml | Odra 2.8.2, nightly toolchain, wasm target |
+| Odra.toml | Contract FQN: verified_agent_payments::VerifiedAgentPayments |
+| build.rs | odra_build::build() — sets odra_module cfg flag |
+| src/lib.rs | Contract: storage, types, 8 entry points, 5 events, 10 errors |
+| bin/build_contract.rs | WASM build binary |
+| bin/build_schema.rs | Schema generation binary |
+| bin/cli.rs | Livenet CLI tool |
+| tests/proof_registry.rs | 23 tests covering all entry points and error paths |
+
+Entry points: init, register_agent, create_payment, anchor_proof, mark_payable, mark_paid, get_agent, get_payment.
+Events: AgentRegistered, PaymentCreated, ProofAnchored, PaymentMarkedPayable, PaymentMarkedPaid.
+Errors: NotOwner, AgentAlreadyExists, AgentNotFound, AgentInactive, PaymentAlreadyExists, PaymentNotFound, ProofAlreadyAnchored, PaymentNotVerified, PaymentNotPayable, InvalidState.
+Sentinel pattern: Mapping<String, bool> for agent_registered and payment_registered existence checks.
+
+Verification gate: cd contracts/verified-agent-payments && cargo odra test → 23/23 passed.
+
 ## Backend stack
 
 | Layer | Choice |
@@ -53,6 +76,7 @@ Config defaults patched by Mide:
 |---|---|---|
 | Senku: backend phase kickoff | t_39582ff2 | done |
 | Senku: Phase A foundation | t_6a63a78d | done |
+| Senku: Phase B contract | t_0d97afe3 | done |
 
 ## Blocky status
 
@@ -62,7 +86,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 - Rust nightly, wasm32 target, cargo-odra, casper-client installed.
 - CSPR.cloud key in /root/.env (REDACTED — never shared).
-- Odra contract not built yet (Phase B).
+- Odra contract BUILT — Phase B complete. 23/23 tests pass.
 
 ## Build rules
 
@@ -87,4 +111,4 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next
 
-Phase B: Odra proof registry contract (Rust/Odra, cargo odra build, cargo odra test).
+Phase C: Blocky adapter service (backend/src/services/blocky.ts, TEE verification adapter).
