@@ -15,6 +15,10 @@ Positioning: No Proof without a Payment.
 - Backend Phase A: DONE. 20/20 tests passed.
 - Backend Phase B: DONE. 23/23 tests passed (cargo odra test).
 - Backend Phase C: DONE. 30/30 tests passed (vitest).
+- Backend Phase D: DONE. 35/35 tests passed (vitest). Commit c67dad7.
+- Backend Phase E: DONE. 75/75 tests passed (vitest). Commit 7787fb8.
+- Backend Phase F: DONE. 44/44 tests passed (vitest). Commit 8015233.
+- Backend Phase G: DONE. 30/30 tests passed (vitest). Commit [TBD].
 
 ## Backend Phase A deliverables
 
@@ -102,6 +106,10 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase A foundation | t_6a63a78d | done |
 | Senku: Phase B contract | t_0d97afe3 | done |
 | Senku: Phase C adapter | t_9803c227 | done |
+| Senku: Phase D casper adapter | t_c865380b | done |
+| Senku: Phase E task + payment | t_2e989ae5 | done |
+| Senku: Phase F agent registry | t_bb1cb4ee | done |
+| Senku: Phase G marketplace | t_2fe2682c | done |
 
 ## Blocky status
 
@@ -134,6 +142,28 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 - Notion Projects: https://notion.so/38f1fa84b58f81feb61dc136969d5c3b
 - Progress log: cron job eb0a1c420c73 (every 6h)
 
-## Next
+## Next Phase
 
-Phase D: Casper anchoring adapter (backend/src/services/casper.ts).
+Phase H: Multi-agent orchestration engine (backend/src/services/workflows.ts, backend/src/routes/workflows.ts).
+
+## Backend Phase G deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/marketplace.ts | G1: Listing CRUD + G2: Listing-to-task creation link using Phase E services |
+| src/routes/marketplace.ts | G3: GET/POST/PATCH marketplace endpoints with owner enforcement |
+| src/index.ts (modified) | Registered marketplace routes |
+| tests/phase-g.test.ts | 30 tests: create/list/get/update, owner mismatch, nonexistent, task creation, filters |
+
+Listing model fields: id, agent_id, owner_address, title, category, summary, price_amount, currency, proof_requirement, verifier_id, reputation_score, total_verified_runs, total_paid_tasks, failure_rate, status, timestamps.
+
+API routes verified via curl:
+- GET /api/marketplace — List with filters (category, status, owner, agent)
+- GET /api/marketplace/:listingId — Detail with agent summary + reputation
+- POST /api/marketplace/listings — Create listing (owner checked against agent owner)
+- PATCH /api/marketplace/listings/:listingId — Update owned listing
+- POST /api/marketplace/:listingId/tasks — Create payment-backed task from live listing
+
+Full test suite: 234 tests, 6 files, all passing.

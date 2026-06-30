@@ -10,6 +10,7 @@ import { registerProofRoutes } from "./routes/proof.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPaymentRoutes } from "./routes/payments.js";
 import { registerAgentRoutes } from "./routes/agents.js";
+import { registerMarketplaceRoutes } from "./routes/marketplace.js";
 
 // Load dotenv before anything reads config
 try {
@@ -82,6 +83,9 @@ registerPaymentRoutes(app);
 
 // ── Agent routes (Phase F: agent registry CRUD, reputation, proofs, Casper sync) ──
 registerAgentRoutes(app);
+
+// ── Marketplace routes (Phase G: listing CRUD, listing-to-task creation) ──
+registerMarketplaceRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
