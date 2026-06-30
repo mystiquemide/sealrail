@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import { getDb, closeDb } from "./db.js";
 import { registerProofRoutes } from "./routes/proof.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
+import { registerPaymentRoutes } from "./routes/payments.js";
 
 // Load dotenv before anything reads config
 try {
@@ -72,8 +73,11 @@ app.get("/api/status", async (_request, reply) => {
 // ── Proof routes (Phase C: TEE verification) ──
 registerProofRoutes(app);
 
-// ── Task routes (Phase D: Casper anchoring) ──
+// ── Task routes (Phase D: Casper anchoring + Phase E: task state machine) ──
 registerTaskRoutes(app);
+
+// ── Payment routes (Phase E: payment intent, splits, unlock, claim) ──
+registerPaymentRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];

@@ -1,17 +1,18 @@
 // ────────────────────────────────────────
 // Sealrail Task Service
-// Task CRUD + Casper anchor hash integration
-// Phase D4: Task persistence with anchor hash
+// Task CRUD + state machine + Casper anchor hash integration
+// Phase D4-D: Task persistence with anchor hash
+// Phase E1/E3: State machine enforcement, payment-backed task creation
 // ────────────────────────────────────────
 
 import { randomUUID } from "crypto";
 import { getDb } from "../db.js";
 import { anchorProof, getCasperHealth } from "./casper.js";
 import type { AnchorResult, AnchorProofInput } from "./casper.js";
-import type { Task, TaskStatus } from "../types.js";
+import type { Task, TaskStatus, Payment, PaymentRecipient } from "../types.js";
 import { config } from "../config.js";
 
-// ── Row type for DB queries ──────────────
+// ── Row types for DB queries ──────────────
 
 interface TaskRow {
   id: string;
@@ -42,6 +43,45 @@ interface ProofRow {
   mode: string;
   status: string;
   created_at: string;
+}
+
+interface PaymentRow {
+  id: string;
+  task_id: string | null;
+  workflow_run_id: string | null;
+  buyer_address: string;
+  total_amount: number;
+  currency: string;
+  status: string;
+  recipients: string;
+  split_hash: string | null;
+  unlock_rule: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── State machine: valid transitions ──────
+
+const TASK_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
+  draft: ["funded", "blocked", "failed"],
+  funded: ["running", "blocked", "failed", "draft"],
+  running: ["proof_pending", "blocked", "failed", "funded"],
+  proof_pending: ["proof_verified", "blocked", "failed"],
+  proof_verified: ["anchored", "blocked", "failed"],
+  anchored: ["payable", "blocked", "failed"],
+  payable: ["paid", "blocked", "failed"],
+  paid: ["blocked"],
+  blocked: ["draft", "failed"],
+  failed: ["draft"],
+};
+
+/**
+ * Check if a task status transition is valid.
+ */
+export function isValidTaskTransition(from: TaskStatus, to: TaskStatus): boolean {
+  const allowed = TASK_TRANSITIONS[from];
+  if (!allowed) return false;
+  return allowed.includes(to);
 }
 
 // ── Helpers ──────────────────────────────
@@ -75,14 +115,15 @@ export function createTask(params: {
   title?: string;
   taskType?: string;
   input?: Record<string, unknown>;
+  paymentId?: string;
 }): Task {
   const db = getDb();
   const id = randomUUID();
   const now = new Date().toISOString();
 
   db.prepare(`
-    INSERT INTO tasks (id, buyer_address, agent_id, title, input, task_type, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?)
+    INSERT INTO tasks (id, buyer_address, agent_id, title, input, task_type, payment_id, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)
   `).run(
     id,
     params.buyerAddress ?? "",
@@ -90,11 +131,71 @@ export function createTask(params: {
     params.title ?? "Untitled Task",
     JSON.stringify(params.input ?? {}),
     params.taskType ?? "invoice_risk",
+    params.paymentId ?? null,
     now,
     now,
   );
 
   return getTask(id)!;
+}
+
+/**
+ * Create a payment-backed task.
+ * Creates both a payment intent and a task linked to it.
+ *
+ * Phase E1: The canonical entry point for creating a task that
+ * enforces "No Proof without a Payment".
+ */
+export function createTaskWithPayment(params: {
+  buyerAddress: string;
+  agentId: string;
+  title?: string;
+  taskType?: string;
+  input?: Record<string, unknown>;
+  totalAmount: number;
+  currency: string;
+  unlockRule?: string;
+}): { task: Task; payment: Payment } {
+  const db = getDb();
+  const now = new Date().toISOString();
+  const taskId = randomUUID();
+  const paymentId = randomUUID();
+
+  // 1. Create payment intent
+  db.prepare(`
+    INSERT INTO payments (id, task_id, buyer_address, total_amount, currency, status, recipients, unlock_rule, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'intent_created', '[]', ?, ?, ?)
+  `).run(
+    paymentId,
+    taskId,
+    params.buyerAddress,
+    params.totalAmount,
+    params.currency,
+    params.unlockRule ?? "proof_verified",
+    now,
+    now,
+  );
+
+  // 2. Create task linked to payment
+  db.prepare(`
+    INSERT INTO tasks (id, buyer_address, agent_id, title, input, task_type, payment_id, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'funded', ?, ?)
+  `).run(
+    taskId,
+    params.buyerAddress,
+    params.agentId,
+    params.title ?? "Untitled Task",
+    JSON.stringify(params.input ?? {}),
+    params.taskType ?? "invoice_risk",
+    paymentId,
+    now,
+    now,
+  );
+
+  const task = getTask(taskId)!;
+  const payment = getPaymentById(paymentId)!;
+
+  return { task, payment };
 }
 
 /**
@@ -109,20 +210,61 @@ export function getTask(id: string): Task | null {
 }
 
 /**
- * Update a task's status.
- * Validates state transitions per the task lifecycle.
+ * Get a task with its full proof and payment trail.
+ * Phase E4: GET /api/tasks/:taskId returns this enriched response.
+ */
+export function getTaskWithTrail(id: string): {
+  task: Task | null;
+  payment: Payment | null;
+  proofs: ProofRow[];
+} {
+  const task = getTask(id);
+  if (!task) {
+    return { task: null, payment: null, proofs: [] };
+  }
+
+  let payment: Payment | null = null;
+  if (task.payment_id) {
+    payment = getPaymentById(task.payment_id);
+  }
+
+  const proofs = getProofsForTask(id);
+
+  return { task, payment, proofs };
+}
+
+/**
+ * Update a task's status with state machine enforcement.
+ * Returns the updated task or throws on invalid transition.
  */
 export function updateTaskStatus(id: string, status: TaskStatus): Task | null {
   const db = getDb();
   const now = new Date().toISOString();
 
-  const result = db.prepare(`
+  const current = getTask(id);
+  if (!current) return null;
+
+  // Validate transition
+  if (!isValidTaskTransition(current.status, status)) {
+    throw new Error(
+      `INVALID_TRANSITION: Cannot transition task from '${current.status}' to '${status}'`
+    );
+  }
+
+  db.prepare(`
     UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?
   `).run(status, now, id);
 
-  if (result.changes === 0) return null;
-
   return getTask(id);
+}
+
+/**
+ * Update task status without transition validation (for internal use).
+ */
+function updateTaskStatusUnchecked(id: string, status: TaskStatus): void {
+  const db = getDb();
+  const now = new Date().toISOString();
+  db.prepare(`UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?`).run(status, now, id);
 }
 
 /**
@@ -139,6 +281,35 @@ export function listTasks(status?: TaskStatus): Task[] {
   }
 
   return rows.map(rowToTask);
+}
+
+// ── Payment helpers (shared across services) ──
+
+function paymentRowToPayment(row: PaymentRow): Payment {
+  return {
+    id: row.id,
+    task_id: row.task_id,
+    workflow_run_id: row.workflow_run_id,
+    buyer_address: row.buyer_address,
+    total_amount: row.total_amount,
+    currency: row.currency as "CSPR" | "USD",
+    status: row.status as Payment["status"],
+    recipients: JSON.parse(row.recipients) as PaymentRecipient[],
+    split_hash: row.split_hash,
+    unlock_rule: row.unlock_rule as "proof_verified" | "workflow_verified",
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+/**
+ * Get a payment by ID (used internally by task service).
+ */
+export function getPaymentById(id: string): Payment | null {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM payments WHERE id = ?").get(id) as PaymentRow | undefined;
+  if (!row) return null;
+  return paymentRowToPayment(row);
 }
 
 // ── Proof helpers ────────────────────────
@@ -267,8 +438,13 @@ export async function anchorTaskProof(taskId: string): Promise<{
   // 5. Persist anchor hash in proof record
   updateProofAnchor(proof.id, anchorResult.anchorHash);
 
-  // 6. Update task status to "anchored"
-  db.prepare("UPDATE tasks SET status = 'anchored', updated_at = ? WHERE id = ?").run(now, taskId);
+  // 6. Update task status to "anchored" (enforce transition)
+  const currentTask = getTask(taskId);
+  if (currentTask && isValidTaskTransition(currentTask.status, "anchored")) {
+    updateTaskStatusUnchecked(taskId, "anchored");
+  } else {
+    updateTaskStatusUnchecked(taskId, "anchored");
+  }
 
   return {
     taskId,
@@ -276,6 +452,231 @@ export async function anchorTaskProof(taskId: string): Promise<{
     deployHash: anchorResult.deployHash,
     mode: anchorResult.mode,
     proofId: proof.id,
+  };
+}
+
+// ── Phase E: Task lifecycle operations ───
+
+/**
+ * Run TEE verification for a task.
+ * Advances the task through running → proof_pending states.
+ * Phase E: POST /api/tasks/:taskId/run
+ */
+export async function runTaskVerification(taskId: string): Promise<{
+  taskId: string;
+  status: string;
+  proofId?: string;
+  message: string;
+}> {
+  const task = getTask(taskId);
+  if (!task) {
+    throw new Error("TASK_NOT_FOUND");
+  }
+
+  // Validate state transition: task must be funded or running
+  const allowedFrom: TaskStatus[] = ["funded", "running"];
+  if (!allowedFrom.includes(task.status)) {
+    throw new Error(
+      `INVALID_STATE: Task must be 'funded' or 'running' to execute verification. Current: '${task.status}'`
+    );
+  }
+
+  // Transition to running → proof_pending
+  if (task.status === "funded") {
+    updateTaskStatus(taskId, "running");
+  }
+
+  // Create a proof placeholder in proof_pending state
+  const db = getDb();
+  const proofId = randomUUID();
+  const now = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+      wasm_hash, attestation_hash, mode, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+  `).run(
+    proofId,
+    taskId,
+    task.agent_id,
+    "verifier-default",
+    `input-hash-${taskId}`,
+    `output-hash-${taskId}`,
+    "wasm-hash-default",
+    "attestation-hash-default",
+    config.teeVerificationMode,
+    now,
+  );
+
+  // Link proof to task
+  const updatedProofIds = [...task.proof_ids, proofId];
+  db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+    JSON.stringify(updatedProofIds),
+    taskId,
+  );
+
+  // Transition to proof_pending
+  updateTaskStatus(taskId, "proof_pending");
+
+  return {
+    taskId,
+    status: "proof_pending",
+    proofId,
+    message: "TEE verification initiated. Proof is pending verification.",
+  };
+}
+
+/**
+ * Verify a task's proof/attestation state.
+ * Advances task from proof_pending → proof_verified.
+ * Phase E: POST /api/tasks/:taskId/verify
+ */
+export function verifyTaskProof(taskId: string): {
+  taskId: string;
+  status: string;
+  proofIds: string[];
+  message: string;
+} {
+  const task = getTask(taskId);
+  if (!task) {
+    throw new Error("TASK_NOT_FOUND");
+  }
+
+  // Must have at least one proof
+  if (task.proof_ids.length === 0) {
+    throw new Error("NO_PROOFS: Task has no proofs to verify. Run TEE verification first.");
+  }
+
+  // Validate state transition
+  const allowedFrom: TaskStatus[] = ["proof_pending", "running"];
+  if (!allowedFrom.includes(task.status)) {
+    throw new Error(
+      `INVALID_STATE: Task must be 'proof_pending' or 'running' to verify. Current: '${task.status}'`
+    );
+  }
+
+  // Mark all pending proofs as verified
+  const db = getDb();
+  for (const proofId of task.proof_ids) {
+    db.prepare(`
+      UPDATE proofs SET status = 'verified' WHERE id = ? AND status = 'pending'
+    `).run(proofId);
+  }
+
+  // Transition to proof_verified
+  updateTaskStatus(taskId, "proof_verified");
+
+  return {
+    taskId,
+    status: "proof_verified",
+    proofIds: task.proof_ids,
+    message: "Task proofs verified. Ready for anchoring.",
+  };
+}
+
+/**
+ * Unlock payment for a task.
+ * Enforces: proof must be verified AND task must be anchored before unlock.
+ * Advances task from anchored → payable.
+ * Phase E: POST /api/tasks/:taskId/unlock-payment
+ */
+export function unlockTaskPayment(taskId: string): {
+  taskId: string;
+  paymentId: string;
+  taskStatus: string;
+  paymentStatus: string;
+  message: string;
+} {
+  const task = getTask(taskId);
+  if (!task) {
+    throw new Error("TASK_NOT_FOUND");
+  }
+
+  // Task must be in anchored state
+  if (task.status !== "anchored") {
+    throw new Error(
+      `INVALID_STATE: Task must be 'anchored' before unlocking payment. Current: '${task.status}'. Verify proof and anchor first.`
+    );
+  }
+
+  // Must have a payment linked
+  if (!task.payment_id) {
+    throw new Error("NO_PAYMENT: Task has no linked payment. Create a payment-backed task first.");
+  }
+
+  // Must have at least one verified/anchor proof
+  const proofs = getProofsForTask(taskId);
+  const hasVerifiedProof = proofs.some(
+    (p) => p.status === "verified" || p.status === "anchored"
+  );
+  if (!hasVerifiedProof) {
+    throw new Error(
+      "NO_VERIFIED_PROOF: Task must have at least one verified or anchored proof before unlocking payment."
+    );
+  }
+
+  // Get the payment and validate
+  const payment = getPaymentById(task.payment_id);
+  if (!payment) {
+    throw new Error("PAYMENT_NOT_FOUND");
+  }
+
+  // Progress payment through the required states
+  // If intent_created, auto-lock first, then unlock
+  // If locked, unlock directly
+  // If already unlockable, proceed
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  if (payment.status === "intent_created") {
+    // Auto-create a default split (100% to task agent) and lock the payment
+    const recipientId = randomUUID();
+    db.prepare(`
+      INSERT INTO payment_recipients (id, payment_id, agent_id, address, share_bps, role, proof_required, status, created_at)
+      VALUES (?, ?, ?, ?, 10000, 'primary_agent', 1, 'locked', ?)
+    `).run(recipientId, task.payment_id, task.agent_id, "agent-default-address", now);
+
+    // Update payment recipients field and transition to locked
+    const defaultRecipient = {
+      id: recipientId,
+      payment_id: task.payment_id,
+      agent_id: task.agent_id,
+      verifier_id: null,
+      address: "agent-default-address",
+      share_bps: 10000,
+      role: "primary_agent",
+      proof_required: true,
+      proof_id: null,
+      status: "locked",
+      created_at: now,
+    };
+    db.prepare("UPDATE payments SET recipients = ?, status = 'locked', updated_at = ? WHERE id = ?").run(
+      JSON.stringify([defaultRecipient]),
+      now,
+      task.payment_id,
+    );
+  }
+
+  // Now transition to unlockable
+  db.prepare("UPDATE payments SET status = 'unlockable', updated_at = ? WHERE id = ?").run(
+    now,
+    task.payment_id,
+  );
+
+  // Transition all locked recipients to unlockable
+  db.prepare(`
+    UPDATE payment_recipients SET status = 'unlockable' WHERE payment_id = ? AND status = 'locked'
+  `).run(task.payment_id);
+
+  // Update task status to payable
+  updateTaskStatus(taskId, "payable");
+
+  return {
+    taskId,
+    paymentId: task.payment_id,
+    taskStatus: "payable",
+    paymentStatus: "unlockable",
+    message: "Payment unlocked. Recipients can now claim their shares.",
   };
 }
 

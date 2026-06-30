@@ -303,13 +303,18 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
       expect(fundedTasks[0].status).toBe("funded");
     });
 
-    it("updateTaskStatus transitions task state", () => {
+    it("updateTaskStatus transitions task state through valid path", () => {
       const task = createTask({ agentId: "agent-transition" });
       expect(task.status).toBe("draft");
 
-      const updated = updateTaskStatus(task.id, "running");
-      expect(updated).not.toBeNull();
-      expect(updated!.status).toBe("running");
+      // Must go draft → funded → running (state machine enforced)
+      updateTaskStatus(task.id, "funded");
+      const funded = getTask(task.id);
+      expect(funded!.status).toBe("funded");
+
+      updateTaskStatus(task.id, "running");
+      const running = getTask(task.id);
+      expect(running!.status).toBe("running");
 
       // Verify persistence
       const fetched = getTask(task.id);
