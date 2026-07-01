@@ -1,0 +1,89 @@
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: clamp(32px, 6vw, 64px);
+}
+
+.brandRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.brandText {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f6f5f3;
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 14px 0 0;
+}
+
+.body {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #8c8c8a;
+  max-width: 440px;
+  margin: 16px auto 0;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.linkPrimary {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 22px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.linkPrimary:hover {
+  opacity: 0.85;
+}
+
+.linkGhost {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 22px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+.linkGhost:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+}

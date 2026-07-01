@@ -139,7 +139,7 @@ export default function RunPage() {
             </span>
             <div className={styles.headerButtons}>
               <button className={styles.btnRunAll} onClick={runAll}>
-                Run full demo
+                Run full verification
               </button>
               <button className={styles.btnReset} onClick={reset}>
                 Reset

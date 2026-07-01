@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
 import styles from "./Landing.module.css";
 
@@ -31,19 +32,19 @@ export function Hero() {
           <a href="#vertical" className={styles.navLink}>
             Agents
           </a>
-          <a href="#tee" className={styles.navLink}>
+          <Link href="/docs" className={styles.navLink}>
             Docs
-          </a>
-          <a href="#run" className={styles.navCta}>
+          </Link>
+          <Link href="/run" className={styles.navCta}>
             Start run
-          </a>
+          </Link>
         </nav>
       </header>
 
       <div className={styles.heroCtaWrap}>
-        <a href="#run" className={styles.heroCtaPrimary}>
+        <Link href="/run" className={styles.heroCtaPrimary}>
           Start verification run
-        </a>
+        </Link>
         <a href="#proofs" className={styles.heroCtaSecondary}>
           View proof trail
         </a>

@@ -2,13 +2,13 @@ import { AppNav } from "@/components/app/AppNav";
 import styles from "@/components/status/Status.module.css";
 
 const STATUSES = [
-  { name: "Backend API", state: "Online", color: "#64D96B" },
-  { name: "LLM provider configured", state: "Yes", color: "#64D96B" },
-  { name: "LLM provider health", state: "OK", color: "#64D96B" },
-  { name: "TEE verifier", state: "Ready", color: "#64D96B" },
-  { name: "Casper RPC", state: "Connected", color: "#64D96B" },
-  { name: "ProofRegistry contract", state: "Deployed", color: "#64D96B" },
-  { name: "CSPR.cloud", state: "Connected", color: "#64D96B" },
+  { name: "Backend API", state: "Endpoint expected at /api/status (Phase O wiring pending)", color: "#F2B84B" },
+  { name: "LLM provider configured", state: "Provider config pending — no runtime active", color: "#F2B84B" },
+  { name: "LLM provider health", state: "No runtime active until Phase O", color: "#6E6E6C" },
+  { name: "Hosted TEE (Blocky AS)", state: "Pending — hosted access not configured", color: "#F2B84B" },
+  { name: "Casper RPC", state: "Testnet node available, Phases O/S wire contract status", color: "#64D96B" },
+  { name: "ProofRegistry contract", state: "Deployed (hash-02f9...) — Phase O wires live state", color: "#64D96B" },
+  { name: "CSPR.cloud", state: "Optional data layer, not required for core product", color: "#6E6E6C" },
 ];
 
 export default function StatusPage() {

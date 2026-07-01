@@ -5,17 +5,16 @@ import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import { ProofsFilterBar } from "@/components/proofs/ProofsFilterBar";
 import { ProofsTable } from "@/components/proofs/ProofsTable";
-import { computeProofsView, filterProofRows, type DemoState } from "@/components/proofs/proofs-data";
+import { computeProofsView, filterProofRows } from "@/components/proofs/proofs-data";
 import styles from "@/components/proofs/Proofs.module.css";
 
 export default function ProofsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [modeFilter, setModeFilter] = useState("All");
-  const [demoState, setDemoState] = useState<DemoState>("loaded");
 
   const rows = filterProofRows(search, statusFilter, modeFilter);
-  const view = computeProofsView(demoState, rows);
+  const view = computeProofsView(rows);
 
   function clearFilters() {
     setSearch("");
@@ -24,7 +23,7 @@ export default function ProofsPage() {
   }
 
   function retryLoad() {
-    setDemoState("loaded");
+    // No-op until Phase O wires a real fetch to retry.
   }
 
   return (
@@ -54,11 +53,9 @@ export default function ProofsPage() {
         search={search}
         statusFilter={statusFilter}
         modeFilter={modeFilter}
-        demoState={demoState}
         onSearchChange={setSearch}
         onStatusChange={setStatusFilter}
         onModeChange={setModeFilter}
-        onDemoStateChange={setDemoState}
       />
 
       <div className={styles.tableWrap}>

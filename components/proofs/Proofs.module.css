@@ -125,33 +125,6 @@
   border-color: rgba(255, 255, 255, 0.42);
 }
 
-.demoStateGroup {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.demoStateLabel {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #6e6e6c;
-}
-
-.demoStateSelect {
-  background: #0c0c0c;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 3px;
-  padding: 9px 10px;
-  color: #8c8c8a;
-  font-size: 12.5px;
-}
-.demoStateSelect:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.42);
-}
-
 /* ---------- table ---------- */
 
 .tableWrap {

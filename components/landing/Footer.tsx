@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
 import styles from "./Landing.module.css";
 
@@ -7,6 +8,17 @@ const footerCols = [
   { head: "Project", links: ["GitHub", "Casper Buildathon", "TEE verification note"] },
   { head: "Legal", links: ["Privacy", "Terms"] },
 ];
+
+const FOOTER_LINK_HREFS: Record<string, string> = {
+  Privacy: "/privacy",
+  Terms: "/terms",
+  API: "/docs",
+  GitHub: "https://github.com/mystiquemide/sealrail",
+};
+
+function footerHref(label: string): string {
+  return FOOTER_LINK_HREFS[label] ?? "#top";
+}
 
 export function Footer() {
   return (
@@ -26,11 +38,28 @@ export function Footer() {
               <div key={col.head}>
                 <div className={styles.footerColHead}>{col.head}</div>
                 <div className={styles.footerColLinks}>
-                  {col.links.map((link) => (
-                    <a key={link} href="#top" className={styles.footerLink}>
-                      {link}
-                    </a>
-                  ))}
+                  {col.links.map((link) => {
+                    const href = footerHref(link);
+                    if (href.startsWith("http")) {
+                      return (
+                        <a key={link} href={href} className={styles.footerLink} target="_blank" rel="noopener noreferrer">
+                          {link}
+                        </a>
+                      );
+                    }
+                    if (href.startsWith("/")) {
+                      return (
+                        <Link key={link} href={href} className={styles.footerLink}>
+                          {link}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <a key={link} href={href} className={styles.footerLink}>
+                        {link}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -39,8 +68,8 @@ export function Footer() {
         <div className={styles.footerBottom}>
           <span>Sealrail on Casper</span>
           <span className={styles.footerBottomLinks}>
-            <a href="#top">Privacy</a>
-            <a href="#top">Terms</a>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
             <a href="#tee">TEE verification note</a>
           </span>
         </div>

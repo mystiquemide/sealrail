@@ -10,7 +10,7 @@ Positioning: No Proof without a Payment.
 ## Phase status
 
 - DESIGN.md: approved by Mide.
-- Frontend UI: Phase N complete. All 19 Claude Design screens implemented in Next.js and verified in-browser, plus a branded favicon. See "Phase N: Frontend implementation" section below for the full breakdown.
+- Frontend UI: implemented across 19 screens, builds and passes lint. Docs page is rich and professional. Blockers were fixed: status truthfulness, demo-wording removal, CTA wiring, 404 recovery, proof-detail navigation.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
 - Backend audit report: produced at docs/audits/SEALRAIL_BACKEND_AUDIT.md and docs/audits/SEALRAIL_BACKEND_AUDIT.docx for audited commit b7df591.
 - Backend re-audit report: produced at docs/audits/SEALRAIL_BACKEND_REAUDIT.md and docs/audits/SEALRAIL_BACKEND_REAUDIT.docx for audited commit 312d3a4. Grade B+; A/A+ target not met until mainnet fail-closed behavior, placeholder proof advancement, and payment claim identity proof are fixed.
@@ -270,6 +270,19 @@ Verified all 4 in-browser: Docs (nav, hero, core loop, architecture box, API box
 Landing, Run, Marketplace, Marketplace Listing, Agents, Agent Profile, Owner Dashboard, Owner Register Agent, Workflows, Workflow Detail, Verifiers, Register Verifier, Proofs, Proof Detail, API Keys, Docs, Privacy, Terms, Status. Every page was pulled directly from the `claude.ai/design` project (`43c0e1ca-8a00-4165-87dc-efa58c1f211d`) via the `DesignSync` tool and verified pixel-correct in-browser (Chrome via claude-in-chrome), not just built from memory of the design system.
 
 Only remaining gap from the original DESIGN.md route map: `/owner/agents/[agentId]` (manage-agent) has no corresponding `.dc.html` file in the design project, so it hasn't been built — everything else the design project covers now has a matching, verified Next.js route.
+
+### Levi audit fix pass
+
+Levi's frontend audit flagged 6 blockers where Phase N UI overstated real backend state or dead-ended navigation. Fixed:
+
+1. `/status` no longer hardcodes all-green — each row shows honest Phase N-stage copy (backend API/LLM/Blocky pending Phase O wiring, Casper testnet + contract deploy genuinely true and shown green, CSPR.cloud marked optional).
+2. `/proofs` — removed the public "Demo state" selector and `DemoState` type entirely; view state now derives only from real filter results (empty-records vs. no-filter-match), not a fake switch.
+3. `/run` — "Run full demo" renamed to "Run full verification".
+4. Landing/footer CTAs rewired from `#fragment` anchors to real routes (`/docs`, `/run`, `/proofs`, `/privacy`, `/terms`, GitHub repo URL).
+5. Added `app/not-found.tsx` — branded 404 with links to `/`, `/marketplace`, `/docs`, `/status`.
+6. `/run`'s "Open proof detail" link now points to `/proofs/INV-1024` instead of a dead `/#proofs` anchor.
+
+All frontend-only; no backend calls added (that's still Phase O).
 
 ### Field-addition sync (post-initial-build)
 

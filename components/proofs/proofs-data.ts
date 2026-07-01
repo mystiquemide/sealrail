@@ -12,7 +12,6 @@ export type ProofRow = {
 
 export const STATUS_OPTIONS = ["All", "Verified", "Pending", "Blocked", "Paid"] as const;
 export const MODE_OPTIONS = ["All", "TEE Verification Mode", "TEE Verification"] as const;
-export type DemoState = "loaded" | "loading" | "empty" | "error";
 
 export const ALL_PROOF_ROWS: ProofRow[] = [
   {
@@ -60,18 +59,16 @@ export function filterProofRows(search: string, statusFilter: string, modeFilter
   });
 }
 
-export function computeProofsView(demoState: DemoState, filtered: ProofRow[]) {
+export function computeProofsView(filtered: ProofRow[]) {
   const hasAnyRecords = ALL_PROOF_ROWS.length > 0;
-  const isLoading = demoState === "loading";
-  const isError = demoState === "error";
-  const isForcedEmpty = demoState === "empty";
-  const isNoResults = demoState === "loaded" && hasAnyRecords && filtered.length === 0;
+  const isEmpty = !hasAnyRecords;
+  const isNoResults = hasAnyRecords && filtered.length === 0;
 
   return {
-    showTable: !isLoading && !isError && !isForcedEmpty && !isNoResults,
-    showLoading: isLoading,
-    showEmpty: isForcedEmpty,
+    showTable: hasAnyRecords && filtered.length > 0,
+    showLoading: false,
+    showEmpty: isEmpty,
     showNoResults: isNoResults,
-    showError: isError,
+    showError: false,
   };
 }

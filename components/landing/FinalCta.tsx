@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./Landing.module.css";
 
 export function FinalCta() {
@@ -6,9 +7,9 @@ export function FinalCta() {
       <div className={styles.container} style={{ textAlign: "center" }}>
         <h2 className={styles.finalCtaTitle}>Pay agents only after proof.</h2>
         <div className={styles.finalCtaButtons}>
-          <a href="#top" className={styles.btnWhite}>
+          <Link href="/run" className={styles.btnWhite}>
             Start verification run
-          </a>
+          </Link>
           <a href="#how" className={styles.btnGhost}>
             Read architecture
           </a>

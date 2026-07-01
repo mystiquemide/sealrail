@@ -88,7 +88,7 @@ export function ProofHashesPanel({
           {copyLabel}
         </button>
         <Link
-          href="/#proofs"
+          href="/proofs/INV-1024"
           className={styles.detailLink}
           style={{ opacity: hasProof ? 1 : 0.55, pointerEvents: hasProof ? "auto" : "none" }}
         >

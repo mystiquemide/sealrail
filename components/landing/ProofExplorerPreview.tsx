@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./Landing.module.css";
 
 const rows = [
@@ -17,10 +18,10 @@ export function ProofExplorerPreview() {
               Inspect every proof before payment.
             </h2>
           </div>
-          <a href="#run" className={styles.proofLink}>
+          <Link href="/proofs" className={styles.proofLink}>
             Open proof explorer
             <span className={styles.proofArrow}>-&gt;</span>
-          </a>
+          </Link>
         </div>
 
         <div className={styles.proofTableWrap}>
