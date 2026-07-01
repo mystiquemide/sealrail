@@ -460,8 +460,9 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
       const db = getDb();
       const proof = db.prepare("SELECT * FROM proofs WHERE id = ?").get(result.proofId) as any;
       expect(proof).not.toBeNull();
-      expect(proof.casper_anchor_hash).toBe(result.anchorHash);
-      expect(proof.status).toBe("anchored");
+      // Placeholder proofs in dry_run: status stays 'pending', no casper_anchor_hash persisted
+      expect(proof.status).toBe("pending");
+      expect(proof.casper_anchor_hash).toBeNull();
     });
 
     it("produces deterministic anchor hashes for the same task", async () => {

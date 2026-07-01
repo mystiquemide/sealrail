@@ -151,3 +151,43 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 | `backend/tests/integration.test.ts` | Updated to expect `dry_run_proof_simulated` status; added real verified proof injection for anchor/unlock tests |
 | `backend/tests/phase-d.test.ts` | Added `insertRealVerifiedProof` helper; updated anchor/status tests to inject real proofs; added 4 new regression tests: placeholder anchor rejection, placeholder unlock rejection, all 5 placeholder hash patterns rejected from verified/anchor states; updated verify proof test to expect task stays at `proof_pending` |
 | `backend/tests/phase-e.test.ts` | Updated to expect `dry_run_proof_simulated` status; added real proof injection for anchor/unlock pipeline; renamed "unlocks with synthetic proof" → "rejects unlock via placeholder"; updated anchor auto-create test to expect `dry_run_simulated` |
+
+## A+ Polish Fix Verification (2026-07-01)
+
+Final re-audit graded A, not A+, because dry-run simulated anchoring still updated
+the placeholder proof row to `status='anchored'` with a `casper_anchor_hash` — even though
+the task stayed at `proof_pending`, payment did not unlock, and the API returned
+`mode: "dry_run_simulated"`. This was semantically sloppy.
+
+### Fix
+
+Removed `updateProofAnchor()` call from the placeholder dry-run anchor path in
+`anchorTaskProof()`. Placeholder proof rows now keep `status='pending'` and
+`casper_anchor_hash=null` after dry-run simulated anchoring. The simulated
+`anchorHash` is returned only in the API response, never persisted to the
+placeholder proof row.
+
+### Gates
+
+| Gate | Status | Command |
+|------|--------|---------|
+| Backend build | PASS | `cd backend && npm run build` |
+| Backend tests | PASS (631) | `cd backend && npm test -- --no-file-parallelism` |
+| Root lint | PASS | `npm run lint` |
+| Root build | PASS | `npm run build` |
+| Backend lint | PASS | `cd backend && npm run lint` |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `backend/src/services/tasks.ts` | Removed `updateProofAnchor(placeholderProof.id, anchorResult.anchorHash)` from dry-run placeholder anchor path; updated comments explaining placeholder proofs intentionally stay `pending` |
+| `backend/tests/phase-d.test.ts` | Updated "creates and links a proof to the task" to expect `proof.status='pending'` and `proof.casper_anchor_hash=null` for placeholder proofs |
+
+### Verdict
+
+Ready for Levi A+ re-audit. Placeholder/synthetic proof rows no longer use real
+status labels like 'anchored'. The proof row after dry-run simulated anchor shows
+`status='pending'` with no `casper_anchor_hash`, while the API response correctly
+returns `mode: "dry_run_simulated"` and the task remains `proof_pending`. No
+real unlock/payment path treats placeholder proofs as verified/anchored.

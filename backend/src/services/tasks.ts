@@ -489,9 +489,10 @@ export async function anchorTaskProof(taskId: string): Promise<{
         );
       }
 
-      // 5. Persist anchor hash in proof record (still marks proof as anchored
-      //    for dry-run demo traceability, but with simulated semantics)
-      updateProofAnchor(placeholderProof.id, anchorResult.anchorHash);
+      // 5. Do NOT persist anchor hash or set status='anchored' on placeholder
+      //    proof rows — placeholder proofs must stay status='pending' with no
+      //    casper_anchor_hash so the proof row does not look like a real anchor.
+      //    The simulated anchorHash is returned only in the API response.
 
       // 6. Do NOT transition task to 'anchored' — placeholder proofs
       //    must never unlock payment or advance real state.
