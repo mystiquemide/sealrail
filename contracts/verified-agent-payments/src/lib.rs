@@ -10,6 +10,8 @@
 //! - mark_paid: Marks a task as paid.
 //! - get_agent: Returns agent record by id.
 //! - get_payment: Returns task/payment record by id.
+#![no_std]
+extern crate alloc;
 use odra::casper_types::U512;
 use odra::prelude::*;
 
