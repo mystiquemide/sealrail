@@ -13,6 +13,7 @@ import { registerAgentRoutes } from "./routes/agents.js";
 import { registerMarketplaceRoutes } from "./routes/marketplace.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerApiKeyRoutes } from "./routes/api-keys.js";
+import { registerVerifierRoutes } from "./routes/verifiers.js";
 
 // Load dotenv before anything reads config
 try {
@@ -94,6 +95,9 @@ registerWorkflowRoutes(app);
 
 // ── API key routes (Phase K: API key management) ──
 registerApiKeyRoutes(app);
+
+// ── Verifier routes (Phase L: verifier template backend) ──
+registerVerifierRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];

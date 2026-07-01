@@ -23,8 +23,28 @@ Positioning: No Proof without a Payment.
 - Backend Phase I: DONE. 44/44 tests passed (vitest). Commit cacb329.
 - Backend Phase J: DONE. 41/41 tests passed (vitest). Commit b815023.
 - Backend Phase K: DONE. 69/69 tests passed (vitest).
+- Backend Phase L: DONE. 65/65 tests passed (vitest). Commit: (pending).
 
-## Backend Phase H deliverables
+## Backend Phase L deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/verifiers.ts | L1: Verifier template CRUD, L2: WASM hash registration + upload, L3: Test-verifier action with deterministic hash chaining |
+| src/routes/verifiers.ts | L4: 6 endpoints — GET list, GET detail, POST create, POST upload (base64 WASM), PATCH update, POST test |
+| src/index.ts (modified) | Registered verifier routes |
+| tests/phase-l.test.ts | 65 tests: create/list/get/update, schema validation, duplicate slug, wasm hash validation, upload/register, test-verifier action, owner mismatch, nonexistent verifier, filters, A-K preservation |
+
+API routes registered:
+- GET /api/verifiers — List with filters (status, task_type, owner_address)
+- GET /api/verifiers/:verifierId — Detail
+- POST /api/verifiers — Register verifier template
+- POST /api/verifiers/upload — Upload WASM (base64) + register template
+- PATCH /api/verifiers/:verifierId — Update (owner-only)
+- POST /api/verifiers/:verifierId/test — Test with sample input (deterministic hash chaining)
+
+Full test suite: 503 tests, 11 files, all passing.
 
 Files created/modified in backend/:
 
@@ -197,6 +217,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase I splits | t_a1571388 | done |
 | Senku: Phase J reputation | t_39aebe66 | done |
 | Senku: Phase K api keys | t_9e3d7666 | done |
+| Senku: Phase L verifiers | t_cdebfeb7 | done |
 
 ## Blocky status
 
@@ -231,7 +252,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next Phase
 
-Phase L: Verifier template backend (backend/src/services/verifiers.ts, backend/src/routes/verifiers.ts).
+Phase M: Backend integration tests and verification gates.
 
 ## Backend Phase G deliverables
 
