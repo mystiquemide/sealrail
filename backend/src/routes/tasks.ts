@@ -20,6 +20,7 @@ import {
   unlockTaskPayment,
   isValidTaskTransition,
 } from "../services/tasks.js";
+import { runTaskWithAgentExecution } from "../services/agent-runtime.js";
 import { requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 import { config } from "../config.js";
@@ -212,11 +213,12 @@ export function registerTaskRoutes(app: FastifyInstance): void {
       const { taskId } = request.params;
 
       try {
-        const result = await runTaskVerification(taskId);
+        const result = await runTaskWithAgentExecution(taskId);
         return reply.status(200).send({
           task_id: result.taskId,
           status: result.status,
           proof_id: result.proofId,
+          agent_executed: result.agentExecuted,
           message: result.message,
         });
       } catch (err: unknown) {
@@ -228,6 +230,12 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         }
         if (msg.startsWith("INVALID_STATE")) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
+        }
+        if (msg.includes("PROVIDER_NOT_CONFIGURED") || msg.includes("API_KEY_MISSING")) {
+          return reply.status(503).send({
+            error: "PROVIDER_NOT_CONFIGURED",
+            message: "Agent execution requires a configured LLM provider. Set LLM_API_BASE_URL and LLM_API_KEY.",
+          });
         }
         return reply.status(500).send({ error: "RUN_FAILED", message: "Internal server error" });
       }

@@ -15,6 +15,7 @@ import { registerMarketplaceRoutes } from "./routes/marketplace.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerApiKeyRoutes } from "./routes/api-keys.js";
 import { registerVerifierRoutes } from "./routes/verifiers.js";
+import { registerAgentRuntimeRoutes } from "./routes/agent-runtime.js";
 import { requireApiKey } from "./middleware/auth.js";
 
 // Load dotenv before anything reads config
@@ -102,6 +103,7 @@ export function buildApp() {
   registerWorkflowRoutes(app);
   registerApiKeyRoutes(app);
   registerVerifierRoutes(app);
+  registerAgentRuntimeRoutes(app);
 
   return app;
 }

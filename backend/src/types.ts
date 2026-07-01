@@ -131,6 +131,70 @@ export interface BlockyHealthStatus {
 
 export type VerifierStatus = "draft" | "active" | "deprecated";
 
+// ── Phase N: Agent execution output types ─
+
+/** Structured output from an agent execution run. */
+export interface AgentExecutionOutput {
+  /** The task this output belongs to */
+  task_id: string;
+  /** The agent that produced this output */
+  agent_id: string;
+  /** Agent-specific structured result (varies by agent type) */
+  result: Record<string, unknown>;
+  /** ISO-8601 timestamp when execution started */
+  started_at: string;
+  /** ISO-8601 timestamp when execution completed */
+  completed_at: string;
+  /** Duration in milliseconds */
+  duration_ms: number;
+  /** SHA-256 hash of the full result (input + output binding) */
+  output_hash: string;
+  /** SHA-256 hash of the task input */
+  input_hash: string;
+  /** Provider/model metadata (only safe fields — no keys) */
+  model_metadata: {
+    provider: string;
+    model: string;
+  } | null;
+}
+
+/** Invoice Risk Agent specific output. */
+export interface InvoiceRiskAgentResult {
+  risk_score: number;
+  decision: "approve" | "review" | "reject";
+  reasoning: string;
+  flags: string[];
+  recommended_action: string;
+  confidence: number;
+}
+
+/** LLM provider completion response shape. */
+export interface LlmCompletionResponse {
+  content: string;
+  model: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+  };
+}
+
+/** LLM provider interface — swappable backends. */
+export interface LlmProvider {
+  name: string;
+  complete(prompt: string, options?: { temperature?: number; maxTokens?: number }): Promise<LlmCompletionResponse>;
+  isConfigured(): boolean;
+}
+
+/** LLM provider error codes. */
+export type LlmProviderErrorCode =
+  | "PROVIDER_NOT_CONFIGURED"
+  | "API_KEY_MISSING"
+  | "API_REQUEST_FAILED"
+  | "INVALID_RESPONSE"
+  | "RATE_LIMITED"
+  | "TIMEOUT"
+  | "UNKNOWN";
+
 export type WorkflowStatus = "active" | "draft";
 export type WorkflowRunStatus =
   | "created"

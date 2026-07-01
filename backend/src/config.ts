@@ -42,4 +42,12 @@ export const config = {
 
   // Verification mode — TEE verification adapter (no hosted enclave claims)
   teeVerificationMode: "tee_verification_mode" as const,
+
+  // Phase N: LLM Provider (agent execution runtime)
+  llmProvider: envStr("LLM_PROVIDER", "openai_compatible") as "openai_compatible" | "none",
+  llmApiBaseUrl: envStr("LLM_API_BASE_URL", ""),
+  llmApiKey: envStr("LLM_API_KEY", ""),
+  llmModel: envStr("LLM_MODEL", "gpt-4o-mini"),
+  llmTimeoutMs: envInt("LLM_TIMEOUT_MS", 30000),
+  llmMaxRetries: envInt("LLM_MAX_RETRIES", 2),
 } as const;

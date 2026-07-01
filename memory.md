@@ -314,3 +314,49 @@ API routes verified via curl:
 - POST /api/marketplace/:listingId/tasks — Create payment-backed task from live listing
 
 Full test suite: 234 tests, 6 files, all passing.
+
+## Backend Phase N deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/llm-provider.ts | N1: Provider-agnostic LLM client with OpenAI-compatible backend, retry logic, error classification (PROVIDER_NOT_CONFIGURED, API_KEY_MISSING, API_REQUEST_FAILED, INVALID_RESPONSE, RATE_LIMITED, TIMEOUT, UNKNOWN), provider swapping for testing |
+| src/services/invoice-risk-agent.ts | N2: First-party Invoice Risk Agent runtime — builds structured prompts, sends to configurable LLM, parses JSON response (risk_score 0-100, decision approve/review/reject, reasoning, flags, recommended_action, confidence), validates all fields, hash-binds input/output into AgentExecutionOutput |
+| src/services/agent-runtime.ts | N3: Agent execution layer orchestrator — executeAgent (real agent dispatch/run path), runTaskWithAgentExecution (upgraded fallback chain: LLM agent → Blocky TEE → pending proof), storeAgentProof (creates verified proof with real hashes, NOT placeholders), storeAgentOutputRow (persists structured output in system_events), getAgentOutput (retrieves latest execution output) |
+| src/routes/agent-runtime.ts | N4: 3 API endpoints — POST /api/tasks/:taskId/execute (agent execution with auth), GET /api/tasks/:taskId/output (retrieve structured output), GET /api/agents/runtime/health (public health check with LLM status) |
+| src/types.ts (modified) | Added Phase N types: AgentExecutionOutput, InvoiceRiskAgentResult, LlmCompletionResponse, LlmProvider interface, LlmProviderErrorCode |
+| src/config.ts (modified) | Added LLM provider config: LLM_PROVIDER, LLM_API_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TIMEOUT_MS, LLM_MAX_RETRIES |
+| src/index.ts (modified) | Registered agent runtime routes |
+| src/routes/tasks.ts (modified) | Upgraded POST /api/tasks/:taskId/run to use runTaskWithAgentExecution (agent_executed flag in response, 503 on provider not configured) |
+| .env.example (modified) | Added LLM provider env var documentation (6 vars) |
+| tests/phase-n.test.ts | 52 tests: LLM provider (config/missing/fail/retry/health), Invoice Risk Agent (execution/hash binding/validation/edge cases), Agent Runtime (executeAgent state machine/agent existence/agent inactive/non-placeholder proofs/output storage), runTaskWithAgentExecution (agent path/fallback path/graceful degradation), Payment safety (agent proofs satisfy unlock gate, placeholder proofs still fail), API routes (auth required/output retrieval/run upgrade/health), Phase A-M preservation |
+
+Agent execution flow:
+1. POST /api/tasks/:taskId/run → runTaskWithAgentExecution
+2. Attempt 1: executeAgent → looks up agent → checks state (funded/running) → dispatches to InvoiceRiskAgent → sends to LLM → parses structured JSON → stores verified proof (non-placeholder!) → transitions to proof_pending
+3. Attempt 2 (fallback): Blocky TEE verification (skipped in dry_run for speed)
+4. Attempt 3 (last resort): pending proof with placeholder hashes
+5. Agent proofs: attestation_hash is real SHA-256 of canonical payload, input_hash/output_hash are deterministic hashes of task data, wasm_hash includes agent ID — NOT placeholder markers
+6. Payment safety: agent-executed proofs pass isPlaceholderProof() check → can be verified, anchored, and unlock real payments
+
+API routes added:
+- POST /api/tasks/:taskId/execute — Execute assigned agent (auth required)
+- GET /api/tasks/:taskId/output — Retrieve structured agent output (public)
+- GET /api/agents/runtime/health — Runtime + LLM health status (public)
+
+API route upgraded:
+- POST /api/tasks/:taskId/run — Now returns agent_executed flag; prefers agent execution over TEE over pending proof; returns 503 when LLM provider not configured
+
+### Frontend wiring notes for Phase N
+
+The existing frontend screens should wire to the new agent runtime as follows:
+
+| Screen | API Call | What to show |
+|---|---|---|
+| /run | POST /api/tasks/:taskId/run | agent_executed flag controls UI messaging; show "Running agent analysis..." state while polling GET /api/tasks/:taskId for status transitions |
+| /agents/[agentId] | GET /api/agents/:agentId | Agent profile already available; add GET /api/agents/runtime/health to check if LLM is configured for this agent type |
+| /proofs/[taskId] | GET /api/tasks/:taskId/output | Show structured agent output: risk_score, decision badge, reasoning text, flags list, recommended_action, model metadata; proof will have non-placeholder hashes when agent-executed |
+| /status | GET /api/agents/runtime/health | Show LLM provider status (configured/missing), supported task types, agent runtime health |
+
+All 683 tests pass (631 existing + 52 new). TypeScript build clean (tsc --noEmit).
