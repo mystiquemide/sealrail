@@ -29,6 +29,7 @@ export const config = {
   casperAccountKeyPath: envStr("CASPER_ACCOUNT_KEY_PATH", ""),
   csprCloudApiKey: envStr("CSPR_CLOUD_API_KEY", ""),
   csprCloudToken: envStr("CSPR_CLOUD_TOKEN", ""),
+  casperContractHash: envStr("CASPER_CONTRACT_HASH", ""),
   casperMode: envStr("CASPER_MODE", "dry_run") as "dry_run" | "testnet" | "mainnet",
 
   // Server

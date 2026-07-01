@@ -31,8 +31,33 @@ Positioning: No Proof without a Payment.
 - Backend Phase K: DONE. 69/69 tests passed (vitest). Commit aafb7e5.
 - Backend Phase L: DONE. 65/65 tests passed (vitest). Commit c187325.
 - Backend Phase N: DONE. 685 tests, commit 90385c9. Post-Levi-audit fix applied — pending placeholder proof fallback removed; LLM failures throw honestly (503/500); wasm_hash is SHA-256 hash-bound.
+- Backend Deploy Prep (Phase N+): DONE. 751 tests (66 new), commit TBD. Backend deployment hardening while Blocky hosted access is pending. Comprehensive status endpoints, config validation, deployment runbook.
 
-## Backend Phase M deliverables
+## Backend Deploy Prep deliverables (Phase N+)
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/status.ts | Comprehensive status gathering: Blocky readiness (CLI + hosted), Casper readiness (mode/contract/client), LLM readiness (provider/model/configured), database readiness, deployment readiness summary with blockers+warnings, public-safe status (no secrets), admin-safe status (full detail) |
+| src/services/config-validation.ts | Deployment config validation with honest failure: validates Blocky, Casper (dry_run/testnet/mainnet), LLM, server, database configs. Returns structured ValidationResult with errors (block deployment) and warnings (advisory). Never leaks secrets in messages. |
+| src/routes/status.ts | Status API routes: GET /api/health (extended with blocky_cli + tee_hookup), GET /api/status (public-safe fields), GET /api/status/detailed, GET /api/admin/status (authenticated, full readiness), GET /api/admin/readiness (returns 503 on blockers) |
+| src/config.ts (modified) | Added casperContractHash config field for CASPER_CONTRACT_HASH env var |
+| src/index.ts (modified) | Registered status routes; added config validation logging at startup; upgraded health/status endpoints to use status service |
+| .env.example (modified) | Deployment-ready env template: added deployment mode docs, quick-start section, deployment checklist for dry_run/testnet, CASPER_CONTRACT_HASH documentation |
+| DEPLOYMENT.md | Deployment runbook: prerequisites, quick start, config reference table, startup validation docs, health/status endpoint reference, Blocky access status section, Phase N guarantee verification, deployment target guidance, remaining access needed for Phase Q |
+| tests/phase-deploy-prep.test.ts | 66 tests: Blocky readiness (CLI, hosted config, secret exposure), Casper readiness (mode, contract hash, client, CSPR.cloud), LLM readiness (provider, config, no leak), database readiness, deployment readiness summary, public status (no secrets), admin status (full detail, no secrets), config validation (issues, severity, secret safety), API routes (health, status, admin auth, readiness HTTP codes), no-hosted-blocky scenario, Phase N A+ guarantee preservation, existing route preservation |
+
+API endpoints added/upgraded:
+- GET /api/health — Extended with blocky_cli (version/unavailable) and tee_hookup (pending_hosted_access/ready)
+- GET /api/status — Public-safe: status, casper_mode, casper_contract_ready, blocky_cli_available, hosted_tee_ready, tee_hookup_blocked, llm_configured, db_connected, node_env, uptime
+- GET /api/status/detailed — Same as /api/status (public-safe)
+- GET /api/admin/status — Authenticated: status + full readiness (all subsystems + blockers + warnings + Phase N guarantees)
+- GET /api/admin/readiness — Authenticated: returns 503 if blockers exist, 200 otherwise
+
+Full test suite: 751 tests, 15 files, all passing. TypeScript check (tsc --noEmit): clean.
+
+## Next Phase
 
 Files created in backend/ and docs/:
 
@@ -258,6 +283,8 @@ POST /api/proofs/verify registered on Fastify server.
 ## Blocky status
 
 Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted TEE API key requested from info@blocky.rocks — no response yet.
+
+Deploy prep hardening complete: status endpoints expose Blocky CLI availability and hosted config readiness without exposing secrets. Config validation warns about missing hosted access in dry_run mode, errors in testnet mode.
 
 ## Casper status
 
