@@ -263,14 +263,13 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 - Rust nightly, wasm32 target, cargo-odra, casper-client installed.
 - CSPR.cloud key in /root/.env (REDACTED — never shared).
 - Odra contract BUILT — Phase B complete. 23/23 tests pass.
-- **Phase P (testnet deploy)**: READY-BLOCKED (2026-07-01).
-  - Contract WASM builds: ✅ `cargo odra build -c VerifiedAgentPayments` produces 323,953-byte WASM (MD5: 4b7bd5ef8611b3d5283652409c76fac1).
-  - Fix applied: added `#![no_std]` + `extern crate alloc;` to `src/lib.rs` and `.cargo/config.toml` with `--allow-undefined` linker flag for WASM target.
-  - Contract tests: 23/23 pass.
-  - Backend fail-closed (C2): verified in phase-d tests — testnet mode returns honest errors when client/key unavailable.
-  - CSPR.cloud API keys: present.
-  - **BLOCKER**: No Casper testnet account key (`secret_key.pem`). Cannot deploy to testnet until user generates key via `casper-client keygen ~/.casper/keys/` and funds it via https://testnet.cspr.live/tools/faucet.
-  - Full runbook: `docs/plans/PHASE_P_CASPER_TESTNET_DEPLOY.md`.
+- **Phase P (testnet deploy)**: DEPLOYED (2026-07-01).
+  - Contract WASM builds and contract tests remain passing.
+  - Deployed via Odra CLI to Casper testnet using RPC `https://node.testnet.casper.network/rpc` and event stream `https://node.testnet.casper.network/events`.
+  - Transaction: `b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196` — https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196
+  - Contract package/hash: `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`.
+  - Odra registry: `contracts/verified-agent-payments/resources/casper-test-contracts.toml`.
+  - Backend fail-closed (C2) remains verified: testnet/mainnet never silently fall back to dry-run.
 
 ## Build rules
 

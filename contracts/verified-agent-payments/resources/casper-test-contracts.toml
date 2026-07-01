@@ -1,0 +1,6 @@
+last_updated = "2026-07-01T13:05:53Z"
+
+[[contracts]]
+name = "VerifiedAgentPayments"
+package_name = "VerifiedAgentPayments"
+package_hash = "hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846"
