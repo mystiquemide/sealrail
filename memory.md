@@ -44,7 +44,20 @@ Full test suite: 591 tests, 12 files, all passing. TypeScript check (tsc --noEmi
 
 ## Next Phase
 
-Phase N: Frontend implementation (per DESIGN.md frontend UI plan). Backend is now fully complete and verified across all 10 API route groups.
+Phase N: Frontend implementation (per DESIGN.md frontend UI plan). Backend is fully complete and A+ audited.
+
+### Post-frontend plan
+
+Post-frontend integration and submission plan written at `docs/plans/SEALRAIL_POST_FRONTEND_PLAN.md`.
+
+| Phase | What |
+|---|---|
+| O | Frontend-backend wiring (fixtures → real API) |
+| P | Casper testnet deploy (Odra contract) |
+| Q | Real TEE hookup (Blocky AS) |
+| R | Deployment (Vercel + backend) |
+| S | Demo video (2-3 min) |
+| T | README + DoraHacks submission |
 
 ## Backend Phase L deliverables
 
