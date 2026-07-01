@@ -14,7 +14,7 @@ Positioning: No Proof without a Payment.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
 - Backend audit report: produced at docs/audits/SEALRAIL_BACKEND_AUDIT.md and docs/audits/SEALRAIL_BACKEND_AUDIT.docx for audited commit b7df591.
 - Backend re-audit report: produced at docs/audits/SEALRAIL_BACKEND_REAUDIT.md and docs/audits/SEALRAIL_BACKEND_REAUDIT.docx for audited commit 312d3a4. Grade B+; A/A+ target not met until mainnet fail-closed behavior, placeholder proof advancement, and payment claim identity proof are fixed.
-- Backend re-audit second pass fix: committed. Three blockers fixed: mainnet fail-closed (B1), placeholder proofs never marked verified (B2), payment claim owner_address enforcement (B3). 628 tests pass, all gates green.
+- Backend re-audit second pass report: produced at docs/audits/SEALRAIL_BACKEND_REAUDIT_2.md and docs/audits/SEALRAIL_BACKEND_REAUDIT_2.docx for audited commit 9941e78. Grade B+; A/A+ target not met because placeholder dry-run proofs still advance task status to `proof_verified` and can be anchored as `anchored`, even though mainnet fail-closed and payment owner_address enforcement are fixed. 628 tests pass, all gates green.
 - Backend Phase A: DONE. 20/20 tests passed.
 - Backend Phase B: DONE. 23/23 tests passed (cargo odra test).
 - Backend Phase C: DONE. 30/30 tests passed (vitest).
