@@ -20,6 +20,7 @@ Positioning: No Proof without a Payment.
 - Backend Phase F: DONE. 44/44 tests passed (vitest). Commit 8015233.
 - Backend Phase G: DONE. 30/30 tests passed (vitest). Commit 75d381a.
 - Backend Phase H: DONE. 50/50 tests passed (vitest). Commit d8f728a.
+- Backend Phase I: DONE. 44/44 tests passed (vitest). Commit pending.
 
 ## Backend Phase H deliverables
 
@@ -42,6 +43,24 @@ API routes verified via curl:
 - POST /api/workflow-runs/:runId/finalize — Bundle all verified step proofs into final proof with real SHA-256 hashes
 
 Full test suite: 284 tests, 7 files, all passing.
+
+## Backend Phase I deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/splits.ts | I1: recipient validation (role + address), I2: proof dependency resolution (verified/anchored proofs matching task/workflow), I3: per-recipient unlock with partial-unlock support |
+| src/routes/payments.ts (modified) | I4: enhanced POST /splits with validation, POST /unlock with proof dependency checking, POST /claim with double-claim/wrong-recipient guards, GET /:paymentId with proof_dependencies |
+| tests/phase-i.test.ts | 44 tests: split validation, proof dependency resolution, partial/full unlock, no-unlockable rejection, double-claim, wrong recipient, nonexistent payment, A-H preservation, end-to-end workflow |
+
+API routes verified via curl:
+- POST /api/payments/:paymentId/splits — Split calculation with recipient role/address validation (400 on invalid role/address/bps)
+- GET /api/payments/:paymentId — Payment with split detail + per-recipient proof dependency status
+- POST /api/payments/:paymentId/unlock — Per-recipient proof dependency check; partial unlock when some proofs satisfied; full unlock when all satisfied; 400 when none unlockable
+- POST /api/payments/:paymentId/claim — Claim with double-claim rejection (409) and wrong-recipient rejection (403)
+
+Full test suite: 328 tests, 8 files, all passing.
 
 ## Backend Phase A deliverables
 
@@ -134,6 +153,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase F agent registry | t_bb1cb4ee | done |
 | Senku: Phase G marketplace | t_2fe2682c | done |
 | Senku: Phase H workflows | t_c44d9742 | done |
+| Senku: Phase I splits | t_a1571388 | done |
 
 ## Blocky status
 
@@ -168,7 +188,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next Phase
 
-Phase I: Payment split engine (backend/src/services/splits.ts, extends backend/src/routes/payments.ts).
+Phase J: Reputation scoring engine (backend/src/services/reputation.ts, extends backend/src/routes/agents.ts).
 
 ## Backend Phase G deliverables
 
