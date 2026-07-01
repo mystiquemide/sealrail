@@ -84,7 +84,9 @@ function storeAgentProof(params: {
     "agent-runtime-v1",
     params.inputHash,
     params.outputHash,
-    `agent-execution-${params.agentId}`,
+    createHash("sha256")
+      .update(`agent-execution:${params.agentId}`)
+      .digest("hex"),
     params.attestationHash,
     config.teeVerificationMode,
     params.status ?? "verified",
@@ -308,14 +310,24 @@ export async function executeAgent(taskId: string): Promise<AgentRunResult> {
 // ── Legacy integration: agent-aware task verification ──
 
 /**
- * Run TEE verification with real agent execution.
+ * Run TEE verification with real agent execution (Phase N).
  *
- * This is the Phase N upgrade of runTaskVerification: it attempts
- * real agent execution first, falls back to Blocky TEE verification
- * if available, and creates a pending proof only as last resort.
+ * This is the Phase N upgrade of runTaskVerification. It attempts real
+ * agent execution when the task is eligible (active agent + invoice_risk
+ * + configured LLM). If the agent is eligible but execution fails for any
+ * reason (provider config, rate limit, invalid JSON, timeout, etc.), the
+ * failure is thrown honestly — no pending proof is created.
+ *
+ * When agent execution is not applicable (no agent, agent inactive,
+ * unsupported task type), it falls back to Blocky TEE verification if
+ * available.
+ *
+ * There is no silent fallback to a pending placeholder proof. Either the
+ * work is done honestly or the caller receives an actionable error.
  *
  * @param taskId - The task to verify
  * @returns Verification result with status
+ * @throws {Error} on task-not-found, invalid state, or agent execution failure
  */
 export async function runTaskWithAgentExecution(taskId: string): Promise<{
   taskId: string;
@@ -343,36 +355,36 @@ export async function runTaskWithAgentExecution(taskId: string): Promise<{
   }
 
   // Attempt 1: Real agent execution with LLM
-  try {
-    const agent = getAgent(task.agent_id);
-    if (agent && agent.status === "active" && task.task_type === "invoice_risk" && isLlmConfigured()) {
-      const result = await executeAgent(taskId);
-      return {
-        taskId: result.taskId,
-        status: result.status,
-        proofId: result.proofId,
-        message: `Agent executed with LLM. ${result.message}`,
-        agentExecuted: true,
-      };
+  const agent = getAgent(task.agent_id);
+  const isAgentEligible =
+    agent &&
+    agent.status === "active" &&
+    task.task_type === "invoice_risk";
+
+  if (isAgentEligible) {
+    if (!isLlmConfigured()) {
+      throw new LlmProviderError(
+        "PROVIDER_NOT_CONFIGURED",
+        "Agent execution requires a configured LLM provider. Set LLM_API_BASE_URL and LLM_API_KEY environment variables."
+      );
     }
-  } catch (err: unknown) {
-    // Agent execution failed — fall through to TEE/BLocky
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("PROVIDER_NOT_CONFIGURED") || msg.includes("API_KEY_MISSING")) {
-      // Honest failure: let the caller know why
-      throw err;
-    }
-    // Other errors: log and continue to fallback
+
+    // Execute agent — any failure (provider, rate-limit, invalid JSON,
+    // timeout, etc.) is thrown honestly. No silent fallback to pending proof.
+    const result = await executeAgent(taskId);
+    return {
+      taskId: result.taskId,
+      status: result.status,
+      proofId: result.proofId,
+      message: `Agent executed with LLM. ${result.message}`,
+      agentExecuted: true,
+    };
   }
 
   // Attempt 2: Real Blocky TEE verification (skip if dry_run with no real TEE)
   const db = getDb();
-  const now = new Date().toISOString();
 
-  // Skip lengthy TEE attempts in dry_run mode — TEE requires actual Blocky AS environment
-  if (config.casperMode === "dry_run") {
-    // Fast-path: skip to pending proof immediately
-  } else {
+  if (config.casperMode !== "dry_run") {
     try {
       const { isCliAvailable } = await import("./tee.js");
       if (isCliAvailable()) {
@@ -396,6 +408,7 @@ export async function runTaskWithAgentExecution(taskId: string): Promise<{
 
         if (verificationResult?.status === "verified") {
           const proofId = randomUUID();
+          const now = new Date().toISOString();
           db.prepare(`
             INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
               wasm_hash, attestation_hash, mode, status, created_at)
@@ -431,48 +444,13 @@ export async function runTaskWithAgentExecution(taskId: string): Promise<{
         }
       }
     } catch {
-      // TEE also not available — fall through to pending proof
+      // TEE not available — nothing to do, throw below
     }
   }
 
-  // Attempt 3: Create pending proof (last resort)
-  const proofId = randomUUID();
-  const inputHash = `input-${taskId}-${now}`;
-  const outputHash = `output-${taskId}-${now}`;
-
-  db.prepare(`
-    INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
-      wasm_hash, attestation_hash, mode, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
-  `).run(
-    proofId,
-    taskId,
-    task.agent_id,
-    "verifier-default",
-    inputHash,
-    outputHash,
-    "wasm-hash-default",
-    "attestation-hash-pending",
-    config.teeVerificationMode,
-    now,
+  throw new Error(
+    "AGENT_UNAVAILABLE: No active agent is eligible for this task and no TEE CLI is available. Could not execute verification."
   );
-
-  const updatedProofIds = [...task.proof_ids, proofId];
-  db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
-    JSON.stringify(updatedProofIds),
-    taskId,
-  );
-
-  updateTaskStatus(taskId, "proof_pending");
-
-  return {
-    taskId,
-    status: "proof_pending",
-    proofId,
-    message:
-      "Verification initiated. No agent runtime or TEE CLI available — proof is pending verification.",
-    agentExecuted: false,
-  };
 }
 
 // ── Health ────────────────────────────────

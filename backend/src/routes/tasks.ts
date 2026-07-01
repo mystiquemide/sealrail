@@ -21,6 +21,7 @@ import {
   isValidTaskTransition,
 } from "../services/tasks.js";
 import { runTaskWithAgentExecution } from "../services/agent-runtime.js";
+import { LlmProviderError } from "../services/llm-provider.js";
 import { requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 import { config } from "../config.js";
@@ -231,11 +232,14 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_STATE")) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
         }
-        if (msg.includes("PROVIDER_NOT_CONFIGURED") || msg.includes("API_KEY_MISSING")) {
+        if (err instanceof LlmProviderError && err.code === "PROVIDER_NOT_CONFIGURED") {
           return reply.status(503).send({
             error: "PROVIDER_NOT_CONFIGURED",
             message: "Agent execution requires a configured LLM provider. Set LLM_API_BASE_URL and LLM_API_KEY.",
           });
+        }
+        if (msg.startsWith("AGENT_UNAVAILABLE")) {
+          return reply.status(503).send({ error: "AGENT_UNAVAILABLE", message: msg });
         }
         return reply.status(500).send({ error: "RUN_FAILED", message: "Internal server error" });
       }

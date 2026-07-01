@@ -489,8 +489,10 @@ describe("Phase N: Agent Execution Layer", () => {
         expect(proofRow).toBeDefined();
         // Not placeholder attestation
         expect(proofRow!.attestation_hash).not.toMatch(/^attestation-hash-(default|pending)$/);
-        // Not placeholder wasm
+        // Not placeholder wasm — must be a proper SHA-256 hex hash (64 chars)
         expect(proofRow!.wasm_hash).not.toBe("wasm-hash-default");
+        expect(proofRow!.wasm_hash).toHaveLength(64);
+        expect(proofRow!.wasm_hash).toMatch(/^[a-f0-9]{64}$/);
         // Not synthetic input/output
         expect(proofRow!.input_hash).not.toMatch(/^input-/);
         expect(proofRow!.output_hash).not.toMatch(/^output-/);
@@ -658,32 +660,41 @@ describe("Phase N: Agent Execution Layer", () => {
         expect(result.proofId).toBeDefined();
       });
 
-      it("falls back to pending proof when agent execution fails (non-provider error)", async () => {
+      it("throws when agent execution fails with invalid LLM output (non-provider error)", async () => {
         const agent = createAgent({
           ownerAddress: "owner-addr-11",
-          name: "Fallback Agent",
+          name: "Fail Agent",
           category: "invoice",
         });
 
-        // Create task without payment (draft task) then advance to funded
-        const task = createTask({ agentId: agent.id });
-        // Direct DB update to set funded without payment
-        const db = getDb();
-        db.prepare("UPDATE tasks SET status = 'funded' WHERE id = ?").run(task.id);
+        const { task } = createTaskWithPayment({
+          buyerAddress: "buyer-addr-11",
+          agentId: agent.id,
+          title: "Fail Test",
+          taskType: "invoice_risk",
+          totalAmount: 5,
+          currency: "USD",
+        });
 
         // Make the agent return invalid JSON to trigger execution error
         const badProvider = new MockLlmProvider();
         badProvider.responseContent = "not json at all";
         __setLlmProvider(badProvider);
 
-        const result = await runTaskWithAgentExecution(task.id);
+        // Should throw — no silent fallback to pending proof
+        await expect(
+          runTaskWithAgentExecution(task.id)
+        ).rejects.toThrow(/INVALID_RESPONSE/);
 
-        // Should fall back to pending proof since execution failed
-        expect(result.agentExecuted).toBe(false);
-        expect(result.proofId).toBeDefined();
+        // No proof should have been created
+        const db = getDb();
+        const proofCount = db
+          .prepare("SELECT COUNT(*) as cnt FROM proofs WHERE task_id = ?")
+          .get(task.id) as { cnt: number };
+        expect(proofCount.cnt).toBe(0);
       });
 
-      it("falls back to pending proof when provider is not configured", async () => {
+      it("throws PROVIDER_NOT_CONFIGURED when LLM provider is not available", async () => {
         const agent = createAgent({
           ownerAddress: "owner-addr-12",
           name: "No Provider Agent",
@@ -704,13 +715,10 @@ describe("Phase N: Agent Execution Layer", () => {
         failingProvider.errorCode = "PROVIDER_NOT_CONFIGURED";
         __setLlmProvider(failingProvider);
 
-        // When provider is not configured, runTaskWithAgentExecution gracefully
-        // falls back to TEE/pending proof path (does NOT throw)
-        const result = await runTaskWithAgentExecution(task.id);
-
-        // Should NOT have executed the agent (no LLM available)
-        expect(result.agentExecuted).toBe(false);
-        expect(result.proofId).toBeDefined();
+        // Should throw — no silent fallback to pending proof
+        await expect(
+          runTaskWithAgentExecution(task.id)
+        ).rejects.toThrow(LlmProviderError);
       });
     });
   });
@@ -1032,7 +1040,7 @@ describe("Phase N: Agent Execution Layer", () => {
         expect(body.proof_id).toBeDefined();
       });
 
-      it("returns agent_executed: false when provider is not configured", async () => {
+      it("returns 503 when provider is not configured", async () => {
         const failingProvider = new MockLlmProvider();
         failingProvider.shouldThrow = true;
         failingProvider.errorCode = "PROVIDER_NOT_CONFIGURED";
@@ -1065,11 +1073,90 @@ describe("Phase N: Agent Execution Layer", () => {
           headers: { authorization: `Bearer ${rawSecret}` },
         });
 
-        // Falls back to pending proof path (200), agent_executed is false
-        expect(res.statusCode).toBe(200);
+        // Honest failure — no 200 with pending proof
+        expect(res.statusCode).toBe(503);
         const body = JSON.parse(res.body);
-        expect(body.agent_executed).toBe(false);
-        expect(body.proof_id).toBeDefined();
+        expect(body.error).toBe("PROVIDER_NOT_CONFIGURED");
+        expect(body.agent_executed).toBeUndefined();
+      });
+
+      it("returns 503 when LLM provider is rate-limited", async () => {
+        const failingProvider = new MockLlmProvider();
+        failingProvider.shouldThrow = true;
+        failingProvider.errorCode = "RATE_LIMITED";
+        __setLlmProvider(failingProvider);
+
+        const { rawSecret } = createApiKey({
+          ownerAddress: "owner-n5-6",
+          name: "Key 6",
+          scopes: ["tasks:write", "agents:write"],
+        });
+
+        const agent = createAgent({
+          ownerAddress: "owner-n5-6",
+          name: "Rate Limited Agent",
+          category: "invoice",
+        });
+
+        const { task } = createTaskWithPayment({
+          buyerAddress: "buyer-n5-6",
+          agentId: agent.id,
+          title: "Rate Limited",
+          taskType: "invoice_risk",
+          totalAmount: 5,
+          currency: "USD",
+        });
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/tasks/${task.id}/run`,
+          headers: { authorization: `Bearer ${rawSecret}` },
+        });
+
+        // Rate-limited errors are thrown honestly — no fallback
+        expect(res.statusCode).toBeGreaterThanOrEqual(500);
+        expect(res.statusCode).toBeLessThan(600);
+        const body = JSON.parse(res.body);
+        expect(body.message).toBeDefined();
+      });
+
+      it("returns error when LLM returns invalid JSON", async () => {
+        const badProvider = new MockLlmProvider();
+        badProvider.responseContent = "definitely not json";
+        __setLlmProvider(badProvider);
+
+        const { rawSecret } = createApiKey({
+          ownerAddress: "owner-n5-7",
+          name: "Key 7",
+          scopes: ["tasks:write", "agents:write"],
+        });
+
+        const agent = createAgent({
+          ownerAddress: "owner-n5-7",
+          name: "Bad JSON Agent",
+          category: "invoice",
+        });
+
+        const { task } = createTaskWithPayment({
+          buyerAddress: "buyer-n5-7",
+          agentId: agent.id,
+          title: "Bad JSON",
+          taskType: "invoice_risk",
+          totalAmount: 5,
+          currency: "USD",
+        });
+
+        const res = await app.inject({
+          method: "POST",
+          url: `/api/tasks/${task.id}/run`,
+          headers: { authorization: `Bearer ${rawSecret}` },
+        });
+
+        // Invalid LLM output must throw — no pending proof
+        expect(res.statusCode).toBe(500);
+        const body = JSON.parse(res.body);
+        expect(body.error).toBe("RUN_FAILED");
+        expect(body.agent_executed).toBeUndefined();
       });
     });
   });

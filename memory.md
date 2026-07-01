@@ -30,6 +30,7 @@ Positioning: No Proof without a Payment.
 - Backend Phase J: DONE. 41/41 tests passed (vitest). Commit b815023.
 - Backend Phase K: DONE. 69/69 tests passed (vitest). Commit aafb7e5.
 - Backend Phase L: DONE. 65/65 tests passed (vitest). Commit c187325.
+- Backend Phase N: DONE. 685 tests, commit 90385c9. Post-Levi-audit fix applied — pending placeholder proof fallback removed; LLM failures throw honestly (503/500); wasm_hash is SHA-256 hash-bound.
 
 ## Backend Phase M deliverables
 
@@ -336,8 +337,8 @@ Agent execution flow:
 1. POST /api/tasks/:taskId/run → runTaskWithAgentExecution
 2. Attempt 1: executeAgent → looks up agent → checks state (funded/running) → dispatches to InvoiceRiskAgent → sends to LLM → parses structured JSON → stores verified proof (non-placeholder!) → transitions to proof_pending
 3. Attempt 2 (fallback): Blocky TEE verification (skipped in dry_run for speed)
-4. Attempt 3 (last resort): pending proof with placeholder hashes
-5. Agent proofs: attestation_hash is real SHA-256 of canonical payload, input_hash/output_hash are deterministic hashes of task data, wasm_hash includes agent ID — NOT placeholder markers
+4. LLM failures (PROVIDER_NOT_CONFIGURED, rate-limited, invalid JSON, timeout) throw honestly — no pending proof created, no task state advance
+5. Agent proofs: attestation_hash is real SHA-256 of canonical payload, input_hash/output_hash are deterministic hashes of task data, wasm_hash is SHA-256 hash bound — NOT placeholder markers
 6. Payment safety: agent-executed proofs pass isPlaceholderProof() check → can be verified, anchored, and unlock real payments
 
 API routes added:
@@ -346,7 +347,7 @@ API routes added:
 - GET /api/agents/runtime/health — Runtime + LLM health status (public)
 
 API route upgraded:
-- POST /api/tasks/:taskId/run — Now returns agent_executed flag; prefers agent execution over TEE over pending proof; returns 503 when LLM provider not configured
+- POST /api/tasks/:taskId/run — Now returns agent_executed flag; LLM failures throw honestly (503/500); no pending placeholder proof fallback
 
 ### Frontend wiring notes for Phase N
 
@@ -359,4 +360,4 @@ The existing frontend screens should wire to the new agent runtime as follows:
 | /proofs/[taskId] | GET /api/tasks/:taskId/output | Show structured agent output: risk_score, decision badge, reasoning text, flags list, recommended_action, model metadata; proof will have non-placeholder hashes when agent-executed |
 | /status | GET /api/agents/runtime/health | Show LLM provider status (configured/missing), supported task types, agent runtime health |
 
-All 683 tests pass (631 existing + 52 new). TypeScript build clean (tsc --noEmit).
+All 685 tests pass (631 existing + 54). TypeScript build clean (tsc --noEmit).
