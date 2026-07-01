@@ -25,6 +25,21 @@ Positioning: No Proof without a Payment.
 - Backend Phase K: DONE. 69/69 tests passed (vitest). Commit aafb7e5.
 - Backend Phase L: DONE. 65/65 tests passed (vitest). Commit c187325.
 
+## Backend Phase M deliverables
+
+Files created in backend/ and docs/:
+
+| File | Purpose |
+|---|---|
+| tests/integration.test.ts | M1+M3+M4: Full-loop integration test (88 tests) covering health/status, agent registration, verifier templates, marketplace listings, task creation, payment intents+splits+unlock+claim, TEE proof verification path, Casper anchor path, workflow template+run+ordered step execution+finalize, reputation recalculation, API key CRUD+lookup+scope checks, state machine enforcement (task/payment/recipient/workflow transitions), and error paths (nonexistent resources, owner mismatch, split validation, proof dependency resolution, unlock enforcement, workflow errors, API key errors) |
+| docs/plans/VERIFICATION_GATES.md | M2: Curl-based verification runbook with copy-paste curl commands, expected HTTP status codes, expected JSON fields, 10 gates covering all API route groups, judge-safe TEE wording, placeholder values only |
+
+Full test suite: 591 tests, 12 files, all passing. TypeScript check (tsc --noEmit): clean.
+
+## Next Phase
+
+Phase N: Frontend implementation (per DESIGN.md frontend UI plan). Backend is now fully complete and verified across all 10 API route groups.
+
 ## Backend Phase L deliverables
 
 Files created/modified in backend/:
@@ -218,6 +233,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase J reputation | t_39aebe66 | done |
 | Senku: Phase K api keys | t_9e3d7666 | done |
 | Senku: Phase L verifiers | t_cdebfeb7 | done |
+| Senku: Phase M integration gates | t_7889b433 | done |
 
 ## Blocky status
 
@@ -249,10 +265,6 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 - Notion Hackathon Tracker: https://notion.so/38f1fa84b58f810780f8cff3bdae2523
 - Notion Projects: https://notion.so/38f1fa84b58f81feb61dc136969d5c3b
 - Progress log: cron job eb0a1c420c73 (every 6h)
-
-## Next Phase
-
-Phase M: Backend integration tests and verification gates.
 
 ## Backend Phase G deliverables
 
