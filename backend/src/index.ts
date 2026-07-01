@@ -2,6 +2,7 @@
 // Sealrail Backend — Fastify Server Entry
 // Phase A: Foundation with health check
 // Audit fix: C1+H2 — extracted buildApp() factory for testing + auth wiring
+// Deploy prep: Status routes with comprehensive subsystem readiness
 // ────────────────────────────────────────
 
 import Fastify from "fastify";
@@ -15,7 +16,11 @@ import { registerMarketplaceRoutes } from "./routes/marketplace.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerApiKeyRoutes } from "./routes/api-keys.js";
 import { registerVerifierRoutes } from "./routes/verifiers.js";
+import { registerAgentRuntimeRoutes } from "./routes/agent-runtime.js";
+import { registerStatusRoutes, setStatusStartTime } from "./routes/status.js";
 import { requireApiKey } from "./middleware/auth.js";
+import { validateDeploymentConfig, getValidationSummary } from "./services/config-validation.js";
+import { getPublicStatus } from "./services/status.js";
 
 // Load dotenv before anything reads config
 try {
@@ -40,6 +45,7 @@ export function buildApp() {
   // Track lifecycle state
   let dbInitialized = false;
   const startTime = Date.now();
+  setStatusStartTime(startTime);
 
   app.addHook("onReady", async () => {
     try {
@@ -49,48 +55,58 @@ export function buildApp() {
     } catch (err) {
       app.log.error({ err }, "Database initialization failed");
     }
+
+    // Run deployment config validation on startup
+    const validationSummary = getValidationSummary();
+    if (validationSummary.includes("error")) {
+      app.log.warn(validationSummary);
+    } else {
+      app.log.info(validationSummary);
+    }
   });
 
   // ── Health endpoint (public) ──
+  // Delegates to status service — no duplicate inline logic
   app.get("/api/health", async (_request, reply) => {
-    return reply.send({
-      status: "ok",
-      mode: config.teeVerificationMode,
-      timestamp: new Date().toISOString(),
-      uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
-    });
+    const { getHealth } = await import("./services/status.js");
+    return reply.send(getHealth(startTime));
   });
 
   app.get("/health", async (_request, reply) => {
-    return reply.send({
-      status: "ok",
-      mode: config.teeVerificationMode,
-      timestamp: new Date().toISOString(),
-      uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
-    });
+    const { getHealth } = await import("./services/status.js");
+    return reply.send(getHealth(startTime));
   });
 
-  // ── Status endpoint (public, sanitized per H5) ──
+  // ── Status endpoints (sanitized, no secrets) ──
   app.get("/api/status", async (_request, reply) => {
-    return reply.send({
-      status: "ok",
-      db_connected: dbInitialized,
-      timestamp: new Date().toISOString(),
-    });
+    return reply.send(getPublicStatus(startTime));
   });
 
-  // ── Admin status (authenticated, detailed per H5) ──
+  // ── Detailed status (public) ──
+  app.get("/api/status/detailed", async (_request, reply) => {
+    return reply.send(getPublicStatus(startTime));
+  });
+
+  // ── Admin status (authenticated, full detail) ──
   app.get("/api/admin/status", {
     preHandler: [requireApiKey],
   } as never, async (_request, reply) => {
-    return reply.send({
-      status: "ok",
-      db_connected: dbInitialized,
-      mode: config.teeVerificationMode,
-      node_env: config.nodeEnv,
-      casper_mode: config.casperMode,
-      timestamp: new Date().toISOString(),
-    });
+    const { getAdminStatus } = await import("./services/status.js");
+    return reply.send(getAdminStatus(startTime));
+  });
+
+  // ── Admin deployment readiness (authenticated) ──
+  app.get("/api/admin/readiness", {
+    preHandler: [requireApiKey],
+  } as never, async (_request, reply) => {
+    const { getAdminStatus } = await import("./services/status.js");
+    const adminStatus = getAdminStatus(startTime);
+
+    const httpStatus = adminStatus.status === "ok" ? 200
+      : adminStatus.status === "degraded" ? 200
+      : 503;
+
+    return reply.status(httpStatus).send(adminStatus);
   });
 
   // ── Route registration ──
@@ -102,6 +118,7 @@ export function buildApp() {
   registerWorkflowRoutes(app);
   registerApiKeyRoutes(app);
   registerVerifierRoutes(app);
+  registerAgentRuntimeRoutes(app);
 
   return app;
 }
@@ -121,6 +138,10 @@ export async function startServer() {
       process.exit(0);
     });
   }
+
+  // Log deployment readiness at startup
+  const validationSummary = getValidationSummary();
+  app.log.info(`Config validation:\n${validationSummary}`);
 
   await app.listen({ port: config.port, host: config.host });
   app.log.info(

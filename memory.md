@@ -30,8 +30,34 @@ Positioning: No Proof without a Payment.
 - Backend Phase J: DONE. 41/41 tests passed (vitest). Commit b815023.
 - Backend Phase K: DONE. 69/69 tests passed (vitest). Commit aafb7e5.
 - Backend Phase L: DONE. 65/65 tests passed (vitest). Commit c187325.
+- Backend Phase N: DONE. 685 tests, commit 90385c9. Post-Levi-audit fix applied — pending placeholder proof fallback removed; LLM failures throw honestly (503/500); wasm_hash is SHA-256 hash-bound.
+- Backend Deploy Prep (Phase N+): DONE. 751 tests (66 new), commit TBD. Backend deployment hardening while Blocky hosted access is pending. Comprehensive status endpoints, config validation, deployment runbook.
 
-## Backend Phase M deliverables
+## Backend Deploy Prep deliverables (Phase N+)
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/status.ts | Comprehensive status gathering: Blocky readiness (CLI + hosted), Casper readiness (mode/contract/client), LLM readiness (provider/model/configured), database readiness, deployment readiness summary with blockers+warnings, public-safe status (no secrets), admin-safe status (full detail) |
+| src/services/config-validation.ts | Deployment config validation with honest failure: validates Blocky, Casper (dry_run/testnet/mainnet), LLM, server, database configs. Returns structured ValidationResult with errors (block deployment) and warnings (advisory). Never leaks secrets in messages. |
+| src/routes/status.ts | Status API routes: GET /api/health (extended with blocky_cli + tee_hookup), GET /api/status (public-safe fields), GET /api/status/detailed, GET /api/admin/status (authenticated, full readiness), GET /api/admin/readiness (returns 503 on blockers) |
+| src/config.ts (modified) | Added casperContractHash config field for CASPER_CONTRACT_HASH env var |
+| src/index.ts (modified) | Registered status routes; added config validation logging at startup; upgraded health/status endpoints to use status service |
+| .env.example (modified) | Deployment-ready env template: added deployment mode docs, quick-start section, deployment checklist for dry_run/testnet, CASPER_CONTRACT_HASH documentation |
+| DEPLOYMENT.md | Deployment runbook: prerequisites, quick start, config reference table, startup validation docs, health/status endpoint reference, Blocky access status section, Phase N guarantee verification, deployment target guidance, remaining access needed for Phase Q |
+| tests/phase-deploy-prep.test.ts | 66 tests: Blocky readiness (CLI, hosted config, secret exposure), Casper readiness (mode, contract hash, client, CSPR.cloud), LLM readiness (provider, config, no leak), database readiness, deployment readiness summary, public status (no secrets), admin status (full detail, no secrets), config validation (issues, severity, secret safety), API routes (health, status, admin auth, readiness HTTP codes), no-hosted-blocky scenario, Phase N A+ guarantee preservation, existing route preservation |
+
+API endpoints added/upgraded:
+- GET /api/health — Extended with blocky_cli (version/unavailable) and tee_hookup (pending_hosted_access/ready)
+- GET /api/status — Public-safe: status, casper_mode, casper_contract_ready, blocky_cli_available, hosted_tee_ready, tee_hookup_blocked, llm_configured, db_connected, node_env, uptime
+- GET /api/status/detailed — Same as /api/status (public-safe)
+- GET /api/admin/status — Authenticated: status + full readiness (all subsystems + blockers + warnings + Phase N guarantees)
+- GET /api/admin/readiness — Authenticated: returns 503 if blockers exist, 200 otherwise
+
+Full test suite: 751 tests, 15 files, all passing. TypeScript check (tsc --noEmit): clean.
+
+## Next Phase
 
 Files created in backend/ and docs/:
 
@@ -491,11 +517,21 @@ POST /api/proofs/verify registered on Fastify server.
 
 Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted TEE API key requested from info@blocky.rocks — no response yet.
 
+Deploy prep hardening complete: status endpoints expose Blocky CLI availability and hosted config readiness without exposing secrets. Config validation warns about missing hosted access in dry_run mode, errors in testnet mode.
+
 ## Casper status
 
 - Rust nightly, wasm32 target, cargo-odra, casper-client installed.
 - CSPR.cloud key in /root/.env (REDACTED — never shared).
 - Odra contract BUILT — Phase B complete. 23/23 tests pass.
+- **Phase P (testnet deploy)**: DEPLOYED (2026-07-01).
+  - Contract WASM builds and contract tests remain passing.
+  - Deployed via Odra CLI to Casper testnet using RPC `https://node.testnet.casper.network/rpc` and event stream `https://node.testnet.casper.network/events`.
+  - Transaction: `b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196` — https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196
+  - Contract package/hash: `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`.
+  - Odra registry: `contracts/verified-agent-payments/resources/casper-test-contracts.toml`.
+  - Backend fail-closed (C2) remains verified: testnet/mainnet never silently fall back to dry-run.
+  - **Phase P ownership verified by Senku (builder) on 2026-07-01**: Independently re-verified all deployment artifacts — transaction confirmed successful on Casper testnet explorer (b2c6a932...a6196, caller 0202746a...fcd794, status Success), contract package/hash `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`, no secrets in repo, /root/.casper/imported-deploy-key absent, contract tests 23/23 pass (cargo odra test), backend tests 631/631 pass (vitest --no-file-parallelism), tsc --noEmit clean. Phase P accepted.
 
 ## Build rules
 
@@ -539,3 +575,49 @@ API routes verified via curl:
 - POST /api/marketplace/:listingId/tasks — Create payment-backed task from live listing
 
 Full test suite: 234 tests, 6 files, all passing.
+
+## Backend Phase N deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/llm-provider.ts | N1: Provider-agnostic LLM client with OpenAI-compatible backend, retry logic, error classification (PROVIDER_NOT_CONFIGURED, API_KEY_MISSING, API_REQUEST_FAILED, INVALID_RESPONSE, RATE_LIMITED, TIMEOUT, UNKNOWN), provider swapping for testing |
+| src/services/invoice-risk-agent.ts | N2: First-party Invoice Risk Agent runtime — builds structured prompts, sends to configurable LLM, parses JSON response (risk_score 0-100, decision approve/review/reject, reasoning, flags, recommended_action, confidence), validates all fields, hash-binds input/output into AgentExecutionOutput |
+| src/services/agent-runtime.ts | N3: Agent execution layer orchestrator — executeAgent (real agent dispatch/run path), runTaskWithAgentExecution (upgraded fallback chain: LLM agent → Blocky TEE → pending proof), storeAgentProof (creates verified proof with real hashes, NOT placeholders), storeAgentOutputRow (persists structured output in system_events), getAgentOutput (retrieves latest execution output) |
+| src/routes/agent-runtime.ts | N4: 3 API endpoints — POST /api/tasks/:taskId/execute (agent execution with auth), GET /api/tasks/:taskId/output (retrieve structured output), GET /api/agents/runtime/health (public health check with LLM status) |
+| src/types.ts (modified) | Added Phase N types: AgentExecutionOutput, InvoiceRiskAgentResult, LlmCompletionResponse, LlmProvider interface, LlmProviderErrorCode |
+| src/config.ts (modified) | Added LLM provider config: LLM_PROVIDER, LLM_API_BASE_URL, LLM_API_KEY, LLM_MODEL, LLM_TIMEOUT_MS, LLM_MAX_RETRIES |
+| src/index.ts (modified) | Registered agent runtime routes |
+| src/routes/tasks.ts (modified) | Upgraded POST /api/tasks/:taskId/run to use runTaskWithAgentExecution (agent_executed flag in response, 503 on provider not configured) |
+| .env.example (modified) | Added LLM provider env var documentation (6 vars) |
+| tests/phase-n.test.ts | 52 tests: LLM provider (config/missing/fail/retry/health), Invoice Risk Agent (execution/hash binding/validation/edge cases), Agent Runtime (executeAgent state machine/agent existence/agent inactive/non-placeholder proofs/output storage), runTaskWithAgentExecution (agent path/fallback path/graceful degradation), Payment safety (agent proofs satisfy unlock gate, placeholder proofs still fail), API routes (auth required/output retrieval/run upgrade/health), Phase A-M preservation |
+
+Agent execution flow:
+1. POST /api/tasks/:taskId/run → runTaskWithAgentExecution
+2. Attempt 1: executeAgent → looks up agent → checks state (funded/running) → dispatches to InvoiceRiskAgent → sends to LLM → parses structured JSON → stores verified proof (non-placeholder!) → transitions to proof_pending
+3. Attempt 2 (fallback): Blocky TEE verification (skipped in dry_run for speed)
+4. LLM failures (PROVIDER_NOT_CONFIGURED, rate-limited, invalid JSON, timeout) throw honestly — no pending proof created, no task state advance
+5. Agent proofs: attestation_hash is real SHA-256 of canonical payload, input_hash/output_hash are deterministic hashes of task data, wasm_hash is SHA-256 hash bound — NOT placeholder markers
+6. Payment safety: agent-executed proofs pass isPlaceholderProof() check → can be verified, anchored, and unlock real payments
+
+API routes added:
+- POST /api/tasks/:taskId/execute — Execute assigned agent (auth required)
+- GET /api/tasks/:taskId/output — Retrieve structured agent output (public)
+- GET /api/agents/runtime/health — Runtime + LLM health status (public)
+
+API route upgraded:
+- POST /api/tasks/:taskId/run — Now returns agent_executed flag; LLM failures throw honestly (503/500); no pending placeholder proof fallback
+
+### Frontend wiring notes for Phase N
+
+The existing frontend screens should wire to the new agent runtime as follows:
+
+| Screen | API Call | What to show |
+|---|---|---|
+| /run | POST /api/tasks/:taskId/run | agent_executed flag controls UI messaging; show "Running agent analysis..." state while polling GET /api/tasks/:taskId for status transitions |
+| /agents/[agentId] | GET /api/agents/:agentId | Agent profile already available; add GET /api/agents/runtime/health to check if LLM is configured for this agent type |
+| /proofs/[taskId] | GET /api/tasks/:taskId/output | Show structured agent output: risk_score, decision badge, reasoning text, flags list, recommended_action, model metadata; proof will have non-placeholder hashes when agent-executed |
+| /status | GET /api/agents/runtime/health | Show LLM provider status (configured/missing), supported task types, agent runtime health |
+
+All 685 tests pass (631 existing + 54). TypeScript build clean (tsc --noEmit).

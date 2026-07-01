@@ -1,0 +1,5 @@
+# Casper contract build configuration
+# Required for WASM builds: casper host functions are resolved at deploy time,
+# not at link time. Without --allow-undefined, the linker rejects them.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--allow-undefined"]

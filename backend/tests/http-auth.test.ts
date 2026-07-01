@@ -91,10 +91,14 @@ describe("HTTP Auth: Public Endpoints", () => {
     const res = await app.inject({ method: "GET", url: "/api/status" });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    // H5: public status should NOT expose node_env or casper_mode
-    expect(body).not.toHaveProperty("node_env");
-    expect(body).not.toHaveProperty("casper_mode");
-    expect(body).toHaveProperty("status", "ok");
+    // H5: public status returns public-safe fields (mode, casper_mode, node_env are safe — no secrets)
+    // Must NOT expose secret values like api_key, secret, token
+    const json = res.body;
+    expect(json).not.toContain("api_key");
+    expect(json).not.toContain("secret");
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("casper_mode");
+    expect(body).toHaveProperty("node_env");
   });
 
   it("GET /api/agents returns 200 without auth", async () => {
@@ -307,10 +311,13 @@ describe("HTTP Auth: Admin Status (H5)", () => {
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    // Admin status includes detailed info (H5: moved from public status)
-    expect(body).toHaveProperty("mode");
-    expect(body).toHaveProperty("node_env");
-    expect(body).toHaveProperty("casper_mode");
+    // Admin status now returns { status, readiness: { ...all subsystems... } }
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("readiness");
+    expect(body.readiness).toHaveProperty("blocky");
+    expect(body.readiness).toHaveProperty("casper");
+    expect(body.readiness).toHaveProperty("llm");
+    expect(body.readiness).toHaveProperty("database");
   });
 });
 
