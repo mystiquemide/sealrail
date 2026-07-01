@@ -270,6 +270,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
   - Contract package/hash: `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`.
   - Odra registry: `contracts/verified-agent-payments/resources/casper-test-contracts.toml`.
   - Backend fail-closed (C2) remains verified: testnet/mainnet never silently fall back to dry-run.
+  - **Phase P ownership verified by Senku (builder) on 2026-07-01**: Independently re-verified all deployment artifacts — transaction confirmed successful on Casper testnet explorer (b2c6a932...a6196, caller 0202746a...fcd794, status Success), contract package/hash `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`, no secrets in repo, /root/.casper/imported-deploy-key absent, contract tests 23/23 pass (cargo odra test), backend tests 631/631 pass (vitest --no-file-parallelism), tsc --noEmit clean. Phase P accepted.
 
 ## Build rules
 
