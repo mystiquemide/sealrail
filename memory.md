@@ -21,6 +21,7 @@ Positioning: No Proof without a Payment.
 - Backend Phase G: DONE. 30/30 tests passed (vitest). Commit 75d381a.
 - Backend Phase H: DONE. 50/50 tests passed (vitest). Commit d8f728a.
 - Backend Phase I: DONE. 44/44 tests passed (vitest). Commit cacb329.
+- Backend Phase J: DONE. 41/41 tests passed (vitest). Commit PENDING.
 
 ## Backend Phase H deliverables
 
@@ -61,6 +62,24 @@ API routes verified via curl:
 - POST /api/payments/:paymentId/claim — Claim with double-claim rejection (409) and wrong-recipient rejection (403)
 
 Full test suite: 328 tests, 8 files, all passing.
+
+## Backend Phase J deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/reputation.ts | J1: Score calculator from real proof/payment/task data, J2: gatherReputationInputs, computeReputation, recalculateReputation, getReputation, computeScore pure function |
+| src/services/agents.ts (modified) | Delegated getAgentReputation to reputation service; re-exports recalculateReputation |
+| src/services/tasks.ts (modified) | J2: On-event recalculation hooks on task status transitions to paid/blocked and proof verification |
+| src/routes/agents.ts (modified) | J3: POST /api/agents/:agentId/reputation/recalculate route with optional owner check |
+| tests/phase-j.test.ts | 41 tests: score formula, bounds [0,100], deterministic output, real data gathering, paid/blocked/failed/verified inputs, recalculation behavior, recalculateAllReputations, task recalculation hooks, health, A-I preservation |
+
+API routes verified:
+- GET /api/agents/:agentId/reputation — Returns computed reputation from live records (score + all metrics)
+- POST /api/agents/:agentId/reputation/recalculate — Explicit recalculation with optional owner address auth
+
+Full test suite: 369 tests, 9 files, all passing.
 
 ## Backend Phase A deliverables
 
@@ -154,6 +173,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase G marketplace | t_2fe2682c | done |
 | Senku: Phase H workflows | t_c44d9742 | done |
 | Senku: Phase I splits | t_a1571388 | done |
+| Senku: Phase J reputation | t_39aebe66 | done |
 
 ## Blocky status
 
@@ -188,7 +208,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next Phase
 
-Phase J: Reputation scoring engine (backend/src/services/reputation.ts, extends backend/src/routes/agents.ts).
+Phase K: API key management (backend/src/services/api-keys.ts, backend/src/middleware/auth.ts, backend/src/routes/api-keys.ts).
 
 ## Backend Phase G deliverables
 

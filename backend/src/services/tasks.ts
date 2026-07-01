@@ -11,6 +11,7 @@ import { anchorProof, getCasperHealth } from "./casper.js";
 import type { AnchorResult, AnchorProofInput } from "./casper.js";
 import type { Task, TaskStatus, Payment, PaymentRecipient } from "../types.js";
 import { config } from "../config.js";
+import { recalculateReputation } from "./reputation.js";
 
 // ── Row types for DB queries ──────────────
 
@@ -254,6 +255,15 @@ export function updateTaskStatus(id: string, status: TaskStatus): Task | null {
   db.prepare(`
     UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?
   `).run(status, now, id);
+
+  // J2: Recalculate reputation on status transitions that affect scoring
+  if (status === "paid" || status === "blocked") {
+    try {
+      recalculateReputation(current.agent_id);
+    } catch {
+      // Silently skip — reputation recalculation should not break task transitions
+    }
+  }
 
   return getTask(id);
 }
@@ -561,6 +571,13 @@ export function verifyTaskProof(taskId: string): {
     db.prepare(`
       UPDATE proofs SET status = 'verified' WHERE id = ? AND status = 'pending'
     `).run(proofId);
+  }
+
+  // J2: Recalculate reputation on proof verification
+  try {
+    recalculateReputation(task.agent_id);
+  } catch {
+    // Silently skip
   }
 
   // Transition to proof_verified

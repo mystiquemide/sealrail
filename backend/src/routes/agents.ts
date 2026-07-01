@@ -5,6 +5,7 @@
 // PATCH /api/agents/:agentId, GET /api/agents/:agentId/reputation,
 // GET /api/agents/:agentId/proofs
 // Phase F3: POST /api/agents/:agentId/sync — Casper registration sync
+// Phase J3: POST /api/agents/:agentId/reputation/recalculate — explicit recalculation
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -19,6 +20,7 @@ import {
   syncAgentToCasper,
   getAgentServiceHealth,
 } from "../services/agents.js";
+import { recalculateReputation } from "../services/reputation.js";
 import type { AgentCategory, AgentStatus, AgentPricingModel, Currency } from "../types.js";
 
 // ── Request schemas ──────────────────────
@@ -260,6 +262,56 @@ export function registerAgentRoutes(app: FastifyInstance): void {
           return reply.status(404).send({ error: "NOT_FOUND", message: msg });
         }
         return reply.status(500).send({ error: "REPUTATION_FAILED", message: msg });
+      }
+    }
+  );
+
+  // ── POST /api/agents/:agentId/reputation/recalculate ──
+  // Phase J3: Explicit recalculation endpoint.
+  // Recomputes reputation from all real proof/payment/task data.
+  // Optional owner_address in body for auth check.
+  app.post<{
+    Params: { agentId: string };
+    Body: { owner_address?: string };
+  }>(
+    "/api/agents/:agentId/reputation/recalculate",
+    async (request, reply) => {
+      const { agentId } = request.params;
+      const { owner_address } = request.body ?? {};
+
+      try {
+        // Owner check if address provided
+        if (owner_address) {
+          const agent = getAgent(agentId);
+          if (!agent) {
+            return reply.status(404).send({
+              error: "NOT_FOUND",
+              message: `No agent found with id '${agentId}'`,
+            });
+          }
+          if (agent.owner_address !== owner_address) {
+            return reply.status(403).send({
+              error: "FORBIDDEN",
+              message: "Only the agent owner can trigger recalculation",
+            });
+          }
+        }
+
+        const reputation = recalculateReputation(agentId);
+
+        return reply.status(200).send({
+          agent_id: agentId,
+          reputation,
+          computed_at: new Date().toISOString(),
+          message: "Reputation recalculated from real proof/payment/task data.",
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+
+        if (msg === "AGENT_NOT_FOUND") {
+          return reply.status(404).send({ error: "NOT_FOUND", message: msg });
+        }
+        return reply.status(500).send({ error: "RECALCULATE_FAILED", message: msg });
       }
     }
   );

@@ -18,6 +18,8 @@ import type {
   Proof,
 } from "../types.js";
 import { config } from "../config.js";
+import { getReputation } from "./reputation.js";
+export { recalculateReputation } from "./reputation.js";
 
 // ── Row types for DB queries ──────────────
 
@@ -39,19 +41,6 @@ interface AgentRow {
   updated_at: string;
 }
 
-interface AgentReputationRow {
-  agent_id: string;
-  score: number;
-  verified_runs: number;
-  failed_runs: number;
-  paid_tasks: number;
-  blocked_tasks: number;
-  total_earned: number;
-  average_verification_time_ms: number;
-  last_proof_at: string | null;
-  updated_at: string;
-}
-
 interface ProofRow {
   id: string;
   task_id: string | null;
@@ -68,11 +57,6 @@ interface ProofRow {
   mode: string;
   status: string;
   created_at: string;
-}
-
-interface TaskRow {
-  id: string;
-  status: string;
 }
 
 // ── Helpers ──────────────────────────────
@@ -93,21 +77,6 @@ function rowToAgent(row: AgentRow): Agent {
     supported_task_types: JSON.parse(row.supported_task_types) as string[],
     status: row.status as AgentStatus,
     created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
-}
-
-function rowToReputation(row: AgentReputationRow): AgentReputation {
-  return {
-    agent_id: row.agent_id,
-    score: row.score,
-    verified_runs: row.verified_runs,
-    failed_runs: row.failed_runs,
-    paid_tasks: row.paid_tasks,
-    blocked_tasks: row.blocked_tasks,
-    total_earned: row.total_earned,
-    average_verification_time_ms: row.average_verification_time_ms,
-    last_proof_at: row.last_proof_at,
     updated_at: row.updated_at,
   };
 }
@@ -391,110 +360,11 @@ export function updateAgent(
 
 /**
  * Get agent reputation data.
+ * Delegates to the reputation service for computation from real records.
  * Returns computed reputation from real proof/task/payment records.
- * If no reputation row exists yet, returns defaults with score 50.
  */
 export function getAgentReputation(agentId: string): AgentReputation {
-  const db = getDb();
-
-  // Ensure agent exists
-  const agent = getAgent(agentId);
-  if (!agent) {
-    throw new Error("AGENT_NOT_FOUND");
-  }
-
-  // Compute from real data
-  const verifiedRuns = (
-    db.prepare(
-      "SELECT COUNT(*) as cnt FROM proofs WHERE agent_id = ? AND status IN ('verified', 'anchored')"
-    ).get(agentId) as { cnt: number }
-  ).cnt;
-
-  const failedRuns = (
-    db.prepare(
-      "SELECT COUNT(*) as cnt FROM proofs WHERE agent_id = ? AND status = 'failed'"
-    ).get(agentId) as { cnt: number }
-  ).cnt;
-
-  const paidTasks = (
-    db.prepare(
-      "SELECT COUNT(*) as cnt FROM tasks WHERE agent_id = ? AND status = 'paid'"
-    ).get(agentId) as { cnt: number }
-  ).cnt;
-
-  const blockedTasks = (
-    db.prepare(
-      "SELECT COUNT(*) as cnt FROM tasks WHERE agent_id = ? AND status = 'blocked'"
-    ).get(agentId) as { cnt: number }
-  ).cnt;
-
-  const totalEarned = (
-    db.prepare(
-      `SELECT COALESCE(SUM(p.total_amount), 0) as total
-       FROM payments p
-       JOIN tasks t ON p.task_id = t.id
-       WHERE t.agent_id = ? AND p.status = 'paid'`
-    ).get(agentId) as { total: number }
-  ).total;
-
-  // Reputation formula per plan §10.1
-  let score = 50
-    + Math.min(25, verifiedRuns * 2)
-    + Math.min(15, paidTasks * 2)
-    - Math.min(25, failedRuns * 5)
-    - Math.min(15, blockedTasks * 3);
-
-  score = Math.max(0, Math.min(100, score));
-
-  // Get last proof timestamp
-  const lastProof = db.prepare(
-    "SELECT created_at FROM proofs WHERE agent_id = ? AND status IN ('verified', 'anchored') ORDER BY created_at DESC LIMIT 1"
-  ).get(agentId) as { created_at: string } | undefined;
-
-  const now = new Date().toISOString();
-
-  // Upsert the reputation row
-  db.prepare(`
-    INSERT INTO agent_reputation (agent_id, score, verified_runs, failed_runs, paid_tasks,
-      blocked_tasks, total_earned, average_verification_time_ms, last_proof_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-    ON CONFLICT(agent_id) DO UPDATE SET
-      score = excluded.score,
-      verified_runs = excluded.verified_runs,
-      failed_runs = excluded.failed_runs,
-      paid_tasks = excluded.paid_tasks,
-      blocked_tasks = excluded.blocked_tasks,
-      total_earned = excluded.total_earned,
-      average_verification_time_ms = excluded.average_verification_time_ms,
-      last_proof_at = excluded.last_proof_at,
-      updated_at = excluded.updated_at
-  `).run(
-    agentId, score, verifiedRuns, failedRuns, paidTasks, blockedTasks,
-    totalEarned, lastProof?.created_at ?? null, now
-  );
-
-  // Read back the upserted row
-  const row = db.prepare(
-    "SELECT * FROM agent_reputation WHERE agent_id = ?"
-  ).get(agentId) as AgentReputationRow | undefined;
-
-  if (!row) {
-    // Fallback defaults
-    return {
-      agent_id: agentId,
-      score: 50,
-      verified_runs: 0,
-      failed_runs: 0,
-      paid_tasks: 0,
-      blocked_tasks: 0,
-      total_earned: 0,
-      average_verification_time_ms: 0,
-      last_proof_at: null,
-      updated_at: now,
-    };
-  }
-
-  return rowToReputation(row);
+  return getReputation(agentId);
 }
 
 // ── Proof history ─────────────────────────
@@ -533,15 +403,6 @@ export function getAgentProofs(agentId: string): Proof[] {
     status: row.status as "pending" | "verified" | "failed" | "anchored",
     created_at: row.created_at,
   }));
-}
-
-/**
- * Recalculate reputation for an agent.
- * This is the on-event recalculation trigger (plan §10.3).
- * Called internally when proofs/tasks change state.
- */
-export function recalculateReputation(agentId: string): AgentReputation {
-  return getAgentReputation(agentId); // getAgentReputation already computes from live data
 }
 
 // ── Casper registration sync (F3) ─────────
