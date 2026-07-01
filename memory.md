@@ -22,8 +22,8 @@ Positioning: No Proof without a Payment.
 - Backend Phase H: DONE. 50/50 tests passed (vitest). Commit d8f728a.
 - Backend Phase I: DONE. 44/44 tests passed (vitest). Commit cacb329.
 - Backend Phase J: DONE. 41/41 tests passed (vitest). Commit b815023.
-- Backend Phase K: DONE. 69/69 tests passed (vitest).
-- Backend Phase L: DONE. 65/65 tests passed (vitest). Commit: (pending).
+- Backend Phase K: DONE. 69/69 tests passed (vitest). Commit aafb7e5.
+- Backend Phase L: DONE. 65/65 tests passed (vitest). Commit c187325.
 
 ## Backend Phase L deliverables
 
