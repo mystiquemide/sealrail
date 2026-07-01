@@ -288,6 +288,22 @@ export function registerPaymentRoutes(app: FastifyInstance): void {
           });
         }
 
+        // Blocker 3: Bind claim to authenticated API key owner — address string match is not enough.
+        // The API key owner must control the recipient address.
+        const apiKey = request.apiKey;
+        if (!apiKey) {
+          return reply.status(401).send({
+            error: "UNAUTHORIZED",
+            message: "API key authentication required for claims.",
+          });
+        }
+        if (apiKey.owner_address !== recipient.address) {
+          return reply.status(403).send({
+            error: "OWNER_MISMATCH",
+            message: `API key owner '${apiKey.owner_address}' does not match recipient address '${recipient.address}'. Only the wallet owner may claim.`,
+          });
+        }
+
         // Check unlockability
         if (recipient.status === "paid") {
           return reply.status(409).send({

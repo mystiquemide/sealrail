@@ -644,23 +644,36 @@ export function verifyTaskProof(taskId: string): {
   }
 
   // C3: Only verify proofs that have real attestation data
-  // In dry_run mode, pending proofs are acceptable (no real TEE available)
-  // In production/tee modes, placeholder proofs are rejected
+  // Placeholder proofs (attestation-hash-pending/default, wasm-hash-default,
+  // synthetic input-*/output-*) are NEVER marked as verified, even in dry_run.
+  // In dry_run mode, task can still advance for demo flow but proofs stay pending.
   const db = getDb();
   const isDryRun = config.casperMode === "dry_run" && !process.env.BKY_AS_AVAILABLE;
   let verifiedCount = 0;
+  let placeholderCount = 0;
 
   for (const proofId of task.proof_ids) {
     const proofRow = db.prepare("SELECT * FROM proofs WHERE id = ?").get(proofId) as ProofRow | undefined;
     if (!proofRow) continue;
 
-    const isPlaceholder = proofRow.attestation_hash === "attestation-hash-default" ||
-      proofRow.attestation_hash === "attestation-hash-pending";
+    const isPlaceholder =
+      proofRow.attestation_hash === "attestation-hash-default" ||
+      proofRow.attestation_hash === "attestation-hash-pending" ||
+      proofRow.wasm_hash === "wasm-hash-default" ||
+      /^(input|output)-/.test(proofRow.input_hash) ||
+      /^(input|output)-/.test(proofRow.output_hash);
 
     if (proofRow.status === "pending") {
-      // In dry_run mode, allow placeholder proofs to be verified
-      // In production, only verify proofs with real attestation data
-      if (!isPlaceholder || isDryRun) {
+      if (isPlaceholder) {
+        // Blocker 2: Placeholder proofs can NEVER become verified, even in dry_run.
+        // They stay pending — no DB status change to "verified".
+        placeholderCount++;
+        if (isDryRun) {
+          // In dry_run, count them toward task progression but leave proof as pending
+          verifiedCount++;
+        }
+      } else {
+        // Real attestation data — safe to verify
         db.prepare(`UPDATE proofs SET status = 'verified' WHERE id = ?`).run(proofId);
         verifiedCount++;
       }
@@ -670,8 +683,15 @@ export function verifyTaskProof(taskId: string): {
   }
 
   if (verifiedCount === 0) {
+    if (placeholderCount > 0 && !isDryRun) {
+      throw new Error(
+        "PLACEHOLDER_PROOFS_REJECTED: Task has placeholder proofs that cannot be verified outside dry_run mode. " +
+        "Run TEE verification to produce real attestation data."
+      );
+    }
     throw new Error(
-      "NO_REAL_PROOFS: Task has no proofs with real attestation data that can be verified. Run TEE verification first."
+      "NO_REAL_PROOFS: Task has no proofs with real attestation data that can be verified. " +
+      "Run TEE verification first. Placeholder/synthetic proofs cannot become verified."
     );
   }
 
@@ -685,11 +705,15 @@ export function verifyTaskProof(taskId: string): {
   // Transition to proof_verified
   updateTaskStatus(taskId, "proof_verified");
 
+  const dryRunNote = placeholderCount > 0 && isDryRun
+    ? " (dry_run simulated — placeholder proofs were not marked verified)"
+    : "";
+
   return {
     taskId,
     status: "proof_verified",
     proofIds: task.proof_ids,
-    message: "Task proofs verified. Ready for anchoring.",
+    message: `Task proofs verified. Ready for anchoring.${dryRunNote}`,
   };
 }
 

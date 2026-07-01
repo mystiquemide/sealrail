@@ -28,7 +28,7 @@ export interface AnchorProofInput {
 export interface AnchorResult {
   success: boolean;
   anchorHash: string;
-  mode: "dry_run" | "testnet";
+  mode: "dry_run" | "testnet" | "mainnet";
   /** True only for dry_run mode */
   simulated: boolean;
   deployHash?: string;
@@ -242,8 +242,27 @@ export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult
     return createTestnetAnchor(input);
   }
 
-  // Default to dry-run for unknown modes with simulated flag
-  return createDryRunAnchor(input);
+  // Blocker 1: mainnet and unsupported modes must fail closed — never dry-run
+  // Only dry_run mode is allowed to return simulated success.
+  if (mode === "mainnet") {
+    return {
+      success: false,
+      anchorHash: "",
+      mode: "mainnet",
+      simulated: false,
+      error: "CASPER_MAINNET_NOT_IMPLEMENTED: Mainnet anchoring is not yet implemented. " +
+        "Use CASPER_MODE=testnet for real-chain testing or CASPER_MODE=dry_run for simulation.",
+    };
+  }
+
+  // Unknown/unrecognized mode — fail closed
+  return {
+    success: false,
+    anchorHash: "",
+    mode: "dry_run",
+    simulated: false,
+    error: `CASPER_MODE_UNKNOWN: Unsupported mode '${mode}'. Use dry_run, testnet, or mainnet.`,
+  };
 }
 
 // ── Anchor verification ──────────────────

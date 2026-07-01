@@ -96,6 +96,31 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 
 ## Next Steps
 
-- Levi re-audit to confirm A/A+ grade
+- ~~Levi re-audit to confirm A/A+ grade~~ → Re-audit done (B+, 2026-07-01)
+- **Second pass fixes** applied for three re-audit blockers:
+  - **Blocker 1**: `CASPER_MODE=mainnet` now fails closed (returns success:false, simulated:false, empty hash, actionable error)
+  - **Blocker 2**: `verifyTaskProof` never marks placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) as "verified" in DB; dry_run demo flow task still advances but proofs stay "pending" and message notes simulation
+  - **Blocker 3**: Payment claim now validates `request.apiKey.owner_address === recipient.address`; returns 403 OWNER_MISMATCH on mismatch
+- Levi re-audit (second pass) to confirm A/A+ grade
 - Frontend wire-up with API key auth headers
 - CI workflow for lint/build/test gates
+
+## Second Pass Fix Verification (2026-07-01)
+
+| Gate | Status | Command |
+|------|--------|---------|
+| Backend build | PASS | `cd backend && npm run build` |
+| Backend tests | PASS (628) | `cd backend && npm test -- --no-file-parallelism` |
+| Root lint | PASS | `npm run lint` |
+| Root build | PASS | `npm run build` |
+| Backend lint | PASS | `cd backend && npm run lint` |
+
+### Files Changed (Second Pass)
+
+| File | Change |
+|------|--------|
+| `backend/src/services/casper.ts` | Added `"mainnet"` to AnchorResult.mode; mainnet branch in anchorProof returns fail-closed error instead of dry-run fallback |
+| `backend/src/services/tasks.ts` | verifyTaskProof: expanded placeholder detection (wasm-hash-default, input-*/output-* patterns); placeholder proofs NEVER marked "verified" in DB; dry_run allows task progression but notes simulation; reordered checks so PLACEHOLDER_PROOFS_REJECTED fires before NO_REAL_PROOFS |
+| `backend/src/routes/payments.ts` | Claim handler: added owner_address check — request.apiKey.owner_address must equal recipient.address; returns 403 OWNER_MISMATCH |
+| `backend/tests/phase-d.test.ts` | Added 8 new tests: 4 mainnet fail-closed (B1), 4 placeholder proof rejection (B2) |
+| `backend/tests/http-auth.test.ts` | Added 3 new tests: payment claim ownership (B3) — wrong key owner, correct owner, address match without ownership |

@@ -349,3 +349,176 @@ describe("HTTP Auth: Schema Validation", () => {
     expect(res.statusCode).toBe(400);
   });
 });
+
+// ══════════════════════════════════════════
+// Blocker 3: Payment Claim Ownership Tests
+// ══════════════════════════════════════════
+
+describe("HTTP Auth: Payment Claim Ownership (Blocker 3)", () => {
+  let otherOwnerKey: string;
+  let otherOwnerAddress: string;
+
+  beforeAll(async () => {
+    // Create an API key with a different owner address
+    otherOwnerAddress = "owner-other-" + randomUUID().slice(0, 8);
+    otherOwnerKey = createApiKey({
+      ownerAddress: otherOwnerAddress,
+      name: "Other Owner Key",
+      scopes: ["payments:write"],
+    }).rawSecret;
+  });
+
+  it("POST /api/payments/:id/claim rejects when API key owner does not match recipient address", async () => {
+    // First, create a payment with splits as admin (whose owner is adminOwnerAddress)
+    const intentRes = await app.inject({
+      method: "POST",
+      url: "/api/payments/intents",
+      headers: authHeader(adminKey),
+      payload: { buyer_address: "buyer-claim-test", total_amount: 1000, currency: "USD" },
+    });
+    expect(intentRes.statusCode).toBe(201);
+    const paymentId = intentRes.json().payment_id;
+
+    // Add splits with a recipient whose address matches adminOwnerAddress
+    const splitsRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/splits`,
+      headers: authHeader(adminKey),
+      payload: {
+        recipients: [
+          { address: adminOwnerAddress, share_bps: 10000, role: "primary_agent", proof_required: false },
+        ],
+      },
+    });
+    expect(splitsRes.statusCode).toBe(200);
+
+    // Get the payment to find the recipient ID
+    const paymentRes = await app.inject({
+      method: "GET",
+      url: `/api/payments/${paymentId}`,
+    });
+    expect(paymentRes.statusCode).toBe(200);
+    const recipientId = paymentRes.json().payment.recipients[0].id;
+
+    // Unlock the payment first
+    await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/unlock`,
+      headers: authHeader(adminKey),
+    });
+
+    // Try to claim with a key whose owner DOES NOT match the recipient address
+    const claimRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/claim`,
+      headers: authHeader(otherOwnerKey),
+      payload: { recipient_id: recipientId, address: adminOwnerAddress },
+    });
+
+    // Blocker 3: Should reject because otherOwnerAddress !== adminOwnerAddress (recipient address)
+    expect(claimRes.statusCode).toBe(403);
+    expect(claimRes.json().error).toBe("OWNER_MISMATCH");
+  });
+
+  it("POST /api/payments/:id/claim allows claim when API key owner matches recipient address", async () => {
+    // Create a payment where the recipient address matches the API key owner
+    const intentRes = await app.inject({
+      method: "POST",
+      url: "/api/payments/intents",
+      headers: authHeader(otherOwnerKey),
+      payload: { buyer_address: "buyer-claim-ok", total_amount: 500, currency: "USD" },
+    });
+    expect(intentRes.statusCode).toBe(201);
+    const paymentId = intentRes.json().payment_id;
+
+    // Add splits with recipient address matching otherOwnerKey's owner
+    const splitsRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/splits`,
+      headers: authHeader(otherOwnerKey),
+      payload: {
+        recipients: [
+          { address: otherOwnerAddress, share_bps: 10000, role: "primary_agent", proof_required: false },
+        ],
+      },
+    });
+    expect(splitsRes.statusCode).toBe(200);
+
+    // Get the payment to find the recipient ID
+    const paymentRes = await app.inject({
+      method: "GET",
+      url: `/api/payments/${paymentId}`,
+    });
+    expect(paymentRes.statusCode).toBe(200);
+    const recipientId = paymentRes.json().payment.recipients[0].id;
+
+    // Unlock first
+    await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/unlock`,
+      headers: authHeader(otherOwnerKey),
+    });
+
+    // Claim with the correct key (owner matches recipient)
+    const claimRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/claim`,
+      headers: authHeader(otherOwnerKey),
+      payload: { recipient_id: recipientId, address: otherOwnerAddress },
+    });
+
+    // Should succeed because otherOwnerKey.owner_address === recipient.address
+    expect(claimRes.statusCode).toBe(200);
+    expect(claimRes.json().recipient_id).toBe(recipientId);
+  });
+
+  it("POST /api/payments/:id/claim with correct address string but wrong key owner returns 403", async () => {
+    // Create payment under admin
+    const intentRes = await app.inject({
+      method: "POST",
+      url: "/api/payments/intents",
+      headers: authHeader(adminKey),
+      payload: { buyer_address: "buyer-wrong-owner", total_amount: 100, currency: "USD" },
+    });
+    expect(intentRes.statusCode).toBe(201);
+    const paymentId = intentRes.json().payment_id;
+
+    // Add splits with admin's address
+    const splitsRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/splits`,
+      headers: authHeader(adminKey),
+      payload: {
+        recipients: [
+          { address: adminOwnerAddress, share_bps: 10000, role: "primary_agent", proof_required: false },
+        ],
+      },
+    });
+    expect(splitsRes.statusCode).toBe(200);
+
+    const paymentRes = await app.inject({
+      method: "GET",
+      url: `/api/payments/${paymentId}`,
+    });
+    const recipientId = paymentRes.json().payment.recipients[0].id;
+
+    // Unlock
+    await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/unlock`,
+      headers: authHeader(adminKey),
+    });
+
+    // Try to claim with other key — correct address string, wrong owner
+    const claimRes = await app.inject({
+      method: "POST",
+      url: `/api/payments/${paymentId}/claim`,
+      headers: authHeader(otherOwnerKey),
+      payload: { recipient_id: recipientId, address: adminOwnerAddress },
+    });
+
+    // Blocker 3: Address string match is not enough — owner must match
+    expect(claimRes.statusCode).toBe(403);
+    expect(claimRes.json().error).toBe("OWNER_MISMATCH");
+  });
+});

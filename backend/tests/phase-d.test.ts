@@ -3,7 +3,7 @@
 // Casper anchoring adapter: dry-run, testnet, anchor integration
 // ────────────────────────────────────────
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createHash, randomUUID } from "crypto";
 
 // ── Types ────────────────────────────────
@@ -516,5 +516,157 @@ describe("Phase D: Schema and Types", () => {
 
     expect(input.taskId).toBe("t1");
     expect(input.proofId).toBe("p1");
+  });
+});
+
+// ═══════════════════════════════════════════
+// Blocker 1: Mainnet Fail-Closed Tests
+// ═══════════════════════════════════════════
+
+describe("Blocker 1: Mainnet Fail-Closed", () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    process.env.CASPER_MODE = "mainnet";
+    process.env.DATABASE_PATH = ":memory:";
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+    delete process.env.CASPER_MODE;
+    process.env.CASPER_MODE = "dry_run";
+  });
+
+  it("anchorProof returns success:false for mainnet mode with no client/key", async () => {
+    const { anchorProof: mainnetAnchorProof } = await import("../src/services/casper.js");
+    const input = sampleAnchorInput();
+    const result = await mainnetAnchorProof(input);
+
+    expect(result.success).toBe(false);
+    expect(result.simulated).toBe(false);
+    expect(result.anchorHash).toBe("");
+    expect(result.mode).toBe("mainnet");
+    expect(result.error).toMatch(/CASPER_MAINNET_NOT_IMPLEMENTED/);
+  });
+
+  it("anchorProof does NOT return simulated:true for mainnet", async () => {
+    const { anchorProof: mainnetAnchorProof } = await import("../src/services/casper.js");
+    const input = sampleAnchorInput();
+    const result = await mainnetAnchorProof(input);
+
+    // Mainnet must never simulate success
+    expect(result.simulated).toBe(false);
+    expect(result.success).toBe(false);
+  });
+
+  it("anchorProof returns empty hash for mainnet", async () => {
+    const { anchorProof: mainnetAnchorProof } = await import("../src/services/casper.js");
+    const input = sampleAnchorInput();
+    const result = await mainnetAnchorProof(input);
+
+    expect(result.anchorHash).toBe("");
+    expect(result.deployHash).toBeUndefined();
+  });
+
+  it("anchorProof error message is actionable for mainnet", async () => {
+    const { anchorProof: mainnetAnchorProof } = await import("../src/services/casper.js");
+    const input = sampleAnchorInput();
+    const result = await mainnetAnchorProof(input);
+
+    expect(result.error).toBeDefined();
+    // Error should mention mainnet and suggest alternatives
+    expect(result.error).toMatch(/mainnet/i);
+    expect(result.error).toMatch(/dry_run|testnet/);
+  });
+});
+
+// ═══════════════════════════════════════════
+// Blocker 2: Placeholder Proof Rejection Tests
+// ═══════════════════════════════════════════
+
+describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    delete process.env.CASPER_MODE; // default dry_run
+    process.env.DATABASE_PATH = ":memory:";
+    resetDb();
+  });
+
+  it("verifyTaskProof does NOT mark placeholder proofs as 'verified' in DB", async () => {
+    const { createTask, updateTaskStatus, runTaskVerification, verifyTaskProof, getTask } =
+      await import("../src/services/tasks.js");
+    const { getDb } = await import("../src/db.js");
+
+    const task = createTask({ agentId: "agent-placeholder-test" });
+    updateTaskStatus(task.id, "funded");
+    await runTaskVerification(task.id);
+
+    // This creates a pending proof with attestation-hash-pending
+    const db = getDb();
+    const proofsBefore = db.prepare("SELECT * FROM proofs WHERE task_id = ?").all(task.id) as any[];
+    expect(proofsBefore.length).toBeGreaterThan(0);
+    expect(proofsBefore[0].attestation_hash).toBe("attestation-hash-pending");
+    expect(proofsBefore[0].status).toBe("pending");
+
+    // Verify — should advance task but leave proof as pending (not verified)
+    verifyTaskProof(task.id);
+
+    const proofsAfter = db.prepare("SELECT * FROM proofs WHERE task_id = ?").all(task.id) as any[];
+    // Blocker 2: Proof status must still be "pending" — never falsely "verified"
+    expect(proofsAfter[0].status).toBe("pending");
+    expect(proofsAfter[0].status).not.toBe("verified");
+  });
+
+  it("verifyTaskProof advances task to proof_verified in dry_run with placeholder note", async () => {
+    const { createTask, updateTaskStatus, runTaskVerification, verifyTaskProof, getTask } =
+      await import("../src/services/tasks.js");
+
+    const task = createTask({ agentId: "agent-dryrun-test" });
+    updateTaskStatus(task.id, "funded");
+    await runTaskVerification(task.id);
+
+    const result = verifyTaskProof(task.id);
+
+    // Task advances for demo flow but message indicates simulation
+    expect(result.status).toBe("proof_verified");
+    expect(result.message).toContain("dry_run simulated");
+    expect(result.message).toContain("placeholder proofs were not marked verified");
+
+    const updated = getTask(task.id);
+    expect(updated!.status).toBe("proof_verified");
+  });
+
+  it("verifyTaskProof rejects when all proofs are placeholders outside dry_run", async () => {
+    // Set non-dry-run env and reset modules
+    process.env.CASPER_MODE = "testnet";
+    process.env.BKY_AS_AVAILABLE = "1"; // So isDryRun is false
+    vi.resetModules();
+
+    const { createTask, updateTaskStatus, runTaskVerification, verifyTaskProof } =
+      await import("../src/services/tasks.js");
+    const { resetDb: resetDb2 } = await import("../src/db.js");
+    resetDb2();
+
+    const task = createTask({ agentId: "agent-testnet-test" });
+    updateTaskStatus(task.id, "funded");
+    await runTaskVerification(task.id);
+
+    // Should throw because placeholder proofs cannot be verified
+    expect(() => verifyTaskProof(task.id)).toThrow(/PLACEHOLDER_PROOFS_REJECTED/);
+  });
+
+  it("verifyTaskProof throws NO_REAL_PROOFS when no non-placeholder proofs exist", async () => {
+    const { createTask, updateTaskStatus, runTaskVerification, verifyTaskProof } =
+      await import("../src/services/tasks.js");
+
+    const task = createTask({ agentId: "agent-noproofs-test" });
+    updateTaskStatus(task.id, "funded");
+    await runTaskVerification(task.id);
+
+    // Disable dry_run flag to force rejection
+    process.env.BKY_AS_AVAILABLE = "1";
+    vi.resetModules();
+
+    const { verifyTaskProof: verifyStrict } = await import("../src/services/tasks.js");
+    expect(() => verifyStrict(task.id)).toThrow();
   });
 });
