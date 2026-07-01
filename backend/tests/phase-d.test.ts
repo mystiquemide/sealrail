@@ -27,6 +27,8 @@ import {
   listTasks,
   updateTaskStatus,
   anchorTaskProof,
+  runTaskVerification,
+  verifyTaskProof,
   getTaskServiceHealth,
 } from "../src/services/tasks.js";
 
@@ -123,29 +125,31 @@ describe("Phase D: Casper Anchoring Adapter", () => {
   // ═══════════════════════════════════════
 
   describe("D3: Testnet Anchor (casper-client)", () => {
-    it("produces a testnet anchor hash", async () => {
+    it("returns success:false when casper-client is not available (C2 fail-closed)", async () => {
       const input = sampleAnchorInput();
       const result = await createTestnetAnchor(input);
 
-      expect(result.success).toBe(true);
+      // C2: In testnet mode, missing client = honest failure (no simulated success)
+      expect(result.success).toBe(false);
       expect(result.mode).toBe("testnet");
-      expect(result.anchorHash).toBeDefined();
-      expect(result.anchorHash.length).toBe(64); // SHA-256 hex
+      expect(result.simulated).toBe(false);
+      expect(result.error).toBeDefined();
     });
 
-    it("produces a deployHash alongside anchorHash", async () => {
+    it("returns success:false without deploy hash when client is missing", async () => {
       const input = sampleAnchorInput();
       const result = await createTestnetAnchor(input);
 
-      expect(result.deployHash).toBeDefined();
-      expect(result.deployHash.length).toBeGreaterThanOrEqual(64);
+      expect(result.success).toBe(false);
+      expect(result.deployHash).toBeUndefined();
     });
 
-    it("different inputs produce different testnet hashes", async () => {
-      const r1 = await createTestnetAnchor(sampleAnchorInput({ taskId: "task-X" }));
-      const r2 = await createTestnetAnchor(sampleAnchorInput({ taskId: "task-Y" }));
+    it("returns error message explaining client or key unavailability", async () => {
+      const input = sampleAnchorInput();
+      const result = await createTestnetAnchor(input);
 
-      expect(r1.anchorHash).not.toBe(r2.anchorHash);
+      // C2: Error indicates what's missing (client or account key)
+      expect(result.error).toMatch(/CASPER_/);
     });
   });
 
@@ -196,12 +200,14 @@ describe("Phase D: Casper Anchoring Adapter", () => {
       expect(verification.valid).toBe(false);
     });
 
-    it("verifyAnchor without input returns valid for dry-run (no cross-check)", async () => {
+    it("verifyAnchor without input returns valid=false for dry-run (C2: honest failure)", async () => {
       const input = sampleAnchorInput();
       const result = await createDryRunAnchor(input);
 
+      // C2: Without input data, dry-run verification cannot re-compute the hash
       const verification = await verifyAnchor(result.anchorHash);
-      expect(verification.valid).toBe(true);
+      expect(verification.valid).toBe(false);
+      expect(verification.error).toBeDefined();
     });
   });
 
@@ -356,6 +362,11 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
         title: "Anchor Test Task",
       });
 
+      // C3: Must be funded for verification, then verify before anchoring
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
+
       const result = await anchorTaskProof(task.id);
 
       expect(result.taskId).toBe(task.id);
@@ -365,32 +376,36 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
       expect(result.proofId).toBeDefined();
     });
 
-    it("auto-creates task when anchoring a non-existent taskId", async () => {
-      const taskId = `auto-created-${randomUUID().slice(0, 8)}`;
+    it("auto-creates synthetic proof in dry_run mode without prior verification", async () => {
+      const task = createTask({ agentId: "dry-run-proof" });
 
-      const result = await anchorTaskProof(taskId);
+      // In dry_run mode, synthetic proof auto-creation is allowed for testing
+      const result = await anchorTaskProof(task.id);
 
-      expect(result.taskId).toBe(taskId);
       expect(result.anchorHash).toBeDefined();
-
-      // Verify task was created
-      const task = getTask(taskId);
-      expect(task).not.toBeNull();
-      expect(task!.status).toBe("anchored");
+      expect(result.mode).toBe("dry_run");
     });
 
     it("updates task status to 'anchored' after anchoring", async () => {
       const task = createTask({ agentId: "agent-status-test" });
       expect(task.status).toBe("draft");
 
+      // C3: Must verify before anchoring
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
       await anchorTaskProof(task.id);
 
       const updated = getTask(task.id);
       expect(updated!.status).toBe("anchored");
     });
 
-    it("creates a proof record with anchor hash", async () => {
+    it("creates and links a proof to the task", async () => {
       const task = createTask({ agentId: "agent-proof-test" });
+      // C3: Must verify before anchoring
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
       const result = await anchorTaskProof(task.id);
 
       // Verify the proof was created and linked
@@ -408,9 +423,11 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
 
     it("produces deterministic anchor hashes for the same task", async () => {
       const task = createTask({ agentId: "agent-det-1" });
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
       const r1 = await anchorTaskProof(task.id);
 
-      // Reset and re-anchor (would create a new proof but same task)
       // The anchor hash depends on proof data, which changes each time
       // So we verify the hash format is valid instead
       expect(r1.anchorHash).toMatch(/^[a-f0-9]{64}$/);
@@ -418,9 +435,12 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
 
     it("anchoring twice on the same task updates the proof", async () => {
       const task = createTask({ agentId: "agent-double-anchor" });
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
       const r1 = await anchorTaskProof(task.id);
 
-      // Re-fetch and anchor again
+      // Re-anchor the same task (should work, proof exists)
       const r2 = await anchorTaskProof(task.id);
 
       // Both should succeed

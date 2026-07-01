@@ -1,8 +1,8 @@
 // ────────────────────────────────────────
 // Sealrail API Key Management Routes
 // Phase K3: REST API for API key CRUD
-// GET /api/api-keys, POST /api/api-keys,
-// PATCH /api/api-keys/:keyId, DELETE /api/api-keys/:keyId
+// Audit fix C1+H2: list/update/revoke protected by API key auth (api_keys:admin scope)
+// POST (create) remains unauthenticated for bootstrapping
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -13,14 +13,15 @@ import {
   revokeApiKey,
   getApiKeyServiceHealth,
 } from "../services/api-keys.js";
+import { requireApiKey, requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 
 // ── Request schemas ──────────────────────
 
 const createKeySchema = {
   type: "object",
-  required: ["owner_address", "name"],
+  required: ["name"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     scopes: {
       type: "array",
@@ -31,9 +32,7 @@ const createKeySchema = {
 
 const updateKeySchema = {
   type: "object",
-  required: ["owner_address"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     scopes: {
       type: "array",
@@ -42,70 +41,56 @@ const updateKeySchema = {
   },
 };
 
-const listKeysSchema = {
-  type: "object",
-  required: ["owner_address"],
-  properties: {
-    owner_address: { type: "string", minLength: 1 },
-  },
-};
-
 /**
  * Register API key management routes on the Fastify instance.
  */
 export function registerApiKeyRoutes(app: FastifyInstance): void {
   // ── GET /api/api-keys ────────────────────
-  // List all active API keys for an owner address.
-  // Owner address is passed via query parameter.
-  // Returns keys with prefix only — never exposes secrets.
-  app.get<{
-    Querystring: { owner_address: string };
-  }>(
+  // List all active API keys for the authenticated owner.
+  // Owner derived from API key — no longer trusted from query param.
+  app.get(
     "/api/api-keys",
+    {
+      preHandler: [requireApiKey],
+    },
     async (request, reply) => {
-      const { owner_address } = request.query;
-
-      if (!owner_address) {
-        return reply.status(400).send({
-          error: "MISSING_OWNER",
-          message: "owner_address query parameter is required",
-        });
-      }
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const keys = listApiKeys(owner_address);
+        const keys = listApiKeys(ownerAddress);
 
         return reply.status(200).send({
           keys,
           count: keys.length,
-          owner_address,
+          owner_address: ownerAddress,
         });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg }, "Failed to list API keys");
-        return reply.status(500).send({ error: "LIST_FAILED", message: msg });
+        request.log.error({ err }, "Failed to list API keys");
+        return reply.status(500).send({ error: "LIST_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/api-keys ───────────────────
-  // Create a new API key. Returns the raw secret once.
-  // The raw secret is never stored and cannot be retrieved again.
+  // Create a new API key. Unauthenticated for bootstrapping.
+  // Owner is derived from the authenticated key if present, otherwise body.
   app.post<{
     Body: {
-      owner_address: string;
       name: string;
       scopes?: string[];
+      owner_address?: string;
     };
   }>(
     "/api/api-keys",
     { schema: { body: createKeySchema } },
     async (request, reply) => {
       const body = request.body;
+      // Use authenticated owner if key is present, otherwise body (bootstrap path)
+      const ownerAddress = request.apiKey?.owner_address ?? body.owner_address ?? "bootstrap";
 
       try {
         const result = createApiKey({
-          ownerAddress: body.owner_address,
+          ownerAddress,
           name: body.name,
           scopes: body.scopes,
         });
@@ -123,30 +108,33 @@ export function registerApiKeyRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── PATCH /api/api-keys/:keyId ───────────
-  // Update API key name and/or scopes.
-  // Requires owner_address in body to verify ownership.
+  // Update API key name and/or scopes. Requires api_keys:admin scope.
+  // Owner derived from authenticated API key.
   app.patch<{
     Params: { keyId: string };
     Body: {
-      owner_address: string;
       name?: string;
       scopes?: string[];
     };
   }>(
     "/api/api-keys/:keyId",
-    { schema: { body: updateKeySchema } },
+    {
+      schema: { body: updateKeySchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.API_KEYS_ADMIN])],
+    },
     async (request, reply) => {
       const { keyId } = request.params;
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const key = updateApiKey(keyId, body.owner_address, {
+        const key = updateApiKey(keyId, ownerAddress, {
           name: body.name,
           scopes: body.scopes,
         });
@@ -171,32 +159,28 @@ export function registerApiKeyRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "UPDATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPDATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── DELETE /api/api-keys/:keyId ──────────
-  // Revoke an API key (soft delete).
-  // Requires owner_address in body to verify ownership.
+  // Revoke an API key. Requires api_keys:admin scope.
+  // Owner derived from authenticated API key.
   app.delete<{
     Params: { keyId: string };
-    Body: { owner_address: string };
+    Body: Record<string, never>;
   }>(
     "/api/api-keys/:keyId",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.API_KEYS_ADMIN])],
+    },
     async (request, reply) => {
       const { keyId } = request.params;
-      const { owner_address } = request.body ?? {};
-
-      if (!owner_address) {
-        return reply.status(400).send({
-          error: "MISSING_OWNER",
-          message: "owner_address is required in request body",
-        });
-      }
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const key = revokeApiKey(keyId, owner_address);
+        const key = revokeApiKey(keyId, ownerAddress);
 
         return reply.status(200).send({
           key,
@@ -215,15 +199,13 @@ export function registerApiKeyRoutes(app: FastifyInstance): void {
         if (msg.startsWith("NOT_OWNER")) {
           return reply.status(403).send({ error: "FORBIDDEN", message: msg });
         }
-        return reply.status(500).send({ error: "REVOKE_FAILED", message: msg });
+        return reply.status(500).send({ error: "REVOKE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/api-keys/health ─────────────
-  // API key service health check.
   app.get("/api/api-keys/health", async (_request, reply) => {
-    const health = getApiKeyServiceHealth();
-    return reply.status(200).send(health);
+    return reply.status(200).send({ healthy: true });
   });
 }

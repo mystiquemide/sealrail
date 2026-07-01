@@ -2,6 +2,7 @@
 // Sealrail Task Routes
 // Phase D: POST /api/tasks/:taskId/anchor — Casper anchor endpoint
 // Phase E: POST /api/tasks, GET /api/tasks/:taskId, run, verify, unlock-payment
+// Audit fix C1+H2: API key auth on all mutation routes
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -19,6 +20,8 @@ import {
   unlockTaskPayment,
   isValidTaskTransition,
 } from "../services/tasks.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 import { config } from "../config.js";
 import type { TaskStatus } from "../types.js";
 
@@ -59,7 +62,7 @@ const statusUpdateSchema = {
  */
 export function registerTaskRoutes(app: FastifyInstance): void {
   // ── POST /api/tasks ────────────────────
-  // Phase E: Create a payment-backed task.
+  // Phase E: Create a payment-backed task. Requires tasks:write scope.
   app.post<{
     Body: {
       agent_id: string;
@@ -73,7 +76,10 @@ export function registerTaskRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/tasks",
-    { schema: { body: createTaskSchema } },
+    {
+      schema: { body: createTaskSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
 
@@ -105,13 +111,12 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         if (msg.includes("INVALID")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/tasks ─────────────────────
-  // List all tasks, optionally filtered by status.
   app.get<{ Querystring: { status?: string } }>(
     "/api/tasks",
     async (request, reply) => {
@@ -122,7 +127,6 @@ export function registerTaskRoutes(app: FastifyInstance): void {
   );
 
   // ── GET /api/tasks/:taskId ─────────────
-  // Get a single task with full proof and payment trail.
   app.get<{ Params: { taskId: string } }>(
     "/api/tasks/:taskId",
     async (request, reply) => {
@@ -158,10 +162,13 @@ export function registerTaskRoutes(app: FastifyInstance): void {
   );
 
   // ── PATCH /api/tasks/:taskId/status ────
-  // Update task status with state machine enforcement.
+  // Requires tasks:write scope.
   app.patch<{ Params: { taskId: string }; Body: { status: TaskStatus } }>(
     "/api/tasks/:taskId/status",
-    { schema: { body: statusUpdateSchema } },
+    {
+      schema: { body: statusUpdateSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { taskId } = request.params;
       const { status } = request.body;
@@ -178,7 +185,6 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         return reply.status(200).send({
           task_id: updated.id,
           status: updated.status,
-          previous_status: getTask(taskId)?.status,
           message: `Task status updated to '${status}'`,
         });
       } catch (err: unknown) {
@@ -190,15 +196,18 @@ export function registerTaskRoutes(app: FastifyInstance): void {
             message: msg,
           });
         }
-        return reply.status(500).send({ error: "UPDATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPDATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/tasks/:taskId/run ────────
-  // Phase E: Execute TEE verification for a task.
+  // Requires tasks:write scope.
   app.post<{ Params: { taskId: string } }>(
     "/api/tasks/:taskId/run",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { taskId } = request.params;
 
@@ -220,15 +229,18 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_STATE")) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
         }
-        return reply.status(500).send({ error: "RUN_FAILED", message: msg });
+        return reply.status(500).send({ error: "RUN_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/tasks/:taskId/verify ─────
-  // Phase E: Validate proof/attestation state.
+  // Requires tasks:write scope.
   app.post<{ Params: { taskId: string } }>(
     "/api/tasks/:taskId/verify",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { taskId } = request.params;
 
@@ -250,16 +262,18 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_STATE") || msg.startsWith("NO_PROOFS")) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
         }
-        return reply.status(500).send({ error: "VERIFY_FAILED", message: msg });
+        return reply.status(500).send({ error: "VERIFY_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/tasks/:taskId/anchor ──────
-  // Phase D: Casper anchor endpoint.
-  // Anchors a task's proof to Casper.
+  // Requires tasks:write scope.
   app.post<{ Params: { taskId: string } }>(
     "/api/tasks/:taskId/anchor",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { taskId } = request.params;
 
@@ -283,7 +297,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         }
         return reply.status(500).send({
           error: "ANCHOR_FAILED",
-          message: msg,
+          message: "Failed to anchor task proof. Check server logs for details.",
           task_id: taskId,
         });
       }
@@ -291,9 +305,12 @@ export function registerTaskRoutes(app: FastifyInstance): void {
   );
 
   // ── POST /api/tasks/:taskId/unlock-payment ──
-  // Phase E: Enforce proof + anchor before payment unlock.
+  // Requires tasks:write scope.
   app.post<{ Params: { taskId: string } }>(
     "/api/tasks/:taskId/unlock-payment",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { taskId } = request.params;
 
@@ -321,7 +338,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         ) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
         }
-        return reply.status(500).send({ error: "UNLOCK_FAILED", message: msg });
+        return reply.status(500).send({ error: "UNLOCK_FAILED", message: "Internal server error" });
       }
     }
   );

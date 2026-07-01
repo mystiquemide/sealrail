@@ -40,6 +40,21 @@ export type RecipientStatus = "locked" | "unlockable" | "paid" | "blocked";
 export type ProofMode = "tee_verification_mode" | "hosted_tee";
 export type ProofStatus = "pending" | "verified" | "failed" | "anchored";
 
+// ── API Key Scopes (audit fix C1+H2) ──
+
+export const API_SCOPES = {
+  AGENTS_WRITE: "agents:write",
+  MARKETPLACE_WRITE: "marketplace:write",
+  TASKS_WRITE: "tasks:write",
+  PAYMENTS_WRITE: "payments:write",
+  VERIFIERS_WRITE: "verifiers:write",
+  WORKFLOWS_WRITE: "workflows:write",
+  API_KEYS_ADMIN: "api_keys:admin",
+  PROOFS_WRITE: "proofs:write",
+} as const;
+
+export type ApiScope = (typeof API_SCOPES)[keyof typeof API_SCOPES];
+
 // ── Phase C: Blocky TEE verification types ──
 
 export interface InvoiceRiskInput {

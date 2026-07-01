@@ -1,11 +1,7 @@
 // ────────────────────────────────────────
 // Sealrail Marketplace Routes
 // Phase G3: Marketplace API endpoints
-// GET  /api/marketplace                    List live listings
-// GET  /api/marketplace/:listingId         Get listing detail with agent summary
-// POST /api/marketplace/listings           Create listing (owner auth)
-// PATCH /api/marketplace/listings/:listingId Update listing (owner auth)
-// POST /api/marketplace/:listingId/tasks   Create task from listing
+// Audit fix C1+H2: API key auth required on mutations, owner from authenticated principal
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -19,16 +15,17 @@ import {
   createTaskFromListing,
   getMarketplaceServiceHealth,
 } from "../services/marketplace.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 import type { ListingStatus, Currency } from "../types.js";
 
 // ── Request schemas ──────────────────────
 
 const createListingSchema = {
   type: "object",
-  required: ["agent_id", "owner_address", "title", "category", "price_amount", "currency", "verifier_id"],
+  required: ["agent_id", "title", "category", "price_amount", "currency", "verifier_id"],
   properties: {
     agent_id: { type: "string", minLength: 1 },
-    owner_address: { type: "string", minLength: 1 },
     title: { type: "string", minLength: 1 },
     category: { type: "string", minLength: 1 },
     summary: { type: "string" },
@@ -41,9 +38,7 @@ const createListingSchema = {
 
 const updateListingSchema = {
   type: "object",
-  required: ["owner_address"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     title: { type: "string", minLength: 1 },
     category: { type: "string" },
     summary: { type: "string" },
@@ -67,7 +62,6 @@ const createTaskFromListingSchema = {
  */
 export function registerMarketplaceRoutes(app: FastifyInstance): void {
   // ── GET /api/marketplace ─────────────────
-  // List live listings with optional filters.
   app.get<{
     Querystring: {
       category?: string;
@@ -95,15 +89,13 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
           count: listings.length,
         });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg }, "Failed to list marketplace listings");
-        return reply.status(500).send({ error: "LIST_FAILED", message: msg });
+        request.log.error({ err }, "Failed to list marketplace listings");
+        return reply.status(500).send({ error: "LIST_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/marketplace/:listingId ──────
-  // Get listing detail with agent summary and reputation.
   app.get<{ Params: { listingId: string } }>(
     "/api/marketplace/:listingId",
     async (request, reply) => {
@@ -121,19 +113,17 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
 
         return reply.status(200).send(detail);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg, listingId }, "Failed to get listing detail");
-        return reply.status(500).send({ error: "GET_FAILED", message: msg });
+        request.log.error({ err, listingId }, "Failed to get listing detail");
+        return reply.status(500).send({ error: "GET_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/marketplace/listings ───────
-  // Create a marketplace listing for an existing agent.
+  // Requires API key with marketplace:write scope. Owner from authenticated key.
   app.post<{
     Body: {
       agent_id: string;
-      owner_address: string;
       title: string;
       category: string;
       summary?: string;
@@ -144,14 +134,18 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/marketplace/listings",
-    { schema: { body: createListingSchema } },
+    {
+      schema: { body: createListingSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.MARKETPLACE_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
         const listing = createListing({
           agentId: body.agent_id,
-          ownerAddress: body.owner_address,
+          ownerAddress,
           title: body.title,
           category: body.category,
           summary: body.summary,
@@ -178,17 +172,16 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── PATCH /api/marketplace/listings/:listingId ──
-  // Update a marketplace listing's mutable fields. Owner auth required.
+  // Requires API key with marketplace:write scope. Owner from authenticated key.
   app.patch<{
     Params: { listingId: string };
     Body: {
-      owner_address: string;
       title?: string;
       category?: string;
       summary?: string;
@@ -198,13 +191,17 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/marketplace/listings/:listingId",
-    { schema: { body: updateListingSchema } },
+    {
+      schema: { body: updateListingSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.MARKETPLACE_WRITE])],
+    },
     async (request, reply) => {
       const { listingId } = request.params;
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const listing = updateListing(listingId, body.owner_address, {
+        const listing = updateListing(listingId, ownerAddress, {
           title: body.title,
           category: body.category,
           summary: body.summary,
@@ -230,13 +227,13 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "UPDATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPDATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/marketplace/:listingId/tasks ──
-  // Create a payment-backed task from a live marketplace listing.
+  // Requires API key with tasks:write scope.
   app.post<{
     Params: { listingId: string };
     Body: {
@@ -245,7 +242,10 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/marketplace/:listingId/tasks",
-    { schema: { body: createTaskFromListingSchema } },
+    {
+      schema: { body: createTaskFromListingSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
+    },
     async (request, reply) => {
       const { listingId } = request.params;
       const body = request.body;
@@ -277,15 +277,17 @@ export function registerMarketplaceRoutes(app: FastifyInstance): void {
         if (msg.startsWith("LISTING_NOT_LIVE")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "TASK_CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "TASK_CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/marketplace/health ──────────
-  // Marketplace service health check.
+  // Sanitized public health check (H5).
   app.get("/api/marketplace/health", async (_request, reply) => {
     const health = getMarketplaceServiceHealth();
-    return reply.status(200).send(health);
+    return reply.status(200).send({
+      healthy: true,
+    });
   });
 }

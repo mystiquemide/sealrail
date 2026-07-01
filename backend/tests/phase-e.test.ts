@@ -924,18 +924,24 @@ describe("Phase E: Task and Payment State Machine", () => {
   describe("Phase D Compatibility", () => {
     it("anchorTaskProof still works with legacy task", async () => {
       const task = createTask({ agentId: "legacy-agent" });
+      // C3: Must be funded/running for verification, then verify before anchoring
+      updateTaskStatus(task.id, "funded");
+      await runTaskVerification(task.id);
+      verifyTaskProof(task.id);
       const result = await anchorTaskProof(task.id);
 
       expect(result.anchorHash).toBeDefined();
       expect(result.anchorHash.length).toBe(64);
     });
 
-    it("anchorTaskProof auto-creates task for non-existent ID", async () => {
-      const fakeId = `auto-create-${randomUUID().slice(0, 8)}`;
-      const result = await anchorTaskProof(fakeId);
+    it("anchorTaskProof auto-creates synthetic proof in dry_run mode", async () => {
+      const task = createTask({ agentId: "dry-run-task" });
+      // In dry_run mode, synthetic proofs are acceptable for testing
+      const result = await anchorTaskProof(task.id);
 
-      expect(result.taskId).toBe(fakeId);
       expect(result.anchorHash).toBeDefined();
+      expect(result.anchorHash.length).toBe(64);
+      expect(result.mode).toBe("dry_run");
     });
   });
 });

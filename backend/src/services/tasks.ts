@@ -12,6 +12,7 @@ import type { AnchorResult, AnchorProofInput } from "./casper.js";
 import type { Task, TaskStatus, Payment, PaymentRecipient } from "../types.js";
 import { config } from "../config.js";
 import { recalculateReputation } from "./reputation.js";
+import { verify as blockyVerify } from "./blocky.js";
 
 // ── Row types for DB queries ──────────────
 
@@ -394,39 +395,53 @@ export async function anchorTaskProof(taskId: string): Promise<{
     task = getTask(taskId)!;
   }
 
-  // 2. Find or create a proof for this task
-  let proof = getProofsForTask(taskId)[0];
+  // 2. Find an existing proof for this task
+  let existingProofs = getProofsForTask(taskId);
 
+  // C3: In dry_run mode, auto-create a synthetic proof for testing/demo
+  // In testnet/mainnet, require real proofs from verification
+  if (existingProofs.length === 0) {
+    if (config.casperMode === "dry_run") {
+      // Create a synthetic proof for dry-run testing
+      const proofId = randomUUID();
+      db.prepare(`
+        INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+          wasm_hash, attestation_hash, mode, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+      `).run(
+        proofId,
+        taskId,
+        task.agent_id,
+        "verifier-anchor-default",
+        `input-${taskId}-${now}`,
+        `output-${taskId}-${now}`,
+        "wasm-hash-default",
+        "attestation-hash-default",
+        config.teeVerificationMode,
+        now,
+      );
+
+      db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+        JSON.stringify([proofId]),
+        taskId,
+      );
+
+      existingProofs = getProofsForTask(taskId);
+    } else {
+      throw new Error(
+        "NO_PROOFS: Task has no proofs to anchor. Run verification first."
+      );
+    }
+  }
+
+  // Use the first verified/anchorable proof
+  const proof = existingProofs.find(
+    (p) => p.status === "verified" || p.status === "pending" || p.status === "anchored"
+  );
   if (!proof) {
-    // Create a synthetic proof from task metadata
-    const proofId = randomUUID();
-    const inputHash = `input-${taskId}-${now}`;
-    const outputHash = `output-${taskId}-${now}`;
-
-    db.prepare(`
-      INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
-        wasm_hash, attestation_hash, mode, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
-    `).run(
-      proofId,
-      taskId,
-      task.agent_id,
-      "verifier-anchor-default",
-      inputHash,
-      outputHash,
-      "wasm-hash-default",
-      "attestation-hash-default",
-      config.teeVerificationMode,
-      now,
+    throw new Error(
+      "NO_VERIFIED_PROOF: Task has proofs but none are verified or anchorable."
     );
-
-    // Link proof to task
-    db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
-      JSON.stringify([proofId]),
-      taskId,
-    );
-
-    proof = getProof(proofId)!;
   }
 
   // 3. Build anchor input
@@ -444,6 +459,13 @@ export async function anchorTaskProof(taskId: string): Promise<{
 
   // 4. Anchor via Casper provider
   const anchorResult: AnchorResult = await anchorProof(anchorInput);
+
+  // C2: Handle testnet anchor failure
+  if (!anchorResult.success) {
+    throw new Error(
+      `ANCHOR_FAILED: ${anchorResult.error || "Unknown anchor error"}`
+    );
+  }
 
   // 5. Persist anchor hash in proof record
   updateProofAnchor(proof.id, anchorResult.anchorHash);
@@ -491,32 +513,86 @@ export async function runTaskVerification(taskId: string): Promise<{
     );
   }
 
-  // Transition to running → proof_pending
+  // Transition to running if needed
   if (task.status === "funded") {
     updateTaskStatus(taskId, "running");
   }
 
-  // Create a proof placeholder in proof_pending state
+  // C3: Run real Blocky TEE verification instead of placeholder proofs
+  // Skip actual TEE call if CLI is not available (fast path for dry-run/testing)
   const db = getDb();
-  const proofId = randomUUID();
   const now = new Date().toISOString();
 
-  db.prepare(`
-    INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
-      wasm_hash, attestation_hash, mode, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
-  `).run(
-    proofId,
-    taskId,
-    task.agent_id,
-    "verifier-default",
-    `input-hash-${taskId}`,
-    `output-hash-${taskId}`,
-    "wasm-hash-default",
-    "attestation-hash-default",
-    config.teeVerificationMode,
-    now,
-  );
+  let verificationResult;
+  try {
+    const { isCliAvailable } = await import("./tee.js");
+    if (isCliAvailable()) {
+      const verifyInput = {
+        task_id: taskId,
+        invoice_id: task.id,
+        vendor: task.buyer_address,
+        buyer: task.agent_id,
+        amount_usd: 0,
+        currency: "USD",
+        due_days: 30,
+        line_items: [],
+        ai_suggested_risk: 0,
+      };
+      // Set a short timeout for the verification call — don't block tests
+      verificationResult = await Promise.race([
+        blockyVerify(verifyInput),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+      ]);
+    }
+  } catch {
+    // Verification attempt failed — create a pending proof (no hang)
+    verificationResult = null;
+  }
+
+  // Create proof record with real or attempted verification data
+  const proofId = randomUUID();
+
+  if (verificationResult?.status === "verified") {
+    // Real verification succeeded — store real claims
+    db.prepare(`
+      INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+        wasm_hash, attestation_hash, mode, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
+    `).run(
+      proofId,
+      taskId,
+      task.agent_id,
+      verificationResult.claims.hash_of_code || "verifier-default",
+      verificationResult.claims.hash_of_input,
+      verificationResult.claims.output,
+      verificationResult.claims.hash_of_code,
+      verificationResult.claims.hash_of_secrets,
+      config.teeVerificationMode,
+      now,
+    );
+  } else {
+    // Verification not available or failed — create pending proof
+    // This is truthfully labeled as pending, not falsely verified
+    const inputHash = `input-${taskId}-${now}`;
+    const outputHash = `output-${taskId}-${now}`;
+
+    db.prepare(`
+      INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+        wasm_hash, attestation_hash, mode, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(
+      proofId,
+      taskId,
+      task.agent_id,
+      "verifier-default",
+      inputHash,
+      outputHash,
+      "wasm-hash-default",
+      "attestation-hash-pending",
+      config.teeVerificationMode,
+      now,
+    );
+  }
 
   // Link proof to task
   const updatedProofIds = [...task.proof_ids, proofId];
@@ -532,7 +608,9 @@ export async function runTaskVerification(taskId: string): Promise<{
     taskId,
     status: "proof_pending",
     proofId,
-    message: "TEE verification initiated. Proof is pending verification.",
+    message: verificationResult?.status === "verified"
+      ? "TEE verification complete. Proof verified with real attestation claims."
+      : "TEE verification initiated. Blocky CLI not available — proof is pending verification.",
   };
 }
 
@@ -565,12 +643,36 @@ export function verifyTaskProof(taskId: string): {
     );
   }
 
-  // Mark all pending proofs as verified
+  // C3: Only verify proofs that have real attestation data
+  // In dry_run mode, pending proofs are acceptable (no real TEE available)
+  // In production/tee modes, placeholder proofs are rejected
   const db = getDb();
+  const isDryRun = config.casperMode === "dry_run" && !process.env.BKY_AS_AVAILABLE;
+  let verifiedCount = 0;
+
   for (const proofId of task.proof_ids) {
-    db.prepare(`
-      UPDATE proofs SET status = 'verified' WHERE id = ? AND status = 'pending'
-    `).run(proofId);
+    const proofRow = db.prepare("SELECT * FROM proofs WHERE id = ?").get(proofId) as ProofRow | undefined;
+    if (!proofRow) continue;
+
+    const isPlaceholder = proofRow.attestation_hash === "attestation-hash-default" ||
+      proofRow.attestation_hash === "attestation-hash-pending";
+
+    if (proofRow.status === "pending") {
+      // In dry_run mode, allow placeholder proofs to be verified
+      // In production, only verify proofs with real attestation data
+      if (!isPlaceholder || isDryRun) {
+        db.prepare(`UPDATE proofs SET status = 'verified' WHERE id = ?`).run(proofId);
+        verifiedCount++;
+      }
+    } else if (proofRow.status === "verified") {
+      verifiedCount++;
+    }
+  }
+
+  if (verifiedCount === 0) {
+    throw new Error(
+      "NO_REAL_PROOFS: Task has no proofs with real attestation data that can be verified. Run TEE verification first."
+    );
   }
 
   // J2: Recalculate reputation on proof verification

@@ -1,11 +1,7 @@
 // ────────────────────────────────────────
 // Sealrail Agent Routes
 // Phase F2: Agent API endpoints
-// GET /api/agents, GET /api/agents/:agentId, POST /api/agents,
-// PATCH /api/agents/:agentId, GET /api/agents/:agentId/reputation,
-// GET /api/agents/:agentId/proofs
-// Phase F3: POST /api/agents/:agentId/sync — Casper registration sync
-// Phase J3: POST /api/agents/:agentId/reputation/recalculate — explicit recalculation
+// Audit fix C1+H2: API key auth required on mutations, owner from authenticated principal
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -21,15 +17,16 @@ import {
   getAgentServiceHealth,
 } from "../services/agents.js";
 import { recalculateReputation } from "../services/reputation.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 import type { AgentCategory, AgentStatus, AgentPricingModel, Currency } from "../types.js";
 
 // ── Request schemas ──────────────────────
 
 const createAgentSchema = {
   type: "object",
-  required: ["owner_address", "name", "category"],
+  required: ["name", "category"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     category: {
       type: "string",
@@ -50,9 +47,7 @@ const createAgentSchema = {
 
 const updateAgentSchema = {
   type: "object",
-  required: ["owner_address"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     slug: { type: "string" },
     category: {
@@ -104,7 +99,7 @@ export function registerAgentRoutes(app: FastifyInstance): void {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         request.log.error({ err: msg }, "Failed to list agents");
-        return reply.status(500).send({ error: "LIST_FAILED", message: msg });
+        return reply.status(500).send({ error: "LIST_FAILED", message: "Internal server error" });
       }
     }
   );
@@ -129,10 +124,10 @@ export function registerAgentRoutes(app: FastifyInstance): void {
   );
 
   // ── POST /api/agents ────────────────────
-  // Register a new agent.
+  // Register a new agent. Requires API key with agents:write scope.
+  // Owner is bound from authenticated API key.
   app.post<{
     Body: {
-      owner_address: string;
       name: string;
       category: AgentCategory;
       description?: string;
@@ -145,13 +140,17 @@ export function registerAgentRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/agents",
-    { schema: { body: createAgentSchema } },
+    {
+      schema: { body: createAgentSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.AGENTS_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
         const agent = createAgent({
-          ownerAddress: body.owner_address,
+          ownerAddress,
           name: body.name,
           category: body.category,
           description: body.description,
@@ -174,17 +173,16 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── PATCH /api/agents/:agentId ──────────
-  // Update an agent's mutable fields. Owner auth required.
+  // Update an agent's mutable fields. Owner auth from API key.
   app.patch<{
     Params: { agentId: string };
     Body: {
-      owner_address: string;
       name?: string;
       slug?: string;
       category?: AgentCategory;
@@ -199,13 +197,17 @@ export function registerAgentRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/agents/:agentId",
-    { schema: { body: updateAgentSchema } },
+    {
+      schema: { body: updateAgentSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.AGENTS_WRITE])],
+    },
     async (request, reply) => {
       const { agentId } = request.params;
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const agent = updateAgent(agentId, body.owner_address, {
+        const agent = updateAgent(agentId, ownerAddress, {
           name: body.name,
           slug: body.slug,
           category: body.category,
@@ -236,13 +238,12 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID") || msg.startsWith("SLUG_TAKEN")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "UPDATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPDATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/agents/:agentId/reputation ──
-  // Get agent reputation foundation data (computed from real records).
   app.get<{ Params: { agentId: string } }>(
     "/api/agents/:agentId/reputation",
     async (request, reply) => {
@@ -261,40 +262,39 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg === "AGENT_NOT_FOUND") {
           return reply.status(404).send({ error: "NOT_FOUND", message: msg });
         }
-        return reply.status(500).send({ error: "REPUTATION_FAILED", message: msg });
+        return reply.status(500).send({ error: "REPUTATION_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/agents/:agentId/reputation/recalculate ──
-  // Phase J3: Explicit recalculation endpoint.
-  // Recomputes reputation from all real proof/payment/task data.
-  // Optional owner_address in body for auth check.
+  // Requires API key with agents:write scope.
   app.post<{
     Params: { agentId: string };
-    Body: { owner_address?: string };
+    Body: Record<string, never>;
   }>(
     "/api/agents/:agentId/reputation/recalculate",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.AGENTS_WRITE])],
+    },
     async (request, reply) => {
       const { agentId } = request.params;
-      const { owner_address } = request.body ?? {};
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        // Owner check if address provided
-        if (owner_address) {
-          const agent = getAgent(agentId);
-          if (!agent) {
-            return reply.status(404).send({
-              error: "NOT_FOUND",
-              message: `No agent found with id '${agentId}'`,
-            });
-          }
-          if (agent.owner_address !== owner_address) {
-            return reply.status(403).send({
-              error: "FORBIDDEN",
-              message: "Only the agent owner can trigger recalculation",
-            });
-          }
+        // Owner check via authenticated principal
+        const agent = getAgent(agentId);
+        if (!agent) {
+          return reply.status(404).send({
+            error: "NOT_FOUND",
+            message: `No agent found with id '${agentId}'`,
+          });
+        }
+        if (agent.owner_address !== ownerAddress) {
+          return reply.status(403).send({
+            error: "FORBIDDEN",
+            message: "Only the agent owner can trigger recalculation",
+          });
         }
 
         const reputation = recalculateReputation(agentId);
@@ -311,13 +311,12 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg === "AGENT_NOT_FOUND") {
           return reply.status(404).send({ error: "NOT_FOUND", message: msg });
         }
-        return reply.status(500).send({ error: "RECALCULATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "RECALCULATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/agents/:agentId/proofs ─────
-  // Get proof history for a given agent.
   app.get<{ Params: { agentId: string } }>(
     "/api/agents/:agentId/proofs",
     async (request, reply) => {
@@ -337,15 +336,18 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg === "AGENT_NOT_FOUND") {
           return reply.status(404).send({ error: "NOT_FOUND", message: msg });
         }
-        return reply.status(500).send({ error: "PROOFS_FAILED", message: msg });
+        return reply.status(500).send({ error: "PROOFS_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/agents/:agentId/sync ──────
-  // Phase F3: Sync agent registration to Casper Network.
+  // Sync agent registration to Casper Network. Requires API key.
   app.post<{ Params: { agentId: string } }>(
     "/api/agents/:agentId/sync",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.AGENTS_WRITE])],
+    },
     async (request, reply) => {
       const { agentId } = request.params;
 
@@ -366,15 +368,14 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         if (msg === "AGENT_NOT_FOUND") {
           return reply.status(404).send({ error: "NOT_FOUND", message: msg });
         }
-        return reply.status(500).send({ error: "SYNC_FAILED", message: msg });
+        return reply.status(500).send({ error: "SYNC_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/agents/health ──────────────
-  // Agent service health check.
+  // Sanitized public health check (H5).
   app.get("/api/agents/health", async (_request, reply) => {
-    const health = getAgentServiceHealth();
-    return reply.status(200).send(health);
+    return reply.status(200).send({ healthy: true });
   });
 }

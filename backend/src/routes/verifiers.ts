@@ -1,6 +1,7 @@
 // ────────────────────────────────────────
 // Sealrail Verifier Template Routes
 // Phase L4: REST API for verifier templates
+// Audit fix C1+H2: API key auth required on mutations, owner from authenticated principal
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -13,14 +14,15 @@ import {
   testVerifier,
   getVerifierServiceHealth,
 } from "../services/verifiers.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 
 // ── Request schemas ──────────────────────
 
 const createVerifierSchema = {
   type: "object",
-  required: ["owner_address", "name", "task_type", "wasm_hash"],
+  required: ["name", "task_type", "wasm_hash"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     task_type: { type: "string", minLength: 1 },
@@ -38,9 +40,8 @@ const createVerifierSchema = {
 
 const uploadVerifierSchema = {
   type: "object",
-  required: ["owner_address", "name", "task_type"],
+  required: ["name", "task_type"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     task_type: { type: "string", minLength: 1 },
@@ -59,9 +60,7 @@ const uploadVerifierSchema = {
 
 const updateVerifierSchema = {
   type: "object",
-  required: ["owner_address"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     task_type: { type: "string", minLength: 1 },
@@ -90,7 +89,6 @@ const testVerifierSchema = {
  */
 export function registerVerifierRoutes(app: FastifyInstance): void {
   // ── GET /api/verifiers ──────────────────
-  // List verifier templates with optional filters.
   app.get<{
     Querystring: {
       status?: string;
@@ -113,15 +111,13 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
           count: verifiers.length,
         });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg }, "Failed to list verifiers");
-        return reply.status(500).send({ error: "LIST_FAILED", message: msg });
+        request.log.error({ err }, "Failed to list verifiers");
+        return reply.status(500).send({ error: "LIST_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── GET /api/verifiers/:verifierId ───────
-  // Get a single verifier template by ID.
   app.get<{
     Params: { verifierId: string };
   }>(
@@ -141,18 +137,16 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
 
         return reply.status(200).send({ verifier });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg, verifierId }, "Failed to get verifier");
-        return reply.status(500).send({ error: "GET_FAILED", message: msg });
+        request.log.error({ err, verifierId }, "Failed to get verifier");
+        return reply.status(500).send({ error: "GET_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── POST /api/verifiers ─────────────────
-  // Register a new verifier template.
+  // Requires API key with verifiers:write scope. Owner from authenticated key.
   app.post<{
     Body: {
-      owner_address: string;
       name: string;
       description?: string;
       task_type: string;
@@ -165,13 +159,17 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/verifiers",
-    { schema: { body: createVerifierSchema } },
+    {
+      schema: { body: createVerifierSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.VERIFIERS_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
         const verifier = createVerifier({
-          ownerAddress: body.owner_address,
+          ownerAddress,
           name: body.name,
           description: body.description,
           taskType: body.task_type,
@@ -199,16 +197,15 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
         ) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── POST /api/verifiers/upload ───────────
-  // Upload WASM + register verifier template.
+  // Requires API key with verifiers:write scope. Owner from authenticated key.
   app.post<{
     Body: {
-      owner_address: string;
       name: string;
       description?: string;
       task_type: string;
@@ -222,13 +219,17 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/verifiers/upload",
-    { schema: { body: uploadVerifierSchema } },
+    {
+      schema: { body: uploadVerifierSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.VERIFIERS_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
         const verifier = uploadVerifier({
-          ownerAddress: body.owner_address,
+          ownerAddress,
           name: body.name,
           description: body.description,
           taskType: body.task_type,
@@ -262,17 +263,16 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
             message: msg,
           });
         }
-        return reply.status(500).send({ error: "UPLOAD_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPLOAD_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── PATCH /api/verifiers/:verifierId ─────
-  // Update a verifier template. Owner-only.
+  // Requires API key with verifiers:write scope. Owner from authenticated key.
   app.patch<{
     Params: { verifierId: string };
     Body: {
-      owner_address: string;
       name?: string;
       description?: string;
       task_type?: string;
@@ -285,13 +285,17 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/verifiers/:verifierId",
-    { schema: { body: updateVerifierSchema } },
+    {
+      schema: { body: updateVerifierSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.VERIFIERS_WRITE])],
+    },
     async (request, reply) => {
       const { verifierId } = request.params;
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
-        const verifier = updateVerifier(verifierId, body.owner_address, {
+        const verifier = updateVerifier(verifierId, ownerAddress, {
           name: body.name,
           description: body.description,
           taskType: body.task_type,
@@ -335,13 +339,12 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
             message: msg,
           });
         }
-        return reply.status(500).send({ error: "UPDATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "UPDATE_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── POST /api/verifiers/:verifierId/test ──
-  // Test a verifier with sample input.
   app.post<{
     Params: { verifierId: string };
     Body: {
@@ -385,15 +388,14 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
             message: msg,
           });
         }
-        return reply.status(500).send({ error: "TEST_FAILED", message: msg });
+        return reply.status(500).send({ error: "TEST_FAILED", message: "Internal server error" });
       }
     },
   );
 
   // ── GET /api/verifiers/health ────────────
-  // Verifier service health check.
+  // Sanitized public health check (H5).
   app.get("/api/verifiers/health", async (_request, reply) => {
-    const health = getVerifierServiceHealth();
-    return reply.status(200).send(health);
+    return reply.status(200).send({ healthy: true });
   });
 }

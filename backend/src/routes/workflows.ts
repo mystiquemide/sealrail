@@ -1,13 +1,7 @@
 // ────────────────────────────────────────
 // Sealrail Workflow Routes
 // Phase H4: Workflow API endpoints
-// GET    /api/workflows                          List workflow templates
-// POST   /api/workflows                          Create workflow template
-// GET    /api/workflows/:workflowId               Get workflow detail
-// POST   /api/workflows/:workflowId/run           Create and start a workflow run
-// GET    /api/workflow-runs/:runId                Get workflow run status
-// POST   /api/workflow-runs/:runId/steps/:stepId/run  Execute one ordered step
-// POST   /api/workflow-runs/:runId/finalize       Finalize and bundle proofs
+// Audit fix C1+H2: API key auth on mutation routes, owner from authenticated principal
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -24,15 +18,16 @@ import {
   transitionWorkflowRun,
   getWorkflowServiceHealth,
 } from "../services/workflows.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 import type { WorkflowStatus, WorkflowStepTemplate } from "../types.js";
 
 // ── Request schemas ──────────────────────
 
 const createWorkflowSchema = {
   type: "object",
-  required: ["owner_address", "name", "steps"],
+  required: ["name", "steps"],
   properties: {
-    owner_address: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     category: { type: "string" },
@@ -79,7 +74,6 @@ const executeStepSchema = {
  */
 export function registerWorkflowRoutes(app: FastifyInstance): void {
   // ── GET /api/workflows ──────────────────
-  // List workflow templates with optional filters.
   app.get<{
     Querystring: {
       category?: string;
@@ -105,18 +99,16 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
           count: workflows.length,
         });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg }, "Failed to list workflows");
-        return reply.status(500).send({ error: "LIST_FAILED", message: msg });
+        request.log.error({ err }, "Failed to list workflows");
+        return reply.status(500).send({ error: "LIST_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/workflows ─────────────────
-  // Create a workflow template.
+  // Create a workflow template. Requires workflows:write scope. Owner from auth key.
   app.post<{
     Body: {
-      owner_address: string;
       name: string;
       description?: string;
       category?: string;
@@ -126,13 +118,17 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/workflows",
-    { schema: { body: createWorkflowSchema } },
+    {
+      schema: { body: createWorkflowSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.WORKFLOWS_WRITE])],
+    },
     async (request, reply) => {
       const body = request.body;
+      const ownerAddress = request.apiKey!.owner_address;
 
       try {
         const workflow = createWorkflow({
-          ownerAddress: body.owner_address,
+          ownerAddress,
           name: body.name,
           description: body.description,
           category: body.category,
@@ -162,13 +158,12 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/workflows/:workflowId ───────
-  // Get workflow template detail.
   app.get<{ Params: { workflowId: string } }>(
     "/api/workflows/:workflowId",
     async (request, reply) => {
@@ -186,15 +181,13 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
 
         return reply.status(200).send({ workflow });
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg, workflowId }, "Failed to get workflow");
-        return reply.status(500).send({ error: "GET_FAILED", message: msg });
+        request.log.error({ err, workflowId }, "Failed to get workflow");
+        return reply.status(500).send({ error: "GET_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/workflows/:workflowId/run ──
-  // Create and start a workflow run from a template.
   app.post<{
     Params: { workflowId: string };
     Body: {
@@ -202,7 +195,10 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/workflows/:workflowId/run",
-    { schema: { body: createWorkflowRunSchema } },
+    {
+      schema: { body: createWorkflowRunSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.WORKFLOWS_WRITE])],
+    },
     async (request, reply) => {
       const { workflowId } = request.params;
       const body = request.body;
@@ -224,13 +220,12 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
         if (msg.startsWith("WORKFLOW_NOT_ACTIVE")) {
           return reply.status(400).send({ error: "INVALID_REQUEST", message: msg });
         }
-        return reply.status(500).send({ error: "RUN_CREATE_FAILED", message: msg });
+        return reply.status(500).send({ error: "RUN_CREATE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/workflow-runs/:runId ────────
-  // Get workflow run status with detail.
   app.get<{ Params: { runId: string } }>(
     "/api/workflow-runs/:runId",
     async (request, reply) => {
@@ -248,15 +243,13 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
 
         return reply.status(200).send(detail);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        request.log.error({ err: msg, runId }, "Failed to get workflow run");
-        return reply.status(500).send({ error: "GET_FAILED", message: msg });
+        request.log.error({ err, runId }, "Failed to get workflow run");
+        return reply.status(500).send({ error: "GET_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/workflow-runs/:runId/steps/:stepId/run ──
-  // Execute one ordered workflow step.
   app.post<{
     Params: { runId: string; stepId: string };
     Body: {
@@ -264,7 +257,10 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/workflow-runs/:runId/steps/:stepId/run",
-    { schema: { body: executeStepSchema } },
+    {
+      schema: { body: executeStepSchema },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.WORKFLOWS_WRITE])],
+    },
     async (request, reply) => {
       const { runId, stepId } = request.params;
       const body = request.body;
@@ -303,15 +299,17 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
         if (msg.startsWith("INVALID_RUN_STATE")) {
           return reply.status(400).send({ error: "INVALID_STATE", message: msg });
         }
-        return reply.status(500).send({ error: "STEP_FAILED", message: msg });
+        return reply.status(500).send({ error: "STEP_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── POST /api/workflow-runs/:runId/finalize ──
-  // Finalize and bundle step proofs.
   app.post<{ Params: { runId: string } }>(
     "/api/workflow-runs/:runId/finalize",
+    {
+      preHandler: [requireApiKeyWithScope([API_SCOPES.WORKFLOWS_WRITE])],
+    },
     async (request, reply) => {
       const { runId } = request.params;
 
@@ -344,15 +342,14 @@ export function registerWorkflowRoutes(app: FastifyInstance): void {
         if (msg.startsWith("NO_STEP_PROOFS")) {
           return reply.status(400).send({ error: "NO_PROOFS", message: msg });
         }
-        return reply.status(500).send({ error: "FINALIZE_FAILED", message: msg });
+        return reply.status(500).send({ error: "FINALIZE_FAILED", message: "Internal server error" });
       }
     }
   );
 
   // ── GET /api/workflows/health ───────────
-  // Workflow service health check.
+  // Sanitized public health check (H5).
   app.get("/api/workflows/health", async (_request, reply) => {
-    const health = getWorkflowServiceHealth();
-    return reply.status(200).send(health);
+    return reply.status(200).send({ healthy: true });
   });
 }

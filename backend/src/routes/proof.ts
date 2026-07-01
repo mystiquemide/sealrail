@@ -2,12 +2,15 @@
 // Sealrail Proof Routes
 // POST /api/proofs/verify — TEE verification endpoint
 // Phase C
+// Audit fix C1+H2: Auth required on verification endpoint
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
 
 import type { InvoiceRiskInput } from "../types.js";
 import { verify } from "../services/blocky.js";
+import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { API_SCOPES } from "../types.js";
 
 // ── Request schema for validation ────────
 
@@ -43,12 +46,14 @@ const verifySchema = {
 export function registerProofRoutes(app: FastifyInstance): void {
   // ── POST /api/proofs/verify ────────────
   // Runs full TEE verification: attest + verify + claims validation
+  // Requires proofs:write scope.
   app.post<{ Body: InvoiceRiskInput }>(
     "/api/proofs/verify",
     {
       schema: {
         body: verifySchema,
       },
+      preHandler: [requireApiKeyWithScope([API_SCOPES.PROOFS_WRITE])],
     },
     async (request, reply) => {
       const input = request.body as InvoiceRiskInput;

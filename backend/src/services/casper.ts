@@ -2,6 +2,7 @@
 // Sealrail Casper Anchoring Adapter
 // Casper provider: dry-run + testnet modes
 // Phase D1-D3: provider interface, deterministic deploy hash, casper-client path
+// Audit fix C2: testnet/mainnet fail-closed — simulated success removed from non-dry-run
 // ────────────────────────────────────────
 
 import { execFile, execSync } from "child_process";
@@ -28,6 +29,8 @@ export interface AnchorResult {
   success: boolean;
   anchorHash: string;
   mode: "dry_run" | "testnet";
+  /** True only for dry_run mode */
+  simulated: boolean;
   deployHash?: string;
   error?: string;
 }
@@ -101,7 +104,7 @@ function computeDryRunAnchorHash(input: AnchorProofInput): string {
 /**
  * Create a dry-run anchor with a deterministic deploy hash.
  * No network calls — purely local computation.
- * Returns: deterministic anchor hash.
+ * Only mode where success: true with simulated data is acceptable.
  */
 export async function createDryRunAnchor(
   input: AnchorProofInput
@@ -117,6 +120,7 @@ export async function createDryRunAnchor(
     anchorHash,
     deployHash,
     mode: "dry_run",
+    simulated: true,
   };
 }
 
@@ -124,123 +128,99 @@ export async function createDryRunAnchor(
 
 /**
  * Build a minimal Casper deploy that stores the anchor hash on-chain.
- * Uses casper-client put-deploy with a native transfer as a no-op carrier.
- *
- * In a real deployment, this would call the VerifiedAgentPayments
- * contract's anchor_proof entry point. For Phase D, we use a
- * standard transfer as a deployment vehicle and derive the
- * deploy hash from the casper-client output.
+ * Fails closed: returns error if client is missing, account key missing, or deploy fails.
  */
 async function submitCasperDeploy(
   input: AnchorProofInput
 ): Promise<{ deployHash: string }> {
   const anchorHash = computeDryRunAnchorHash(input);
 
-  // Build a minimal deploy: a native transfer to self with 0 CSPR
-  // The deploy hash from casper-client serves as our anchor hash.
-  //
-  // In production, replace this with a contract call:
-  //   casper-client put-deploy --session-path <wasm>
-  //     --payment-amount <amount>
-  //     --chain-name <chain>
   const paymentAmount = "100000000"; // 0.1 CSPR for gas
   const chainName = config.casperChainName;
   const nodeAddress = config.casperRpcUrl;
 
-  // Use a temporary key for testnet; in production this comes from config
-  const secretKeyPath = config.casperAccountKeyPath || "/dev/null";
+  // C2: Require account key — fail if missing (no simulated hashes)
+  if (!config.casperAccountKeyPath) {
+    throw new Error(
+      "CASPER_ACCOUNT_KEY_MISSING: No Casper account key configured. " +
+      "Set CASPER_ACCOUNT_KEY_PATH env var or switch to CASPER_MODE=dry_run."
+    );
+  }
 
   const args = [
     "put-deploy",
     "--chain-name", chainName,
     "--node-address", nodeAddress,
-    "--secret-key", secretKeyPath,
+    "--secret-key", config.casperAccountKeyPath,
     "--payment-amount", paymentAmount,
     "--session-arg", `anchor_hash:string='${anchorHash}'`,
   ];
 
-  // If we have a real key path, attempt the deploy
-  if (config.casperAccountKeyPath) {
-    const { stdout, stderr } = await _execAsync(
-      "bash",
-      ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
-      { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }
-    );
+  const { stdout, stderr } = await _execAsync(
+    "bash",
+    ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
+    { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }
+  );
 
-    const output = stdout.toString();
-    // casper-client outputs the deploy hash in JSON format
-    try {
-      const parsed = JSON.parse(output);
-      if (parsed?.result?.deploy_hash) {
-        return { deployHash: parsed.result.deploy_hash };
-      }
-    } catch {
-      // Output might not be JSON; try to extract deploy hash from text
-      const match = output.match(/deploy_hash[:\s=]+"?([a-f0-9]{64})"?/i);
-      if (match) {
-        return { deployHash: match[1] };
-      }
+  const output = stdout.toString();
+  // casper-client outputs the deploy hash in JSON format
+  try {
+    const parsed = JSON.parse(output);
+    if (parsed?.result?.deploy_hash) {
+      return { deployHash: parsed.result.deploy_hash };
     }
-
-    // If we got output but couldn't parse the deploy hash, fall through
-    throw new Error(`casper-client succeeded but could not extract deploy hash. Output: ${output.slice(0, 500)}`);
+  } catch {
+    // Output might not be JSON; try to extract deploy hash from text
+    const match = output.match(/deploy_hash[:\s=]+"?([a-f0-9]{64})"?/i);
+    if (match) {
+      return { deployHash: match[1] };
+    }
   }
 
-  // No secret key configured — generate a simulated testnet deploy hash
-  // This is a valid SHA-256 hash that looks like a Casper deploy hash
-  const simulatedDeployHash = createHash("sha256")
-    .update(`testnet-simulated|${anchorHash}|${randomUUID()}`)
-    .digest("hex");
-
-  return { deployHash: simulatedDeployHash };
+  throw new Error(
+    `CASPER_DEPLOY_PARSE_FAILED: casper-client succeeded but could not extract deploy hash. Output: ${output.slice(0, 500)}`
+  );
 }
 
 /**
  * Create a testnet anchor using casper-client.
- * Falls back to simulated testnet hash if casper-client is unavailable
- * or no account key is configured.
+ * C2: Fails closed — missing client, missing key, or deploy error = failure.
+ * No simulated success fallback in testnet mode.
  */
 export async function createTestnetAnchor(
   input: AnchorProofInput
 ): Promise<AnchorResult> {
+  // C2: Fail if casper-client is not available (no fallback)
   if (!isCasperClientAvailable()) {
-    // Fallback: simulated testnet hash
-    const anchorHash = computeDryRunAnchorHash(input);
-    const simulatedDeploy = createHash("sha256")
-      .update(`testnet-fallback|${anchorHash}|${randomUUID()}`)
-      .digest("hex");
-
     return {
-      success: true,
-      anchorHash: simulatedDeploy,
-      deployHash: simulatedDeploy,
+      success: false,
+      anchorHash: "",
       mode: "testnet",
+      simulated: false,
+      error: "CASPER_CLIENT_UNAVAILABLE: casper-client binary not found. Install casper-client or use CASPER_MODE=dry_run.",
     };
   }
 
   try {
     const { deployHash } = await submitCasperDeploy(input);
 
-    // The deploy hash is our anchor hash in testnet mode
     return {
       success: true,
       anchorHash: deployHash,
       deployHash,
       mode: "testnet",
+      simulated: false,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
 
-    // Fallback on any error: produce a deterministic hash labeled as testnet
-    const fallbackHash = createHash("sha256")
-      .update(`testnet-error|${input.taskId}|${input.proofId}|${msg}`)
-      .digest("hex");
-
+    // C2: Fail closed on any error — no fallback hash
     return {
-      success: true, // We still produce a hash — the anchor is valid
-      anchorHash: fallbackHash,
-      deployHash: fallbackHash,
+      success: false,
+      anchorHash: "",
       mode: "testnet",
+      simulated: false,
+      error: `CASPER_DEPLOY_FAILED: ${msg}`,
     };
   }
 }
@@ -250,9 +230,6 @@ export async function createTestnetAnchor(
 /**
  * Anchor a proof to Casper (or produce a deterministic hash in dry-run mode).
  * Dispatches to dry-run or testnet mode based on config.casperMode.
- *
- * @param input - The proof data to anchor
- * @returns AnchorResult with the anchor hash and deploy hash
  */
 export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult> {
   const mode = config.casperMode;
@@ -265,7 +242,7 @@ export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult
     return createTestnetAnchor(input);
   }
 
-  // Default to dry-run for unknown modes
+  // Default to dry-run for unknown modes with simulated flag
   return createDryRunAnchor(input);
 }
 
@@ -273,8 +250,7 @@ export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult
 
 /**
  * Verify that an anchor hash exists and is valid.
- * In dry-run mode, re-computes the hash and compares.
- * In testnet mode, queries casper-client for the deploy status.
+ * C2: In testnet, fail honestly when client is unavailable.
  */
 export async function verifyAnchor(
   anchorHash: string,
@@ -285,15 +261,18 @@ export async function verifyAnchor(
   if (mode === "dry_run") {
     // Dry-run: re-compute and compare
     if (!input) {
-      return { valid: true }; // Can't re-verify without input
+      return { valid: false, error: "Cannot verify dry-run anchor without input data" };
     }
     const expected = computeDryRunAnchorHash(input);
     return { valid: anchorHash === expected };
   }
 
-  // Testnet: query casper-client get-deploy
+  // C2: Testnet — fail if client is unavailable (no silent success)
   if (!isCasperClientAvailable()) {
-    return { valid: true }; // Can't verify without client
+    return {
+      valid: false,
+      error: "CASPER_CLIENT_UNAVAILABLE: Cannot verify anchor — casper-client not found.",
+    };
   }
 
   try {
