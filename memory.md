@@ -12,6 +12,7 @@ Positioning: No Proof without a Payment.
 - DESIGN.md: approved by Mide.
 - Frontend UI plan: written, not started.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
+- Backend audit report: produced at docs/audits/SEALRAIL_BACKEND_AUDIT.md and docs/audits/SEALRAIL_BACKEND_AUDIT.docx for audited commit b7df591.
 - Backend Phase A: DONE. 20/20 tests passed.
 - Backend Phase B: DONE. 23/23 tests passed (cargo odra test).
 - Backend Phase C: DONE. 30/30 tests passed (vitest).
