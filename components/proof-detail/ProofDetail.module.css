@@ -1,0 +1,251 @@
+/* Sealrail /proofs/[proofId] page — ported from Sealrail Proof Detail.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 56px) clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #8c8c8a;
+  transition: color 0.2s;
+}
+.backLink:hover {
+  color: #f6f5f3;
+}
+
+.backArrow {
+  font-family: var(--font-mono);
+}
+
+/* ---------- status header ---------- */
+
+.statusHeaderRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.taskLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #7a7a78;
+  margin-top: 14px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.6vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: #f6f5f3;
+  margin: 8px 0 0;
+}
+
+.statusSentence {
+  font-size: 15.5px;
+  color: #b4b4b2;
+  margin: 10px 0 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 18px;
+  background: #ffffff;
+  color: #080808;
+  border: none;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.copyButton:hover {
+  opacity: 0.85;
+}
+
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 18px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  transition: border-color 0.2s;
+}
+.btnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- panels ---------- */
+
+.panelsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-top: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel {
+  flex: 1 1 320px;
+  min-width: 280px;
+  background: #111111;
+  padding: 24px 26px;
+}
+
+.cardBlock {
+  margin-top: 24px;
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 24px 26px;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+.modeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(242, 184, 75, 0.4);
+  border-radius: 3px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f2b84b;
+}
+
+.modeBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f2b84b;
+}
+
+.infoRows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.infoRowLabel {
+  font-size: 13px;
+  color: #8c8c8a;
+}
+
+.infoRowValue {
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.infoRowValueMono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.infoRowValueMonoSmall {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #9a9a98;
+}
+
+.infoRowValueMuted {
+  font-size: 13px;
+  color: #6e6e6c;
+}
+
+.stateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.stateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ---------- raw bundle ---------- */
+
+.bundlePre {
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #b4b4b2;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.smallCopyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 7px 12px;
+  background: transparent;
+  color: #a8a8a6;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.smallCopyButton:hover {
+  color: #f6f5f3;
+}

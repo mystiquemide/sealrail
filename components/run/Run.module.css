@@ -1,0 +1,575 @@
+/* Sealrail /run page — ported from Sealrail Run.dc.html (Claude Design import) */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+@keyframes srPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotPulse {
+    animation: none !important;
+  }
+}
+
+/* ---------- page header ---------- */
+
+.headerWrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(40px, 5vw, 64px) clamp(20px, 5vw, 48px) clamp(28px, 3vw, 40px);
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.headerCopy {
+  max-width: 620px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(32px, 4.4vw, 50px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 16px 0 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  line-height: 1.58;
+  color: #a8a8a6;
+  margin: 16px 0 0;
+}
+
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.modeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border: 1px solid rgba(242, 184, 75, 0.4);
+  border-radius: 3px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #f2b84b;
+}
+
+.modeBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f2b84b;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.btnRunAll {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 10px 18px;
+  background: #ffffff;
+  color: #080808;
+  border: none;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btnRunAll:hover {
+  opacity: 0.85;
+}
+
+.btnReset {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 10px 18px;
+  background: transparent;
+  color: #a8a8a6;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.btnReset:hover {
+  color: #f6f5f3;
+}
+
+/* ---------- workspace ---------- */
+
+.workspaceWrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.workspaceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.outputGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: stretch;
+}
+
+.panel {
+  flex: 1 1 380px;
+  min-width: 300px;
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: clamp(22px, 2.4vw, 30px);
+}
+
+.panelLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+/* ---------- task form ---------- */
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 16px;
+  margin-top: 20px;
+}
+
+.formFieldFull {
+  grid-column: 1 / 3;
+}
+
+.formLabel {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8c8c8a;
+  margin-bottom: 7px;
+}
+
+.formInput {
+  width: 100%;
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 11px 12px;
+  color: #e4e4e2;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.formInputMono {
+  composes: formInput;
+  font-family: var(--font-mono);
+}
+
+.formTextarea {
+  composes: formInput;
+  resize: none;
+  line-height: 1.5;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+/* ---------- stage buttons ---------- */
+
+.stageButtons {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stageButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: none;
+  transition: opacity 0.2s;
+}
+
+.stageButtonNum {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.failRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: #8c8c8a;
+}
+
+.failCheckbox {
+  accent-color: #f45b45;
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------- live proof rail ---------- */
+
+.railPanel {
+  flex: 1;
+  background: #0e0e0e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: clamp(22px, 2.4vw, 28px) clamp(22px, 2.4vw, 30px) clamp(22px, 2.4vw, 28px) 64px;
+  position: relative;
+}
+
+.railRight {
+  flex: 1 1 360px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.railLineOuter {
+  position: absolute;
+  left: 30px;
+  top: 84px;
+  bottom: 40px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.railLineInner {
+  position: absolute;
+  left: 36px;
+  top: 84px;
+  bottom: 40px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.railHeader {
+  margin-left: -44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+}
+
+.railHeaderTask {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #6e6e6c;
+}
+
+.railSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.railStep {
+  position: relative;
+}
+
+.railStepDot {
+  position: absolute;
+  left: -37px;
+  top: 13px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #0e0e0e;
+}
+
+.railStepRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.railStepLabel {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+.railStepStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.railStepStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.railStepSub {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #b4b4b2;
+}
+
+/* ---------- TEE note ---------- */
+
+.teeNote {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+
+.teeNoteHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f2b84b;
+}
+
+.teeNoteDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f2b84b;
+}
+
+.teeNoteBody {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #9a9a98;
+  margin: 10px 0 0;
+}
+
+/* ---------- verified output ---------- */
+
+.outputHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.outputBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.outputBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.outputRows {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.outputRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.outputRowLabel {
+  font-size: 13px;
+  color: #8c8c8a;
+}
+
+.outputRowValue {
+  font-size: 14px;
+  color: #f6f5f3;
+}
+
+.outputReason {
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.outputReasonBody {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #c9c9c7;
+  margin: 8px 0 0;
+}
+
+.outputFlags {
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.flagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.flagChip {
+  padding: 5px 9px;
+  background: rgba(242, 184, 75, 0.1);
+  border: 1px solid rgba(242, 184, 75, 0.32);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: #f2b84b;
+}
+
+.flagsEmpty {
+  font-size: 13px;
+  color: #5c5c5a;
+}
+
+/* ---------- proof hashes ---------- */
+
+.hashRows {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hashRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hashRowLabel {
+  font-size: 12.5px;
+  color: #8c8c8a;
+}
+
+.hashRowValue {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.hashRowStateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hashRowStateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.hashActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 18px;
+  border-radius: 3px;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.detailLink {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 18px;
+  border-radius: 3px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #a8a8a6;
+  transition: color 0.2s;
+}
+.detailLink:hover {
+  color: #f6f5f3;
+}

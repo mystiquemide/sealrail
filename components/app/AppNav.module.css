@@ -1,0 +1,83 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(8, 8, 8, 0.86);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px clamp(20px, 5vw, 48px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.brandText {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 32px);
+  font-size: 13.5px;
+  color: #a8a8a6;
+}
+
+.active {
+  white-space: nowrap;
+  color: #f6f5f3;
+}
+
+.link {
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.link:hover {
+  color: #f6f5f3;
+}
+
+.ctaPrimary {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 9px 18px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.ctaPrimary:hover {
+  opacity: 0.85;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 9px 18px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  font-weight: 500;
+  transition: border-color 0.2s;
+}
+.cta:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}

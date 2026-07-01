@@ -1,0 +1,330 @@
+/* Sealrail /proofs page — ported from Sealrail Proofs.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+.headerWrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(40px, 5vw, 64px) clamp(20px, 5vw, 48px) clamp(28px, 3vw, 36px);
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.headerCopy {
+  max-width: 640px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 14px 0 0;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 22px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.btnPrimary:hover {
+  opacity: 0.85;
+}
+
+/* ---------- filter bar ---------- */
+
+.filterWrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 48px);
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.searchInput {
+  width: 100%;
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 10px 12px;
+  color: #e4e4e2;
+  font-size: 13.5px;
+  font-family: var(--font-mono);
+}
+.searchInput:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #8c8c8a;
+}
+
+.filterLabel {
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10.5px;
+}
+
+.filterSelect {
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 9px 10px;
+  color: #e4e4e2;
+  font-size: 13px;
+}
+.filterSelect:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.demoStateGroup {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demoStateLabel {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+}
+
+.demoStateSelect {
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 9px 10px;
+  color: #8c8c8a;
+  font-size: 12.5px;
+}
+.demoStateSelect:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+/* ---------- table ---------- */
+
+.tableWrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.table {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.gridCols {
+  grid-template-columns: 1.1fr 1.3fr 1fr 1fr 1.3fr 0.7fr;
+}
+
+.tableHead {
+  display: grid;
+  gap: 16px;
+  padding: 13px 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.row {
+  display: grid;
+  gap: 16px;
+  padding: 17px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.15s;
+}
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.taskId {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.agent {
+  font-size: 13.5px;
+  color: #b4b4b2;
+}
+
+.stateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.hash {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #9a9a98;
+}
+
+.action {
+  justify-self: end;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: #a8a8a6;
+  transition: color 0.2s;
+}
+.action:hover {
+  color: #f6f5f3;
+}
+
+/* ---------- loading skeleton ---------- */
+
+.skeletonRow {
+  display: grid;
+  gap: 16px;
+  padding: 17px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.skeletonBar {
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  display: inline-block;
+}
+
+.loadingCaption {
+  padding: 20px 4px;
+  font-size: 12.5px;
+  color: #6e6e6c;
+}
+
+/* ---------- empty / no-results / error states ---------- */
+
+.stateBlock {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 72px 4px;
+  text-align: center;
+}
+
+.stateTitle {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: #f6f5f3;
+}
+
+.stateBody {
+  font-size: 14px;
+  color: #8c8c8a;
+  margin: 10px auto 0;
+  max-width: 380px;
+}
+
+.stateBodyWide {
+  font-size: 14px;
+  color: #8c8c8a;
+  margin: 10px 0 0;
+}
+
+.errorTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f45b45;
+}
+
+.errorDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f45b45;
+}
+
+.stateButtonPrimary {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 22px;
+  padding: 11px 20px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  border: none;
+  cursor: pointer;
+}
+
+.stateButtonGhost {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 22px;
+  padding: 11px 20px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+}

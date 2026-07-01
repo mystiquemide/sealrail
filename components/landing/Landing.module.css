@@ -1,0 +1,672 @@
+/* Sealrail landing page — ported from Sealrail Landing.dc.html (Claude Design import) */
+
+.page {
+  overflow-x: hidden;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+/* ---------- 02 Hero ---------- */
+
+.heroSection {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 86vh;
+  overflow: hidden;
+  background: #e9e3d6;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.heroScrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 34%;
+  max-height: 150px;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(237, 231, 220, 0.92), rgba(237, 231, 220, 0));
+  pointer-events: none;
+}
+
+.navHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: clamp(15px, 2.4vw, 26px) clamp(20px, 4vw, 54px);
+}
+
+.navBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navBrandText {
+  font-weight: 600;
+  font-size: clamp(15px, 1.4vw, 18px);
+  letter-spacing: -0.01em;
+  color: #2c2c2b;
+}
+
+.navLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(13px, 1.9vw, 30px);
+  font-size: clamp(11.5px, 1.05vw, 13.5px);
+  color: #4a4843;
+}
+
+.navLink {
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.navLink:hover {
+  color: #080808;
+}
+
+.navCta {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 9px 18px;
+  background: #1b1b1a;
+  color: #f6f5f3;
+  border-radius: 3px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.navCta:hover {
+  opacity: 0.85;
+}
+
+.heroCtaWrap {
+  position: absolute;
+  left: clamp(20px, 9.4%, 140px);
+  bottom: clamp(18px, 7%, 72px);
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(8px, 0.9vw, 12px);
+}
+
+.heroCtaBase {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: clamp(10px, 1.1vw, 13px) clamp(16px, 1.7vw, 24px);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: clamp(12px, 1.15vw, 14.5px);
+}
+
+.heroCtaPrimary {
+  composes: heroCtaBase;
+  background: #1b1b1a;
+  color: #f6f5f3;
+  transition: opacity 0.2s;
+}
+.heroCtaPrimary:hover {
+  opacity: 0.85;
+}
+
+.heroCtaSecondary {
+  composes: heroCtaBase;
+  background: rgba(249, 248, 246, 0.72);
+  color: #2c2c2b;
+  border: 1px solid rgba(44, 44, 43, 0.3);
+  backdrop-filter: blur(2px);
+  transition: border-color 0.2s;
+}
+.heroCtaSecondary:hover {
+  border-color: rgba(44, 44, 43, 0.6);
+}
+
+/* ---------- shared section shells ---------- */
+
+.sectionPaper {
+  background: #f9f8f6;
+  color: #2c2c2b;
+}
+
+.sectionPaperTop {
+  background: #f9f8f6;
+  color: #2c2c2b;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sectionGray {
+  background: #f0efed;
+  color: #2c2c2b;
+}
+
+.sectionBlack {
+  background: #080808;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(72px, 8vw, 120px) clamp(20px, 5vw, 48px);
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #9a968e;
+}
+
+.eyebrowDark {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.h2Serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(32px, 4.6vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin: 18px 0 0;
+  max-width: 760px;
+}
+
+.h2SerifLight {
+  composes: h2Serif;
+  color: #f6f5f3;
+  max-width: 780px;
+}
+
+/* ---------- 03 Product family ---------- */
+
+.familyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  margin-top: 56px;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.familyCard {
+  background: #f9f8f6;
+  padding: 34px 30px;
+}
+
+.familyCardLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9a968e;
+}
+
+.familyCardTitle {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 24px;
+  margin: 16px 0 0;
+}
+
+.familyCardBody {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #5c5a55;
+  margin: 12px 0 0;
+}
+
+/* ---------- 04 Proof flow ---------- */
+
+.flowWrap {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 0;
+  margin-top: 64px;
+}
+
+.flowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.flowStep {
+  position: relative;
+  flex: 1 1 180px;
+  min-width: 160px;
+  padding-right: 18px;
+}
+
+.flowStepNum {
+  position: relative;
+  display: inline-block;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #080808;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f6f5f3;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 25px;
+  text-align: center;
+}
+
+.flowStepTitle {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: #f6f5f3;
+  margin: 18px 0 0;
+  line-height: 1.2;
+}
+
+.flowStepBody {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #9a9a98;
+  margin: 10px 0 0;
+}
+
+/* ---------- 05 Scale strip ---------- */
+
+.scaleLead {
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 3.4vw, 38px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0 0 48px;
+  max-width: 640px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.metricCard {
+  background: #f0efed;
+  padding: 30px 26px;
+}
+
+.metricValue {
+  font-family: var(--font-serif);
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.metricLabel {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #6a6862;
+  margin: 14px 0 0;
+}
+
+/* ---------- 06 First production vertical ---------- */
+
+.verticalWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(40px, 5vw, 80px);
+}
+
+.verticalCol {
+  flex: 1 1 420px;
+  min-width: 300px;
+}
+
+.verticalTitle {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  margin: 18px 0 0;
+  max-width: 520px;
+}
+
+.verticalBody {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #5c5a55;
+  margin: 22px 0 0;
+  max-width: 480px;
+}
+
+.verticalList {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.verticalItem {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.verticalItemNum {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #9a968e;
+  width: 22px;
+}
+
+.verticalItemLabel {
+  font-size: 15.5px;
+  color: #2c2c2b;
+}
+
+/* ---------- 07 Proof explorer preview ---------- */
+
+.proofHeaderRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.proofLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #a8a8a6;
+  transition: color 0.2s;
+}
+.proofLink:hover {
+  color: #f6f5f3;
+}
+
+.proofArrow {
+  font-family: var(--font-mono);
+}
+
+.proofTableWrap {
+  margin-top: 44px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.proofGridCols {
+  grid-template-columns: 1.1fr 1.2fr 1.1fr 1.4fr 1fr;
+}
+
+.proofTableHead {
+  display: grid;
+  gap: 16px;
+  padding: 14px 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.proofRow {
+  display: grid;
+  gap: 16px;
+  padding: 18px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.15s;
+}
+.proofRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.proofTask {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.proofAgent {
+  font-size: 13.5px;
+  color: #b4b4b2;
+}
+
+.proofMode {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f2b84b;
+}
+
+.proofHash {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #9a9a98;
+}
+
+.proofPayment {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.proofDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ---------- 08 TEE verification ---------- */
+
+.teeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.teeBadgeAmber {
+  border: 1px solid rgba(154, 107, 18, 0.35);
+  color: #8a6314;
+}
+
+.teeBadgeNeutral {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #5c5a55;
+}
+
+.teeBadgeGreen {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #3f7e3f;
+}
+
+.teeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ---------- 09 Final CTA ---------- */
+
+.finalCtaTitle {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(36px, 5.6vw, 68px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 0;
+}
+
+.finalCtaButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 38px;
+}
+
+.btnWhite {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 28px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 15px;
+  transition: opacity 0.2s;
+}
+.btnWhite:hover {
+  opacity: 0.85;
+}
+
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 28px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 15px;
+  transition: border-color 0.2s;
+}
+.btnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- 10 Footer ---------- */
+
+.footerInner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(56px, 6vw, 88px) clamp(20px, 5vw, 48px) 40px;
+}
+
+.footerTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px 64px;
+  justify-content: space-between;
+}
+
+.footerBrandCol {
+  flex: 1 1 260px;
+  min-width: 240px;
+  max-width: 340px;
+}
+
+.footerBrandRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.footerBrandText {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.footerTagline {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.35;
+  color: #2c2c2b;
+  margin: 18px 0 0;
+}
+
+.footerSub {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #7a776f;
+  margin: 12px 0 0;
+}
+
+.footerCols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px 56px;
+}
+
+.footerColHead {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9a968e;
+}
+
+.footerColLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 18px;
+}
+
+.footerLink {
+  font-size: 13.5px;
+  color: #5c5a55;
+  transition: color 0.2s;
+}
+.footerLink:hover {
+  color: #2c2c2b;
+}
+
+.footerBottom {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9a968e;
+}
+
+.footerBottomLinks {
+  display: inline-flex;
+  gap: 20px;
+}
+
+.footerBottomLinks a {
+  transition: color 0.2s;
+}
+.footerBottomLinks a:hover {
+  color: #2c2c2b;
+}

@@ -10,7 +10,7 @@ Positioning: No Proof without a Payment.
 ## Phase status
 
 - DESIGN.md: approved by Mide.
-- Frontend UI plan: written, not started.
+- Frontend UI: Phase N complete. All 19 Claude Design screens implemented in Next.js and verified in-browser, plus a branded favicon. See "Phase N: Frontend implementation" section below for the full breakdown.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
 - Backend audit report: produced at docs/audits/SEALRAIL_BACKEND_AUDIT.md and docs/audits/SEALRAIL_BACKEND_AUDIT.docx for audited commit b7df591.
 - Backend re-audit report: produced at docs/audits/SEALRAIL_BACKEND_REAUDIT.md and docs/audits/SEALRAIL_BACKEND_REAUDIT.docx for audited commit 312d3a4. Grade B+; A/A+ target not met until mainnet fail-closed behavior, placeholder proof advancement, and payment claim identity proof are fixed.
@@ -42,9 +42,242 @@ Files created in backend/ and docs/:
 
 Full test suite: 591 tests, 12 files, all passing. TypeScript check (tsc --noEmit): clean.
 
+## Phase N: Frontend implementation (in progress)
+
+Landing page (`/`) built in Next.js App Router (React 19, Tailwind v4, CSS Modules), sourced directly from a Claude Design (claude.ai/design) import rather than hand-building from DESIGN.md wireframes.
+
+Design source: claude.ai/design project `43c0e1ca-8a00-4165-87dc-efa58c1f211d` ("Design documentation request"), file `Sealrail Landing.dc.html`, pulled via the DesignSync MCP tool (`get_project` / `list_files` / `get_file`).
+
+That same design project already contains finished `.dc.html` designs for every other app screen, ready to pull the same way when their turn comes: `Sealrail Agent Profile.dc.html`, `Sealrail Agents.dc.html`, `Sealrail Marketplace Listing.dc.html`, `Sealrail Marketplace.dc.html`, `Sealrail Owner Dashboard.dc.html`, `Sealrail Owner Register Agent.dc.html`, `Sealrail Proof Detail.dc.html`, `Sealrail Proofs.dc.html`, `Sealrail Run.dc.html`.
+
+Files created/modified in this pass:
+
+| File | Purpose |
+|---|---|
+| `public/hero-sealkeeper.jpg` | Hero image (The Sealkeeper mascot on the payment rail), supplied by Mide |
+| `components/landing/Landing.module.css` | All landing page styles ported 1:1 from the `.dc.html` inline styles (colors, clamp() responsive type, hover states) |
+| `components/brand/SealrailMark.tsx` | Reusable logo SVG (nav + footer) |
+| `components/landing/Hero.tsx` | Full-bleed hero image with nav overlay + dual CTA |
+| `components/landing/ProductFamily.tsx` | 3-card "Proof Tasks / Verifier Rail / Casper Anchor" section |
+| `components/landing/ProofFlow.tsx` | 5-step "how it works" rail with connecting line |
+| `components/landing/ScaleStrip.tsx` | 4-metric trust strip |
+| `components/landing/FirstVertical.tsx` | RWA invoice verification narrative |
+| `components/landing/ProofExplorerPreview.tsx` | Sample proof table (payable/blocked states) |
+| `components/landing/TeeVerification.tsx` | TEE Verification Mode / TEE Verification / Casper Anchored badges |
+| `components/landing/FinalCta.tsx` | Closing CTA section |
+| `components/landing/Footer.tsx` | 4-column footer with brand block |
+| `app/page.tsx` | Rewritten to compose all landing sections (was untouched create-next-app boilerplate before this) |
+| `app/layout.tsx` | Swapped Geist/Geist_Mono for Inter + JetBrains Mono (next/font/google), real page metadata |
+| `app/globals.css` | Added Sealrail palette tokens (`--sr-black`, `--sr-paper`, `--sr-proof-green`, etc.) and `--font-serif` |
+| `tsconfig.json` | Added `backend` and `contracts` to `exclude` — root tsconfig had no exclusion for the backend folder, which broke `next build`/`tsc` once backend code existed (pre-existing gap, not previously hit since frontend was untouched until now) |
+
+Verification: `npm run build` (Turbopack, typecheck + static generation) passes clean, `npm run lint` passes clean, `npm run dev` checked visually in Chrome at desktop (1440px) and mobile (390px) width — hero, all 8 sections, and footer render pixel-correct against the design. One hydration console warning observed is a false positive from a Chrome extension injecting `bis_skin_checked` attributes, not app code.
+
+### `/run` (task runner)
+
+Built from `Sealrail Run.dc.html` in the same Claude Design project. This one is a real interactive state machine (not a static section), ported 1:1 from the design's embedded component logic:
+
+| File | Purpose |
+|---|---|
+| `components/app/AppNav.tsx` + `.module.css` | Reusable dark sticky app nav (distinct from the landing page's overlay nav), used by `/run` and future app screens |
+| `components/run/run-state.ts` | Pure functions: `computeSteps`, `computeButtonVariants`, `computeButtonLabels`, `computeOutput`, `computeHashes` — derive all UI state from a single `stage` value (0-6, 99=failed) |
+| `components/run/TaskForm.tsx` | Read-only invoice fields (fixed demo scenario, matches source) + 4 numbered stage buttons + "simulate a failed proof" checkbox |
+| `components/run/LiveProofRail.tsx` | Vertical timeline, 5 steps, pulsing dot on the currently-running step |
+| `components/run/VerifiedOutputPanel.tsx`, `ProofHashesPanel.tsx` | Risk score/decision/reason panel and WASM/attestation/Casper-anchor hash panel with copy-bundle button |
+| `app/run/page.tsx` | `"use client"` page holding the state machine (stage/simulateFail/copied in refs+state to avoid stale-closure bugs in the `setTimeout` chains) and composing the above |
+
+Timing and transitions match the source exactly: createTask (instant) → runAgent (1300ms to ready) → verify (1500ms to verified/failed) → unlock. "Run full demo" chains all four with the same delays as the design (250/900/2900/5100ms). Verified in-browser: initial state and a full run-through both render correctly (colors, labels, hash values, enabled/disabled states all match). Copy-to-clipboard button wasn't fully click-verified in-browser — clicking it appears to trigger a native Chrome clipboard-permission dialog that blocks CDP automation (recovered fine after a reload); the handler itself has a try/catch around `navigator.clipboard.writeText`, matching the source design's own error handling, so this is a test-environment limitation, not a known app bug.
+
+### `/marketplace`
+
+Built from `Sealrail Marketplace.dc.html`. Client component with 3-way filtering (category/mode/status selects) over a small typed listings array.
+
+| File | Purpose |
+|---|---|
+| `components/app/AppNav.tsx` (refactored) | Now takes `active`, `links`, `cta` props instead of being hardcoded, since each screen's nav shows a different active-page label and CTA variant (ghost vs primary white). Run page's usage relies on the defaults, which match its original hardcoded behavior exactly |
+| `components/marketplace/marketplace-data.ts` | `Listing` type, `ALL_LISTINGS` (currently just Invoice Risk Agent, matching the source — DeFi/Research are explicitly "in development, not shown" per the footnote), `filterListings`, `emptyReasonFor` |
+| `components/marketplace/MarketplaceFilters.tsx` | Category/Proof mode/Status native `<select>` filter bar |
+| `components/marketplace/MarketplaceListingTable.tsx` | Listing table + truthful empty state with "Clear filters" |
+| `app/marketplace/page.tsx` | `"use client"` page holding filter state |
+
+Listing row links to `/marketplace/[listingId]` (e.g. `/marketplace/listing_invoice_risk`), matching the DESIGN.md route map — that page doesn't exist yet, will resolve once built.
+
+Verified: initial render confirmed pixel-correct in-browser (nav, header, disabled "Register agent"/"Create verifier" tooltips, filter bar, single live listing row, footnote). Did **not** get to visually confirm the filter dropdowns changing the listing/empty state in-browser — native `<select>` popups block CDP screenshot capture in this environment the same way the clipboard permission dialog did on `/run` (confirmed: both a real click-to-open and a keyboard focus+keypress on the select froze `Page.captureScreenshot`; `navigate` reliably recovers the tab both times). The filtering logic itself (`filterListings`/`emptyReasonFor`) is a direct, unmodified port of the source's own filter function, not something built from scratch, so this is a test-environment gap rather than an unverified implementation.
+
+### `/marketplace/[listingId]`
+
+Built from `Sealrail Marketplace Listing.dc.html`. Server component (no interactivity beyond links), dynamic route.
+
+| File | Purpose |
+|---|---|
+| `components/app/AppNav.tsx` (extended again) | Added `maxWidth` prop — this page's nav container is 1080px, not the usual 1240px |
+| `components/marketplace-listing/listing-data.ts` | `getListingDetail(listingId)` keyed lookup, returns `undefined` for unknown ids (only `listing_invoice_risk` exists, matching the one real marketplace row) |
+| `components/marketplace-listing/ListingDetail.module.css` | Styles |
+| `app/marketplace/[listingId]/page.tsx` | Async server component (`params` is a `Promise` in Next 16), renders listing header/task-input/agent-verifier panels/recent-proofs table, or a truthful "Listing not found" state for unknown ids (not in the source design, added to avoid crashing on bad ids — consistent with the project's "no fake records" rule) |
+
+Note: the recent-proofs row currently links to `/proofs/INV-1024` (task-id-based slug) as a placeholder — when `/proofs` and `/proofs/[proofId]` get built next, reconcile the id scheme (the proof's own id is `proof_1024`, not the task id) across all three fixtures.
+
+Verified end-to-end in-browser: listing detail renders pixel-correct (header, stats, task input panel, agent/verifier panel, recent proofs table), and the not-found path for an invalid listing id renders the truthful empty state correctly with a working back link.
+
+### `/agents`
+
+Built from `Sealrail Agents.dc.html`. Static server component, no interactivity beyond links.
+
+| File | Purpose |
+|---|---|
+| `components/agents/agents-data.ts` | `AGENTS` array — Invoice Risk Agent (active, links to `/run` and `/agents/agent_invoice_risk`) plus two "Planned" placeholders (DeFi Risk, Research) with no actions, matching source |
+| `components/agents/AgentRow.tsx` | Row: name, status tag, task/verifier/mode meta, conditional action buttons |
+| `app/agents/page.tsx` | Composes `AppNav` (active="Agents") + header + row list |
+
+Note: the active agent's "View proofs" button links to `/agents/agent_invoice_risk` (the agent profile page, not a real proofs-filtered view) — that's what the source design literally does (label says "View proofs", href goes to the profile page), kept as-is rather than reinterpreted.
+
+Verified pixel-correct in-browser: active/planned status colors, conditional meta fields (verifier/mode only shown for agents that have one), conditional action buttons (only shown for the active agent).
+
+### `/agents/[agentId]`
+
+Built from `Sealrail Agent Profile.dc.html`. Async server component, dynamic route, same shape as the marketplace listing page (back link, header+stats+actions, two-panel grid, history table).
+
+| File | Purpose |
+|---|---|
+| `components/agent-profile/agent-profile-data.ts` | `getAgentProfile(agentId)` keyed lookup, only `agent_invoice_risk` exists |
+| `components/agent-profile/AgentProfile.module.css` | Styles |
+| `app/agents/[agentId]/page.tsx` | Reputation panel (score, verified runs, paid tasks, failed proofs, total earned) + Verifiers panel (schema, WASM hash) + proof history table; truthful "Agent not found" for unknown ids |
+
+Same open item as the listing page: proof history hrefs use task-id slugs (`/proofs/INV-1024`) as placeholders pending the real `/proofs/[proofId]` id scheme.
+
+Verified pixel-correct in-browser: header stats, reputation score, verifier schema panel, and proof history table (paid=green/blocked=red) all match.
+
+### `/owner`
+
+Built from `Sealrail Owner Dashboard.dc.html`. Static server component.
+
+| File | Purpose |
+|---|---|
+| `components/owner/owner-data.ts` | `OWNED_AGENTS`, `EARNINGS`, `INCOMING_TASKS` fixtures |
+| `components/owner/OwnerDashboard.module.css` | Styles |
+| `app/owner/page.tsx` | Header with 1 enabled action ("Register agent" -> `/owner/agents/new`) + 2 disabled-with-tooltip actions ("Create listing", "Register verifier" — both explicitly "coming soon" in the source), owned-agents panel, earnings panel, incoming tasks table |
+
+Verified pixel-correct in-browser: nav (active="Owner", Agents/Marketplace links, primary Start run), disabled action tooltips, earnings color-coding (unlockable=amber, blocked=red), incoming tasks table (pending=amber, blocked=red).
+
+### `/owner/agents/new`
+
+Built from `Sealrail Owner Register Agent.dc.html`. Client component with real client-side form validation and a success state (frontend-only — no backend call yet, matching Phase N scope).
+
+| File | Purpose |
+|---|---|
+| `components/app/AppNav.tsx` (extended again) | `cta` prop now accepts `null` to render no CTA at all — this page's nav is just Owner/Agents links, no button |
+| `components/owner-register-agent/register-agent-constants.ts` | `CATEGORY_OPTIONS`, `VERIFIER_OPTIONS` (only `verifyInvoiceRisk` exists), `INITIAL_FORM_STATE`, `validateForm()` — validation order matches source exactly (name -> owner wallet -> verifier -> price -> recipient) |
+| `components/owner-register-agent/RegisterAgent.module.css` | Styles |
+| `app/owner/agents/new/page.tsx` | Two-panel form (Agent details / Verifier and payment), inline validation error banner, success card with "Register another agent" reset |
+
+Verified end-to-end in-browser: submitting empty form shows "Agent name is required.", fixing that reveals the next validation error in order ("Enter a valid price amount." for an empty price field), and a fully filled form submits to the success card with correct echoed values and a green "Published" badge.
+
+### `/workflows` and `/workflows/[workflowId]`
+
+Built from `Sealrail Workflows.dc.html` (static list) and `Sealrail Workflow Detail.dc.html` (interactive state machine, same ref-based stage pattern as `/run`).
+
+| File | Purpose |
+|---|---|
+| `components/workflows/workflows-data.ts`, `Workflows.module.css` | Static list — one `Invoice Settlement` workflow, "Create workflow" disabled with tooltip |
+| `components/workflow-detail/workflow-detail-state.ts` | Pure functions: `computeSteps`, `computeSplits`, `computeBundleText`, `computeRunButton` — single linear `stage` 0-5 (no failure branch, unlike `/run`) |
+| `components/workflow-detail/StepRuns.tsx`, `PaymentSplitTable.tsx`, `FinalProofBundle.tsx` | Presentational pieces |
+| `app/workflows/[workflowId]/page.tsx` | Client component; uses React's `use()` hook to unwrap the `params` Promise (can't `await` in a client component) instead of the `async` pattern used on the server-component dynamic routes |
+
+Timing matches source exactly: run -> 1400ms -> step2 running -> 2800ms -> step3 running -> 4200ms -> all verified -> 5000ms -> bundle ready. Payment splits unlock progressively as steps verify (60% at step 2, 30% at step 3, 10% at step 4).
+
+Verified end-to-end in-browser: list page renders correctly; detail page's full run sequence was watched through to completion (step dots pulse then turn green, splits unlock in order, final bundle populates with all 5 hash lines, "Copy bundle" button becomes enabled). Did not click "Copy bundle" itself, consistent with the known clipboard-dialog automation limitation noted on `/run`.
+
+### `/verifiers` and `/verifiers/new`
+
+Built from `Sealrail Verifiers.dc.html` (static list, same shape as `/workflows`) and `Sealrail Register Verifier.dc.html` (form with validation + a "Test verifier" 1100ms-timer button + success state, same shape as `/owner/agents/new`).
+
+| File | Purpose |
+|---|---|
+| `components/verifiers/verifiers-data.ts`, `Verifiers.module.css` | Static list — one `verifyInvoiceRisk` template |
+| `components/register-verifier/register-verifier-constants.ts` | `INITIAL_VERIFIER_FORM_STATE`, `validateVerifierForm()` (order: name -> task type -> WASM hash -> owner wallet) |
+| `app/verifiers/new/page.tsx` | Two-panel form + independent "Test verifier" flow (separate from submit validation) that shows a green "Test passed" result panel |
+
+Verified in-browser: list page matches design; register form matches design; clicked "Test verifier" and confirmed the "Test passed / sample_input -> success: true" result panel appears after the timer. Validation/success-state behavior not re-tested by click (identical pattern to `/owner/agents/new`, already verified end-to-end there).
+
+### `/proofs` and `/proofs/[proofId]`
+
+Built from `Sealrail Proofs.dc.html` (search + status/mode filters + a "Demo state" selector for previewing loading/empty/no-results/error) and `Sealrail Proof Detail.dc.html` (per-task record with copy-bundle). This confirmed the routing scheme used by every earlier page that links here: **proof detail is keyed by task ID** (`INV-1024`, not `proof_1024`) — so the placeholder hrefs already used on marketplace listing, agent profile, and owner dashboard (`/proofs/INV-1024` etc.) were correct all along.
+
+| File | Purpose |
+|---|---|
+| `components/proofs/proofs-data.ts` | `ALL_PROOF_ROWS` (3 fixture rows), `filterProofRows()`, `computeProofsView()` — derives showTable/showLoading/showEmpty/showNoResults/showError from a `demoState` value plus the real filtered-to-zero case |
+| `components/proofs/ProofsFilterBar.tsx`, `ProofsTable.tsx` | Filter bar + 5-state table (loaded/loading-skeleton/empty/no-results/error) |
+| `components/proof-detail/proof-detail-data.ts` | `getProofDetail(taskId)` — 3 full records (INV-1024 verified/payable, INV-1025 pending/blocked, INV-1026 failed/blocked) |
+| `app/proofs/[proofId]/page.tsx` | Client component (`use()` for params), payment-state panel, agent-output panel, Blocky verification panel, Casper anchor panel, raw JSON bundle with copy button |
+
+Verified in-browser: proofs list renders all 3 rows correctly; search filter narrows to matching task id; proof detail page confirmed for both INV-1024 (verified/payable, green) and INV-1026 (failed/blocked, red) — record lookup correctly switches per task id, payment/agent-output/verification/Casper-anchor panels and the raw JSON bundle all match the design.
+
+### `/api-keys`
+
+Built from `Sealrail API Keys.dc.html` — the most stateful page yet: a two-stage modal (create form -> one-time secret reveal) plus per-row revoke, all frontend-only.
+
+| File | Purpose |
+|---|---|
+| `components/api-keys/api-keys-types.ts` | `ApiKey` type, `ALL_SCOPES`, `INITIAL_KEYS` (one seed key), `generateKeySecret()` — real random hex generation matching source's `randomHex()` |
+| `components/api-keys/ApiKeyTable.tsx` | List with dimmed/disabled state once revoked |
+| `components/api-keys/CreateApiKeyModal.tsx` | Two stages: scoped checkbox form with validation, then the generated-secret reveal panel |
+| `app/api-keys/page.tsx` | Holds keys array + modal stage state; `createKey()` validates name + at least one scope before generating and prepending the new key |
+
+Verified end-to-end in-browser: opened the modal, typed a name, submitted with `tasks:write` pre-checked, got a real generated secret (`sr_live_e311d905...`) in the "Shown once" panel while the new key already appeared in the table behind it with "Never" last-used, clicked "Done", then clicked "Revoke" on that key and confirmed the row dimmed with "Revoked" (disabled) while the original seed key stayed unaffected. Didn't click "Copy secret" itself (known clipboard-dialog automation limitation).
+
+### `/docs`, `/privacy`, `/terms`, `/status` — all 19 design screens now implemented
+
+Docs/Privacy/Terms share a distinct light "warm paper" theme (`#F9F8F6` background, `#2C2C2B` text) that no other app page uses — a separate nav and page-shell were needed since `AppNav` is dark-theme-only. Status stays on the dark theme and reuses `AppNav`.
+
+| File | Purpose |
+|---|---|
+| `components/docs-legal/DocsNav.tsx` + `.module.css` | Light-theme nav (mirrors `AppNav`'s API: `active`, `links`, optional `cta`) |
+| `components/docs-legal/DocsLegal.module.css` | Shared styles for all three light pages (header, doc sections, numbered legal sections, footer) |
+| `components/docs-legal/LegalTextPage.tsx` | Shared template for `/privacy` and `/terms` (identical shape, just different `sections` data) — neither page shows an active nav label, matching source |
+| `app/docs/page.tsx` | Its own layout (core loop, architecture diagram box, dark API-quickstart box with amber `POST` labels, TEE path paragraph) |
+| `components/status/Status.module.css`, `app/status/page.tsx` | Dark theme, reuses `AppNav`; 5 health rows, each a text label + colored dot (not dot-only, consistent with the project's "status must include text" rule) |
+
+Verified all 4 in-browser: Docs (nav, hero, core loop, architecture box, API box, TEE section, footer all correct), Privacy and Terms (nav with no active label, numbered sections rendering title+body correctly), Status (dark nav with active "Status" label, all 5 rows green/Online-Ready-Connected-Deployed-Connected).
+
+## All 19 Claude Design screens are now implemented in the Next.js app
+
+Landing, Run, Marketplace, Marketplace Listing, Agents, Agent Profile, Owner Dashboard, Owner Register Agent, Workflows, Workflow Detail, Verifiers, Register Verifier, Proofs, Proof Detail, API Keys, Docs, Privacy, Terms, Status. Every page was pulled directly from the `claude.ai/design` project (`43c0e1ca-8a00-4165-87dc-efa58c1f211d`) via the `DesignSync` tool and verified pixel-correct in-browser (Chrome via claude-in-chrome), not just built from memory of the design system.
+
+Only remaining gap from the original DESIGN.md route map: `/owner/agents/[agentId]` (manage-agent) has no corresponding `.dc.html` file in the design project, so it hasn't been built — everything else the design project covers now has a matching, verified Next.js route.
+
+### Field-addition sync (post-initial-build)
+
+Mide (via another AI session) added field-level updates to 4 already-built screens in the same Claude Design project (no new pages). Pulled the refreshed `.dc.html` files and updated the implementations:
+
+- **Status**: added "LLM provider configured" (Yes) and "LLM provider health" (OK) rows between Backend API and TEE verifier.
+- **Agent Profile**: added a blue "Runtime" stat badge (e.g. "LLM WORKER") next to Status, and a row of task-type tag chips (`invoice_risk_check`, `invoice_risk_check_batch`) below the stat row. Added `runtimeType`/`supportedTaskTypes` to `AgentProfile` type in `agent-profile-data.ts`.
+- **Run**: added a "Flags" row under Reason in the Verified Output panel (amber chips, e.g. `due_date_variance`, or an empty-state message before the agent runs), plus "Output hash" (new top row) and "Payment unlock state" (new bottom row, text+dot) in the Proof Hashes panel. `run-state.ts`'s `computeOutput`/`computeHashes` extended accordingly; `PROOF_BUNDLE` now includes `flags` and `output_hash`.
+- **Owner Register Agent**: added an "Execution type" segmented button group (First-party LLM worker / External webhook / Manual API submitter) with a conditional field (webhook URL or submitter ID) shown based on selection, plus an "Output schema" textarea in the Verifier panel. Success summary now shows Execution type and Output schema rows. `register-agent-constants.ts` extended with `ExecutionType`, `EXECUTION_TYPE_LABELS`, `EXECUTION_TYPE_OPTIONS`, and `outputSchemaSummary()`. No new required-field validation was added for these fields, matching the source design exactly (the user was asked if they wanted it and declined implicitly by not confirming).
+
+All 4 verified end-to-end in-browser (Status rows, Agent Profile badge+tags, Run flags/output-hash/payment-state after a full demo run, Register Agent's three execution-type states plus a full submit showing the new success-summary rows).
+
+### `/docs` full rebuild (sidebar-nav docs site)
+
+Mide had the Claude Design assistant rebuild `Sealrail Docs.dc.html` from a simple 4-section page into a full 16-section sidebar-nav documentation site (content sourced from `uploads/sealrail_frontend_docs_content.md` in the design project). Rebuilt the Next.js `/docs` page from scratch to match — this is now by far the largest page in the app.
+
+| File | Purpose |
+|---|---|
+| `components/docs/docs-content.ts` | All content as typed data — quickstart steps w/ real curl-style request/response JSON, core concepts, product flow + state machine table, LLM runtime behavior, full API reference + endpoint groups, API examples, frontend screen->API integration map, safety guarantees + unsafe-value list, error code table, status endpoints, deployment env vars + checklist, security principles, changelog, glossary, `llms.txt` content |
+| `components/docs/CodeBlock.tsx`, `BulletList.tsx`, `DocsSidebar.tsx` | Shared primitives reused across every section (dark JetBrains Mono code panel, dot-bullet list, sticky "on this page" jump-link nav) |
+| `components/docs/HeroSection.tsx` | Overview: headline, positioning badge, 4 CTA buttons, flow diagram code block, "who this is for" bullets |
+| `components/docs/sections.tsx` | The other 15 sections as named exports in one file (Quickstart, Core concepts, Product flow, LLM runtime, API reference, API examples, Frontend integration, Safety, Errors, Status & readiness, Deployment, Security, Changelog, Glossary, AI-readable docs) — one file rather than 15 near-identical tiny files |
+| `components/docs-legal/DocsLegal.module.css` (extended) | Added ~15 new class groups: hero badge, code block, info box, bullet list, sidebar+content flex layout, two-col card grid, key-value row grid, tag chips (neutral/accent/mono-danger variants) |
+| `app/docs/page.tsx` | Rewritten: hero full-width, then a sticky sidebar + content two-column layout below, all 15 sections in the content column, footer unchanged. Container widened to 1160px (from 860px) to match the new design |
+
+The design's "Layout: sidebar toggle" prop was a Claude Design canvas preview control (for reviewing with/without sidebar), not a real product feature — skipped; sidebar is always shown, matching the design's own default.
+
+Verified in-browser: hero (badge, 4 CTAs, flow code block), sticky sidebar tracks scroll correctly across all 16 anchor links, quickstart's numbered steps + code blocks, API reference table, glossary key-value rows, and the safety section's italic quote box + green bullets + dark mono danger chips all render pixel-correct.
+
+Next phase per the roadmap: **Phase O** — wire all these frontend-only fixtures to the real backend API (which is separately complete and A+ audited, see the Backend section above), then P (Casper testnet deploy), Q (real TEE hookup), R (deployment), S (demo video), T (submission).
+
 ## Next Phase
 
-Phase N: Frontend implementation (per DESIGN.md frontend UI plan). Backend is fully complete and A+ audited.
+Phase N is done — all 19 Claude Design screens are implemented, verified, and pushed to GitHub (commit history below). Backend is fully complete and A+ audited (631 tests). Next up is Phase O (wire the frontend's typed fixtures to the real backend API).
 
 ### Post-frontend plan
 

@@ -1,0 +1,145 @@
+/* Sealrail /workflows page — ported from Sealrail Workflows.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+.headerWrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(40px, 5vw, 64px) clamp(20px, 5vw, 48px) clamp(28px, 3vw, 36px);
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.headerCopy {
+  max-width: 600px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.8vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 14px 0 0;
+}
+
+.disabledAction {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 22px;
+  background: transparent;
+  color: #5c5c5a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: not-allowed;
+}
+
+/* ---------- workflow list ---------- */
+
+.listWrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.table {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.gridCols {
+  grid-template-columns: 1.6fr 0.7fr 1.2fr 0.8fr 0.7fr;
+}
+
+.tableHead {
+  display: grid;
+  gap: 16px;
+  padding: 12px 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.row {
+  display: grid;
+  gap: 16px;
+  padding: 19px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.15s;
+}
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.name {
+  font-size: 14.5px;
+  color: #f6f5f3;
+}
+
+.value {
+  font-size: 13.5px;
+  color: #b4b4b2;
+}
+
+.split {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #b4b4b2;
+}
+
+.stateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.action {
+  justify-self: end;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: #a8a8a6;
+  transition: color 0.2s;
+}
+.action:hover {
+  color: #f6f5f3;
+}
+
+.footNote {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #6e6e6c;
+  margin: 22px 4px 0;
+  max-width: 620px;
+}

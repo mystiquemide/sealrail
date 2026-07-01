@@ -1,0 +1,330 @@
+/* Sealrail /owner/agents/new page — ported from Sealrail Owner Register Agent.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 56px) clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #8c8c8a;
+  transition: color 0.2s;
+}
+.backLink:hover {
+  color: #f6f5f3;
+}
+
+.backArrow {
+  font-family: var(--font-mono);
+}
+
+.headerBlock {
+  margin-top: 16px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: #f6f5f3;
+  margin: 14px 0 0;
+}
+
+/* ---------- form panels ---------- */
+
+.panelsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-top: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel {
+  flex: 1 1 340px;
+  min-width: 280px;
+  background: #111111;
+  padding: 24px 26px;
+}
+
+.panelLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.fieldRowPair {
+  display: flex;
+  gap: 12px;
+}
+
+.fieldRowPair > div {
+  flex: 1 1 0;
+}
+
+.formLabel {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8c8c8a;
+  margin-bottom: 6px;
+}
+
+.formInput {
+  width: 100%;
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 10px 12px;
+  color: #e4e4e2;
+  font-size: 13.5px;
+  font-family: inherit;
+}
+
+.formInputMono {
+  composes: formInput;
+  font-family: var(--font-mono);
+}
+
+.formTextarea {
+  composes: formInput;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.formInput:focus,
+.formTextarea:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.formSelect {
+  composes: formInput;
+}
+
+.fieldNote {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #5c5c5a;
+  margin: 8px 0 0;
+}
+
+.execTypeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.execTypeButton {
+  padding: 9px 13px;
+  border-radius: 3px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.execTypeConditionalInput {
+  composes: formInputMono;
+  margin-top: 10px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: #b4b4b2;
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: #ff2d2d;
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------- validation + submit ---------- */
+
+.validationError {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: rgba(244, 91, 69, 0.08);
+  border: 1px solid rgba(244, 91, 69, 0.3);
+  border-radius: 4px;
+  font-size: 13px;
+  color: #f45b45;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: #ffffff;
+  color: #080808;
+  border: none;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.submitButton:hover {
+  opacity: 0.85;
+}
+
+/* ---------- success state ---------- */
+
+.successCard {
+  margin-top: 32px;
+  background: #111111;
+  border: 1px solid rgba(100, 217, 107, 0.3);
+  border-radius: 6px;
+  padding: 32px;
+}
+
+.successTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64d96b;
+}
+
+.successDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64d96b;
+}
+
+.successName {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  color: #f6f5f3;
+  margin: 16px 0 0;
+}
+
+.successRows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+
+.successRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.successRowLabel {
+  font-size: 13px;
+  color: #8c8c8a;
+}
+
+.successRowValue {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.successRowValuePlain {
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.listingTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.listingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.successActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 20px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  transition: opacity 0.2s;
+}
+.btnPrimary:hover {
+  opacity: 0.85;
+}
+
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 11px 20px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.btnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}

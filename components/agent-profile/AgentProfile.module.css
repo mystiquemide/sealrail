@@ -1,0 +1,306 @@
+/* Sealrail /agents/[agentId] page — ported from Sealrail Agent Profile.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 56px) clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #8c8c8a;
+  transition: color 0.2s;
+}
+.backLink:hover {
+  color: #f6f5f3;
+}
+
+.backArrow {
+  font-family: var(--font-mono);
+}
+
+/* ---------- header ---------- */
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.8vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: #f6f5f3;
+  margin: 0;
+}
+
+.statRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 16px;
+}
+
+.statLabel {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+.statValue {
+  font-size: 13.5px;
+  color: #e4e4e2;
+  margin-top: 4px;
+}
+
+.statValueMono {
+  composes: statValue;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.taskTypeTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.taskTypeTag {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #b4b4b2;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 22px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.btnPrimary:hover {
+  opacity: 0.85;
+}
+
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 22px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+.btnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- panels ---------- */
+
+.panelsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-top: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel {
+  flex: 1 1 320px;
+  min-width: 280px;
+  background: #111111;
+  padding: 24px 26px;
+}
+
+.panelLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+}
+
+.reputationScore {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  color: #f6f5f3;
+  margin: 14px 0 0;
+}
+
+.reputationScoreOf {
+  font-size: 19px;
+  color: #7a7a78;
+}
+
+.reputationNote {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6e6e6c;
+  margin: 8px 0 0;
+}
+
+.verifierName {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: #f6f5f3;
+  margin: 16px 0 0;
+}
+
+.infoRows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.infoRowLabel {
+  font-size: 13px;
+  color: #8c8c8a;
+}
+
+.infoRowValue {
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.infoRowValueMono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #9a9a98;
+}
+
+/* ---------- proof history ---------- */
+
+.historySection {
+  margin-top: 24px;
+}
+
+.historyLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+  margin-bottom: 12px;
+}
+
+.historyTable {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.historyGridCols {
+  grid-template-columns: 1.2fr 1fr 1.4fr 1fr;
+}
+
+.historyHead {
+  display: grid;
+  gap: 16px;
+  padding: 12px 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.historyRow {
+  display: grid;
+  gap: 16px;
+  padding: 16px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.15s;
+}
+.historyRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.historyId {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #e4e4e2;
+}
+
+.historyTask {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #b4b4b2;
+}
+
+.historyVerifier {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #9a9a98;
+}
+
+.historyPayment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.historyPaymentDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}

@@ -1,0 +1,277 @@
+/* Sealrail /workflows/[workflowId] page — ported from Sealrail Workflow Detail.dc.html */
+
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #f6f5f3;
+}
+
+@keyframes srPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotPulse {
+    animation: none !important;
+  }
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 56px) clamp(20px, 5vw, 48px) clamp(56px, 7vw, 96px);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #8c8c8a;
+  transition: color 0.2s;
+}
+.backLink:hover {
+  color: #f6f5f3;
+}
+
+.backArrow {
+  font-family: var(--font-mono);
+}
+
+/* ---------- header ---------- */
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.headerCopy {
+  max-width: 600px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.8vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: #f6f5f3;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14.5px;
+  color: #b4b4b2;
+  margin: 12px 0 0;
+}
+
+.runButton {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 22px;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  border-style: solid;
+  border-width: 1px;
+  transition: opacity 0.2s;
+}
+.runButton:hover {
+  opacity: 0.85;
+}
+
+/* ---------- step runs ---------- */
+
+.section {
+  margin-top: 32px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a78;
+  margin-bottom: 12px;
+}
+
+.stepsCard {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 26px 12px;
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.stepRow:last-child {
+  border-bottom: none;
+}
+
+.stepLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stepDot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.stepName {
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: #f6f5f3;
+}
+
+.stepVerifier {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #8c8c8a;
+  margin-top: 6px;
+}
+
+.stepStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.stepStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ---------- payment split ---------- */
+
+.splitTable {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.splitGridCols {
+  grid-template-columns: 1.6fr 1.1fr 0.6fr 0.9fr;
+}
+
+.splitHead {
+  display: grid;
+  gap: 16px;
+  padding: 12px 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e6e6c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.splitRow {
+  display: grid;
+  gap: 16px;
+  padding: 16px 4px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.splitRecipient {
+  font-size: 14px;
+  color: #e4e4e2;
+}
+
+.splitRole {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #9a9a98;
+}
+
+.splitShare {
+  font-size: 13.5px;
+  color: #e4e4e2;
+}
+
+.splitState {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.splitStateDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ---------- final proof bundle ---------- */
+
+.bundleCard {
+  margin-top: 24px;
+  background: #0c0c0c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 24px 26px;
+  transition: opacity 0.4s;
+}
+
+.bundleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 7px 12px;
+  background: transparent;
+  color: #a8a8a6;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+.copyButton:hover {
+  color: #f6f5f3;
+}
+
+.bundlePre {
+  margin: 16px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #b4b4b2;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

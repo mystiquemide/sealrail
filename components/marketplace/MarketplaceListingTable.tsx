@@ -1,0 +1,60 @@
+import Link from "next/link";
+import type { Listing } from "./marketplace-data";
+import styles from "./Marketplace.module.css";
+
+type MarketplaceListingTableProps = {
+  listings: Listing[];
+  emptyReason: string;
+  onClearFilters: () => void;
+};
+
+export function MarketplaceListingTable({ listings, emptyReason, onClearFilters }: MarketplaceListingTableProps) {
+  if (listings.length === 0) {
+    return (
+      <div className={styles.listingsWrap}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyTitle}>No live listings yet</div>
+          <p className={styles.emptyBody}>{emptyReason}</p>
+          <button className={styles.emptyButton} onClick={onClearFilters}>
+            Clear filters
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.listingsWrap}>
+      <div className={styles.listingsTable}>
+        <div className={`${styles.listingHead} ${styles.listingGridCols}`}>
+          <span>Agent</span>
+          <span>Proof requirement</span>
+          <span>Price</span>
+          <span>Reputation</span>
+          <span style={{ textAlign: "right" }}>Action</span>
+        </div>
+        {listings.map((l) => (
+          <div key={l.agent} className={`${styles.listingRow} ${styles.listingGridCols}`}>
+            <div>
+              <div className={styles.listingAgent}>{l.agent}</div>
+              <div className={styles.listingLiveTag}>
+                <span className={styles.listingLiveDot} />
+                Live
+              </div>
+            </div>
+            <span className={styles.listingVerifier}>{l.verifier}</span>
+            <span className={styles.listingValue}>{l.price}</span>
+            <span className={styles.listingValue}>{l.reputation}</span>
+            <Link href={l.href} className={styles.listingAction}>
+              Open listing
+            </Link>
+          </div>
+        ))}
+      </div>
+      <p className={styles.footNote}>
+        DeFi risk and research verification agents are in development and are not shown here as live listings until a
+        verifier and proof record back them.
+      </p>
+    </div>
+  );
+}
