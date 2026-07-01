@@ -352,6 +352,23 @@ function updateProofAnchor(proofId: string, anchorHash: string): void {
   `).run(anchorHash, proofId);
 }
 
+/**
+ * Predicate: is this proof row a placeholder/dry-run stub
+ * (no real attestation, wasm, input, or output hash)?
+ * Placeholder proofs must never count as real verification,
+ * must never anchor through the normal path, and must never
+ * unlock payment.
+ */
+function isPlaceholderProof(p: ProofRow): boolean {
+  return (
+    p.attestation_hash === "attestation-hash-default" ||
+    p.attestation_hash === "attestation-hash-pending" ||
+    p.wasm_hash === "wasm-hash-default" ||
+    /^(input|output)-/.test(p.input_hash) ||
+    /^(input|output)-/.test(p.output_hash)
+  );
+}
+
 // ── Anchor integration (D4) ──────────────
 
 /**
@@ -434,13 +451,62 @@ export async function anchorTaskProof(taskId: string): Promise<{
     }
   }
 
-  // Use the first verified/anchorable proof
-  const proof = existingProofs.find(
-    (p) => p.status === "verified" || p.status === "pending" || p.status === "anchored"
+  // Use the first non-placeholder verified/anchored proof.
+  // Placeholder proofs (attestation-hash-pending, wasm-hash-default,
+  // input-*/output-*) must NEVER anchor through the normal path.
+  // 'pending' proofs are no longer accepted — only real verified or
+  // previously anchored non-placeholder proofs qualify.
+  let proof = existingProofs.find(
+    (p) =>
+      !isPlaceholderProof(p) &&
+      (p.status === "verified" || p.status === "anchored")
   );
+
   if (!proof) {
+    // Check if we have placeholder proofs in dry_run — allow demo
+    // anchoring with simulated labels but do NOT update task status.
+    const placeholderProof = existingProofs.find((p) => isPlaceholderProof(p));
+    if (placeholderProof && config.casperMode === "dry_run") {
+      // 3. Build anchor input from placeholder
+      const anchorInput: AnchorProofInput = {
+        taskId,
+        proofId: placeholderProof.id,
+        agentId: placeholderProof.agent_id,
+        verifierId: placeholderProof.verifier_id,
+        hashOfCode: placeholderProof.wasm_hash,
+        hashOfInput: placeholderProof.input_hash,
+        hashOfOutput: placeholderProof.output_hash,
+        wasmHash: placeholderProof.wasm_hash,
+        teeMode: placeholderProof.mode,
+      };
+
+      // 4. Anchor via Casper provider (dry_run returns simulated hash)
+      const anchorResult: AnchorResult = await anchorProof(anchorInput);
+
+      if (!anchorResult.success) {
+        throw new Error(
+          `ANCHOR_FAILED: ${anchorResult.error || "Unknown anchor error"}`
+        );
+      }
+
+      // 5. Persist anchor hash in proof record (still marks proof as anchored
+      //    for dry-run demo traceability, but with simulated semantics)
+      updateProofAnchor(placeholderProof.id, anchorResult.anchorHash);
+
+      // 6. Do NOT transition task to 'anchored' — placeholder proofs
+      //    must never unlock payment or advance real state.
+      return {
+        taskId,
+        anchorHash: anchorResult.anchorHash,
+        deployHash: anchorResult.deployHash,
+        mode: "dry_run_simulated",
+        proofId: placeholderProof.id,
+      };
+    }
+
     throw new Error(
-      "NO_VERIFIED_PROOF: Task has proofs but none are verified or anchorable."
+      "NO_VERIFIED_PROOF: Task has proofs but none are non-placeholder, verified, or anchorable. " +
+      "Placeholder proofs cannot be anchored through the normal path."
     );
   }
 
@@ -656,33 +722,43 @@ export function verifyTaskProof(taskId: string): {
     const proofRow = db.prepare("SELECT * FROM proofs WHERE id = ?").get(proofId) as ProofRow | undefined;
     if (!proofRow) continue;
 
-    const isPlaceholder =
-      proofRow.attestation_hash === "attestation-hash-default" ||
-      proofRow.attestation_hash === "attestation-hash-pending" ||
-      proofRow.wasm_hash === "wasm-hash-default" ||
-      /^(input|output)-/.test(proofRow.input_hash) ||
-      /^(input|output)-/.test(proofRow.output_hash);
+    const isPlaceholder = isPlaceholderProof(proofRow as ProofRow);
 
     if (proofRow.status === "pending") {
       if (isPlaceholder) {
         // Blocker 2: Placeholder proofs can NEVER become verified, even in dry_run.
         // They stay pending — no DB status change to "verified".
         placeholderCount++;
-        if (isDryRun) {
-          // In dry_run, count them toward task progression but leave proof as pending
-          verifiedCount++;
-        }
+        // Do NOT count placeholder proofs toward verification — they
+        // must never satisfy real verification, not even in dry_run.
       } else {
         // Real attestation data — safe to verify
         db.prepare(`UPDATE proofs SET status = 'verified' WHERE id = ?`).run(proofId);
         verifiedCount++;
       }
     } else if (proofRow.status === "verified") {
-      verifiedCount++;
+      // Only count if it's a non-placeholder verified proof
+      if (!isPlaceholder) {
+        verifiedCount++;
+      }
     }
   }
 
   if (verifiedCount === 0) {
+    if (placeholderCount > 0 && isDryRun) {
+      // Dry-run with placeholder-only proofs: task stays at proof_pending.
+      // Do NOT advance to proof_verified — placeholder proofs must never
+      // satisfy real verification. The caller gets a simulated label so
+      // demos can still render a flow, but machine-readable status is truthful.
+      return {
+        taskId,
+        status: "dry_run_proof_simulated",
+        proofIds: task.proof_ids,
+        message:
+          "Dry-run simulated: placeholder proofs remain pending (no real attestation data). " +
+          "Task is NOT proof_verified. Run TEE verification to produce real proofs.",
+      };
+    }
     if (placeholderCount > 0 && !isDryRun) {
       throw new Error(
         "PLACEHOLDER_PROOFS_REJECTED: Task has placeholder proofs that cannot be verified outside dry_run mode. " +
@@ -702,18 +778,14 @@ export function verifyTaskProof(taskId: string): {
     // Silently skip
   }
 
-  // Transition to proof_verified
+  // Transition to proof_verified (only for real verified proofs)
   updateTaskStatus(taskId, "proof_verified");
-
-  const dryRunNote = placeholderCount > 0 && isDryRun
-    ? " (dry_run simulated — placeholder proofs were not marked verified)"
-    : "";
 
   return {
     taskId,
     status: "proof_verified",
     proofIds: task.proof_ids,
-    message: `Task proofs verified. Ready for anchoring.${dryRunNote}`,
+    message: "Task proofs verified. Ready for anchoring.",
   };
 }
 
@@ -747,14 +819,17 @@ export function unlockTaskPayment(taskId: string): {
     throw new Error("NO_PAYMENT: Task has no linked payment. Create a payment-backed task first.");
   }
 
-  // Must have at least one verified/anchor proof
+  // Must have at least one non-placeholder verified/anchor proof
   const proofs = getProofsForTask(taskId);
-  const hasVerifiedProof = proofs.some(
-    (p) => p.status === "verified" || p.status === "anchored"
+  const hasRealProof = proofs.some(
+    (p) =>
+      !isPlaceholderProof(p) &&
+      (p.status === "verified" || p.status === "anchored")
   );
-  if (!hasVerifiedProof) {
+  if (!hasRealProof) {
     throw new Error(
-      "NO_VERIFIED_PROOF: Task must have at least one verified or anchored proof before unlocking payment."
+      "NO_VERIFIED_PROOF: Task must have at least one non-placeholder verified or anchored proof before unlocking payment. " +
+      "Placeholder/simulated proofs cannot unlock real payments."
     );
   }
 

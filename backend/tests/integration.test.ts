@@ -517,9 +517,9 @@ describe("Phase M: Backend Integration Gates", () => {
         expect(runResult.status).toBe("proof_pending");
         expect(runResult.proofId).toBeDefined();
 
-        // Verify the proof
+        // Verify the proof (dry_run placeholder returns simulated status)
         const verifyResult = verifyTaskProof(task.id);
-        expect(verifyResult.status).toBe("proof_verified");
+        expect(verifyResult.status).toBe("dry_run_proof_simulated");
         expect(verifyResult.proofIds.length).toBeGreaterThan(0);
       });
     });
@@ -534,9 +534,30 @@ describe("Phase M: Backend Integration Gates", () => {
           currency: "USD",
         });
 
-        // Run + verify first
+        // Run + verify first — then inject a real verified proof so anchor works
         await runTaskVerification(task.id);
         verifyTaskProof(task.id);
+
+        // Inject a real non-placeholder verified proof
+        const db = getDb();
+        const proofId = randomUUID();
+        db.prepare(`
+          INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+            wasm_hash, attestation_hash, mode, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
+        `).run(
+          proofId, task.id, task.agent_id, "verifier-real",
+          "real-in-" + proofId.slice(0, 8), "real-out-" + proofId.slice(0, 8),
+          "real-wasm-" + proofId.slice(0, 8), "real-attest-" + proofId.slice(0, 8),
+          "tee_verification_mode", new Date().toISOString(),
+        );
+        const current = db.prepare("SELECT proof_ids FROM tasks WHERE id = ?").get(task.id) as any;
+        const proofIds: string[] = current ? JSON.parse(current.proof_ids) : [];
+        proofIds.push(proofId);
+        db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+          JSON.stringify(proofIds), task.id,
+        );
+        updateTaskStatus(task.id, "proof_verified");
 
         // Anchor
         const anchorResult = await anchorTaskProof(task.id);
@@ -570,6 +591,27 @@ describe("Phase M: Backend Integration Gates", () => {
         // 3. Run TEE verification
         await runTaskVerification(task.id);
         verifyTaskProof(task.id);
+
+        // Inject a real verified proof so anchor + unlock works
+        const db = getDb();
+        const proofId = randomUUID();
+        db.prepare(`
+          INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+            wasm_hash, attestation_hash, mode, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
+        `).run(
+          proofId, task.id, task.agent_id, "verifier-real",
+          "real-in-" + proofId.slice(0, 8), "real-out-" + proofId.slice(0, 8),
+          "real-wasm-" + proofId.slice(0, 8), "real-attest-" + proofId.slice(0, 8),
+          "tee_verification_mode", new Date().toISOString(),
+        );
+        const current = db.prepare("SELECT proof_ids FROM tasks WHERE id = ?").get(task.id) as any;
+        const proofIds: string[] = current ? JSON.parse(current.proof_ids) : [];
+        proofIds.push(proofId);
+        db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+          JSON.stringify(proofIds), task.id,
+        );
+        updateTaskStatus(task.id, "proof_verified");
 
         // 4. Anchor
         await anchorTaskProof(task.id);
@@ -616,7 +658,7 @@ describe("Phase M: Backend Integration Gates", () => {
         updateTaskStatus(task.id, "proof_pending");
         updateTaskStatus(task.id, "proof_verified");
 
-        // Create a proof in verified state
+        // Create a real non-placeholder proof in verified state
         const db = getDb();
         const proofId = randomUUID();
         db.prepare(`
@@ -625,7 +667,8 @@ describe("Phase M: Backend Integration Gates", () => {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
         `).run(
           proofId, task.id, task.agent_id, "verifier-default",
-          "input-hash", "output-hash", "wasm-hash", "attestation-hash",
+          "sha256-abc123def456", "sha256-output789xyz",
+          "sha256-wasm-001", "sha256-attest-real",
           "tee_verification_mode", new Date().toISOString(),
         );
         db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(

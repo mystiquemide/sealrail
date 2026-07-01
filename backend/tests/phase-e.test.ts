@@ -771,7 +771,7 @@ describe("Phase E: Task and Payment State Machine", () => {
     });
 
     describe("verifyTaskProof", () => {
-      it("advances from proof_pending → proof_verified", async () => {
+      it("returns simulated status for placeholder proofs in dry_run mode", async () => {
         const { task } = createTaskWithPayment({
           buyerAddress: "0xVerifier",
           agentId: "agent-verify",
@@ -782,11 +782,12 @@ describe("Phase E: Task and Payment State Machine", () => {
         await runTaskVerification(task.id);
 
         const result = verifyTaskProof(task.id);
-        expect(result.status).toBe("proof_verified");
+        // Placeholder proofs in dry_run: simulated status, task stays at proof_pending
+        expect(result.status).toBe("dry_run_proof_simulated");
         expect(result.proofIds.length).toBeGreaterThan(0);
 
         const updated = getTask(task.id);
-        expect(updated!.status).toBe("proof_verified");
+        expect(updated!.status).toBe("proof_pending");
       });
 
       it("throws if no proofs exist", () => {
@@ -818,18 +819,34 @@ describe("Phase E: Task and Payment State Machine", () => {
           currency: "CSPR",
         });
 
+        // Inject a real verified proof so anchorTaskProof can find it
+        const db = getDb();
+        const proofId = randomUUID();
+        db.prepare(`
+          INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+            wasm_hash, attestation_hash, mode, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
+        `).run(
+          proofId, task.id, task.agent_id, "verifier-real",
+          "real-input-" + proofId.slice(0, 8), "real-output-" + proofId.slice(0, 8),
+          "real-wasm-" + proofId.slice(0, 8), "real-attest-" + proofId.slice(0, 8),
+          "tee_verification_mode", new Date().toISOString(),
+        );
+        db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+          JSON.stringify([proofId]), task.id,
+        );
+
         // Run the full pipeline: funded → ... → anchored
-        await runTaskVerification(task.id);       // → proof_pending
-        verifyTaskProof(task.id);                  // → proof_verified
+        // Task starts as 'funded' from createTaskWithPayment
+        updateTaskStatus(task.id, "running");
+        updateTaskStatus(task.id, "proof_pending");
+        updateTaskStatus(task.id, "proof_verified");
         await anchorTaskProof(task.id);            // → anchored
 
         // Now unlock
         const result = unlockTaskPayment(task.id);
         expect(result.taskStatus).toBe("payable");
         expect(result.paymentStatus).toBe("unlockable");
-
-        const updatedTask = getTask(task.id);
-        expect(updatedTask!.status).toBe("payable");
       });
 
       it("throws if task not anchored", () => {
@@ -855,7 +872,7 @@ describe("Phase E: Task and Payment State Machine", () => {
         expect(() => unlockTaskPayment(task.id)).toThrow("NO_PAYMENT");
       });
 
-      it("unlocks successfully after anchorTaskProof creates synthetic proof", async () => {
+      it("rejects unlock when anchored via placeholder synthetic proof", async () => {
         const { task } = createTaskWithPayment({
           buyerAddress: "0xNoProofUnlock",
           agentId: "agent-no-proof-unlock",
@@ -863,12 +880,13 @@ describe("Phase E: Task and Payment State Machine", () => {
           currency: "CSPR",
         });
 
-        // Skip verification, go to anchored via anchorTaskProof (which creates synthetic proof)
+        // anchorTaskProof in dry_run creates a synthetic placeholder proof
+        // and returns dry_run_simulated — but does NOT advance task to 'anchored'.
         await anchorTaskProof(task.id);
 
-        // Should work because anchorTaskProof creates a proof
-        const result = unlockTaskPayment(task.id);
-        expect(result.taskStatus).toBe("payable");
+        // Placeholder/simulated proofs must never unlock real payments.
+        // Task is still NOT anchored, so unlock rejects with INVALID_STATE.
+        expect(() => unlockTaskPayment(task.id)).toThrow("INVALID_STATE");
       });
     });
   });
@@ -937,11 +955,12 @@ describe("Phase E: Task and Payment State Machine", () => {
     it("anchorTaskProof auto-creates synthetic proof in dry_run mode", async () => {
       const task = createTask({ agentId: "dry-run-task" });
       // In dry_run mode, synthetic proofs are acceptable for testing
+      // but return simulated mode since they are placeholders
       const result = await anchorTaskProof(task.id);
 
       expect(result.anchorHash).toBeDefined();
       expect(result.anchorHash.length).toBe(64);
-      expect(result.mode).toBe("dry_run");
+      expect(result.mode).toBe("dry_run_simulated");
     });
   });
 });

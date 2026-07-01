@@ -53,6 +53,45 @@ function sampleAnchorInput(overrides: Partial<AnchorProofInput> = {}): AnchorPro
   };
 }
 
+/**
+ * Helper: insert a real (non-placeholder) verified proof into the DB
+ * so the full pipeline (proof_verified → anchored → payable) can be
+ * tested without Blocky CLI.
+ */
+async function insertRealVerifiedProof(
+  taskId: string,
+  agentId: string
+): Promise<string> {
+  const { getDb } = await import("../src/db.js");
+  const db = getDb();
+  const proofId = randomUUID();
+  db.prepare(`
+    INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+      wasm_hash, attestation_hash, mode, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', ?)
+  `).run(
+    proofId,
+    taskId,
+    agentId,
+    "verifier-real",
+    "real-input-hash-" + proofId.slice(0, 8),
+    "real-output-hash-" + proofId.slice(0, 8),
+    "real-wasm-hash-" + proofId.slice(0, 8),
+    "real-attestation-hash-" + proofId.slice(0, 8),
+    "tee_verification_mode",
+    new Date().toISOString(),
+  );
+  // Link proof to task
+  const task = db.prepare("SELECT proof_ids FROM tasks WHERE id = ?").get(taskId) as any;
+  const proofIds: string[] = task ? JSON.parse(task.proof_ids) : [];
+  proofIds.push(proofId);
+  db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+    JSON.stringify(proofIds),
+    taskId,
+  );
+  return proofId;
+}
+
 // ── Test Suite: Casper Provider ──────────
 
 describe("Phase D: Casper Anchoring Adapter", () => {
@@ -380,20 +419,24 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
       const task = createTask({ agentId: "dry-run-proof" });
 
       // In dry_run mode, synthetic proof auto-creation is allowed for testing
+      // but returns simulated mode since proofs are placeholders
       const result = await anchorTaskProof(task.id);
 
       expect(result.anchorHash).toBeDefined();
-      expect(result.mode).toBe("dry_run");
+      expect(result.mode).toBe("dry_run_simulated");
     });
 
     it("updates task status to 'anchored' after anchoring", async () => {
       const task = createTask({ agentId: "agent-status-test" });
       expect(task.status).toBe("draft");
 
-      // C3: Must verify before anchoring
+      // Insert a real verified proof so anchorTaskProof can find a non-placeholder proof
+      await insertRealVerifiedProof(task.id, task.agent_id);
+      // Transition through state machine manually (verification already done via real proof)
       updateTaskStatus(task.id, "funded");
-      await runTaskVerification(task.id);
-      verifyTaskProof(task.id);
+      updateTaskStatus(task.id, "running");
+      updateTaskStatus(task.id, "proof_pending");
+      updateTaskStatus(task.id, "proof_verified");
       await anchorTaskProof(task.id);
 
       const updated = getTask(task.id);
@@ -435,9 +478,12 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
 
     it("anchoring twice on the same task updates the proof", async () => {
       const task = createTask({ agentId: "agent-double-anchor" });
+      // Insert a real verified proof so anchorTaskProof works
+      await insertRealVerifiedProof(task.id, task.agent_id);
       updateTaskStatus(task.id, "funded");
-      await runTaskVerification(task.id);
-      verifyTaskProof(task.id);
+      updateTaskStatus(task.id, "running");
+      updateTaskStatus(task.id, "proof_pending");
+      updateTaskStatus(task.id, "proof_verified");
       const r1 = await anchorTaskProof(task.id);
 
       // Re-anchor the same task (should work, proof exists)
@@ -616,7 +662,7 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
     expect(proofsAfter[0].status).not.toBe("verified");
   });
 
-  it("verifyTaskProof advances task to proof_verified in dry_run with placeholder note", async () => {
+  it("verifyTaskProof returns simulated status in dry_run with placeholder proofs and does NOT advance task", async () => {
     const { createTask, updateTaskStatus, runTaskVerification, verifyTaskProof, getTask } =
       await import("../src/services/tasks.js");
 
@@ -626,13 +672,13 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
 
     const result = verifyTaskProof(task.id);
 
-    // Task advances for demo flow but message indicates simulation
-    expect(result.status).toBe("proof_verified");
-    expect(result.message).toContain("dry_run simulated");
-    expect(result.message).toContain("placeholder proofs were not marked verified");
+    // Placeholder proofs must NOT produce proof_verified — return simulated status
+    expect(result.status).toBe("dry_run_proof_simulated");
+    expect(result.message).toContain("Dry-run simulated");
 
+    // Task MUST stay at proof_pending — placeholder proofs never advance state
     const updated = getTask(task.id);
-    expect(updated!.status).toBe("proof_verified");
+    expect(updated!.status).toBe("proof_pending");
   });
 
   it("verifyTaskProof rejects when all proofs are placeholders outside dry_run", async () => {
@@ -668,5 +714,125 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
 
     const { verifyTaskProof: verifyStrict } = await import("../src/services/tasks.js");
     expect(() => verifyStrict(task.id)).toThrow();
+  });
+
+  // ── Regression: placeholder proofs blocked from real states ──
+
+  it("placeholder proof can never anchor through normal path (rejects NO_VERIFIED_PROOF)", async () => {
+    // Switch to non-dry_run mode so placeholder proofs are rejected
+    process.env.CASPER_MODE = "testnet";
+    process.env.BKY_AS_AVAILABLE = "1";
+    vi.resetModules();
+
+    const { createTask, updateTaskStatus, anchorTaskProof } =
+      await import("../src/services/tasks.js");
+    const { getDb } = await import("../src/db.js");
+
+    const task = createTask({ agentId: "agent-placeholder-anchor" });
+    updateTaskStatus(task.id, "funded");
+    updateTaskStatus(task.id, "running");
+    updateTaskStatus(task.id, "proof_pending");
+    updateTaskStatus(task.id, "proof_verified");
+
+    // Inject a placeholder proof directly
+    const db = getDb();
+    const pid = randomUUID();
+    db.prepare(`
+      INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+        wasm_hash, attestation_hash, mode, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(pid, task.id, task.agent_id, "verifier-x",
+      "input-placeholder", "output-placeholder", "wasm-hash-default",
+      "attestation-hash-pending", "tee_verification_mode", new Date().toISOString());
+    db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+      JSON.stringify([pid]), task.id,
+    );
+
+    // All proofs are placeholders → anchor must reject
+    await expect(anchorTaskProof(task.id)).rejects.toThrow(
+      /NO_VERIFIED_PROOF|Placeholder/
+    );
+
+    // Restore dry_run for remaining tests
+    process.env.CASPER_MODE = "dry_run";
+    delete process.env.BKY_AS_AVAILABLE;
+    vi.resetModules();
+  });
+
+  it("placeholder proof cannot unlock payment (rejects INVALID_STATE)", async () => {
+    const { createTaskWithPayment } =
+      await import("../src/services/tasks.js");
+    const { createTask, updateTaskStatus, anchorTaskProof, unlockTaskPayment } =
+      await import("../src/services/tasks.js");
+
+    const { task } = createTaskWithPayment({
+      buyerAddress: "0xRegress",
+      agentId: "agent-regress-unlock",
+      totalAmount: 100,
+      currency: "CSPR",
+    });
+
+    // anchorTaskProof in dry_run with placeholder returns simulated, task stays NOT anchored
+    await anchorTaskProof(task.id);
+
+    // unlock must reject because task was never marked 'anchored' with a real proof
+    expect(() => unlockTaskPayment(task.id)).toThrow("INVALID_STATE");
+  });
+
+  it("all placeholder hash patterns are rejected from verified/anchor states", async () => {
+    // Use non-dry_run mode throughout to test rejection
+    process.env.CASPER_MODE = "testnet";
+    process.env.BKY_AS_AVAILABLE = "1";
+    vi.resetModules();
+
+    const { createTask, updateTaskStatus, verifyTaskProof, anchorTaskProof, getTask } =
+      await import("../src/services/tasks.js");
+    const { getDb } = await import("../src/db.js");
+
+    const task = createTask({ agentId: "agent-all-placeholders" });
+    updateTaskStatus(task.id, "funded");
+    updateTaskStatus(task.id, "running");
+    updateTaskStatus(task.id, "proof_pending");
+
+    const db = getDb();
+    // Insert one proof per placeholder pattern — ALL are placeholders
+    const patterns = [
+      { attestation_hash: "attestation-hash-pending", wasm_hash: "wasm-hash-default", input_hash: "input-a", output_hash: "output-a" },
+      { attestation_hash: "attestation-hash-default", wasm_hash: "wasm-hash-default", input_hash: "input-b", output_hash: "output-b" },
+      { attestation_hash: "real-attest",               wasm_hash: "wasm-hash-default", input_hash: "real-in",   output_hash: "real-out" },
+      { attestation_hash: "real-attest-2",             wasm_hash: "real-wasm",         input_hash: "input-c",   output_hash: "real-out-2" },
+      { attestation_hash: "real-attest-3",             wasm_hash: "real-wasm-2",       input_hash: "real-in-2", output_hash: "output-c" },
+    ];
+
+    const proofIds: string[] = [];
+    for (const p of patterns) {
+      const pid = randomUUID();
+      db.prepare(`
+        INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+          wasm_hash, attestation_hash, mode, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+      `).run(pid, task.id, task.agent_id, "verifier-x", p.input_hash, p.output_hash,
+        p.wasm_hash, p.attestation_hash, "tee_verification_mode", new Date().toISOString());
+      proofIds.push(pid);
+    }
+    db.prepare("UPDATE tasks SET proof_ids = ? WHERE id = ?").run(
+      JSON.stringify(proofIds), task.id,
+    );
+
+    // Non-dry_run: verifyTaskProof must reject placeholder proofs
+    expect(() => verifyTaskProof(task.id)).toThrow(/PLACEHOLDER_PROOFS_REJECTED/);
+
+    // Advance task manually to proof_verified (bypass verify guard)
+    updateTaskStatus(task.id, "proof_verified");
+
+    // Anchor must reject — all proofs are placeholders
+    await expect(anchorTaskProof(task.id)).rejects.toThrow(
+      /NO_VERIFIED_PROOF|Placeholder/
+    );
+
+    // Restore dry_run for remaining tests
+    process.env.CASPER_MODE = "dry_run";
+    delete process.env.BKY_AS_AVAILABLE;
+    vi.resetModules();
   });
 });

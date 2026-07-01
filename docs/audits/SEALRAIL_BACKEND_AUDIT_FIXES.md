@@ -97,11 +97,19 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 ## Next Steps
 
 - ~~Levi re-audit to confirm A/A+ grade~~ → Re-audit done (B+, 2026-07-01)
-- **Second pass fixes** applied for three re-audit blockers:
+- ~~Second pass fixes~~ applied for three re-audit blockers (commit 9941e78):
   - **Blocker 1**: `CASPER_MODE=mainnet` now fails closed (returns success:false, simulated:false, empty hash, actionable error)
-  - **Blocker 2**: `verifyTaskProof` never marks placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) as "verified" in DB; dry_run demo flow task still advances but proofs stay "pending" and message notes simulation
+  - **Blocker 2 (second pass)**: `verifyTaskProof` never marks placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) as "verified" in DB; dry_run demo flow task still advances but proofs stay "pending" and message notes simulation
   - **Blocker 3**: Payment claim now validates `request.apiKey.owner_address === recipient.address`; returns 403 OWNER_MISMATCH on mismatch
-- Levi re-audit (second pass) to confirm A/A+ grade
+- ~~Levi re-audit (second pass)~~ → Re-audit done (B+, 2026-07-01). Blocker 2 not fully resolved — placeholder proofs still advanced task state in dry_run.
+- **Third pass fixes** applied for remaining Blocker 2 regression:
+  - Placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) **can never advance task to `proof_verified`**, `anchored`, or `payable` — even in dry_run mode
+  - `verifyTaskProof` returns `dry_run_proof_simulated` status for placeholder-only tasks instead of `proof_verified`; task stays at `proof_pending`
+  - `anchorTaskProof` returns `dry_run_simulated` mode for placeholders but does NOT transition task to `anchored`; normal anchor path rejects placeholders with NO_VERIFIED_PROOF
+  - `unlockTaskPayment` rejects placeholder/simulated proofs; requires at least one non-placeholder verified/anchored proof
+  - Extracted `isPlaceholderProof()` predicate to centralize placeholder detection; used consistently across verify/anchor/unlock
+  - New regression tests: placeholder anchor rejection, placeholder unlock rejection, all 5 placeholder hash patterns rejected from verified/anchor states
+- Levi re-audit (third pass) to confirm A/A+ grade
 - Frontend wire-up with API key auth headers
 - CI workflow for lint/build/test gates
 
@@ -115,7 +123,7 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 | Root build | PASS | `npm run build` |
 | Backend lint | PASS | `cd backend && npm run lint` |
 
-### Files Changed (Second Pass)
+### Files Changed (Second Pass → superseded by Third Pass)
 
 | File | Change |
 |------|--------|
@@ -124,3 +132,22 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 | `backend/src/routes/payments.ts` | Claim handler: added owner_address check — request.apiKey.owner_address must equal recipient.address; returns 403 OWNER_MISMATCH |
 | `backend/tests/phase-d.test.ts` | Added 8 new tests: 4 mainnet fail-closed (B1), 4 placeholder proof rejection (B2) |
 | `backend/tests/http-auth.test.ts` | Added 3 new tests: payment claim ownership (B3) — wrong key owner, correct owner, address match without ownership |
+
+## Third Pass Fix Verification (2026-07-01)
+
+| Gate | Status | Command |
+|------|--------|---------|
+| Backend build | PASS | `cd backend && npm run build` |
+| Backend tests | PASS (631) | `cd backend && npm test -- --no-file-parallelism` |
+| Root lint | PASS | `npm run lint` |
+| Root build | PASS | `npm run build` |
+| Backend lint | PASS | `cd backend && npm run lint` |
+
+### Files Changed (Third Pass)
+
+| File | Change |
+|------|--------|
+| `backend/src/services/tasks.ts` | Extracted `isPlaceholderProof()` predicate; `verifyTaskProof` returns `dry_run_proof_simulated` instead of `proof_verified` for placeholder-only tasks; task stays at `proof_pending`; `anchorTaskProof` returns `dry_run_simulated` for placeholders but does NOT transition to `anchored`; `unlockTaskPayment` requires non-placeholder proofs |
+| `backend/tests/integration.test.ts` | Updated to expect `dry_run_proof_simulated` status; added real verified proof injection for anchor/unlock tests |
+| `backend/tests/phase-d.test.ts` | Added `insertRealVerifiedProof` helper; updated anchor/status tests to inject real proofs; added 4 new regression tests: placeholder anchor rejection, placeholder unlock rejection, all 5 placeholder hash patterns rejected from verified/anchor states; updated verify proof test to expect task stays at `proof_pending` |
+| `backend/tests/phase-e.test.ts` | Updated to expect `dry_run_proof_simulated` status; added real proof injection for anchor/unlock pipeline; renamed "unlocks with synthetic proof" → "rejects unlock via placeholder"; updated anchor auto-create test to expect `dry_run_simulated` |
