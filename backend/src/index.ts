@@ -12,6 +12,7 @@ import { registerPaymentRoutes } from "./routes/payments.js";
 import { registerAgentRoutes } from "./routes/agents.js";
 import { registerMarketplaceRoutes } from "./routes/marketplace.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
+import { registerApiKeyRoutes } from "./routes/api-keys.js";
 
 // Load dotenv before anything reads config
 try {
@@ -90,6 +91,9 @@ registerMarketplaceRoutes(app);
 
 // ── Workflow routes (Phase H: multi-agent orchestration engine) ──
 registerWorkflowRoutes(app);
+
+// ── API key routes (Phase K: API key management) ──
+registerApiKeyRoutes(app);
 
 // ── Graceful shutdown ──
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];

@@ -22,6 +22,7 @@ Positioning: No Proof without a Payment.
 - Backend Phase H: DONE. 50/50 tests passed (vitest). Commit d8f728a.
 - Backend Phase I: DONE. 44/44 tests passed (vitest). Commit cacb329.
 - Backend Phase J: DONE. 41/41 tests passed (vitest). Commit b815023.
+- Backend Phase K: DONE. 69/69 tests passed (vitest).
 
 ## Backend Phase H deliverables
 
@@ -80,6 +81,27 @@ API routes verified:
 - POST /api/agents/:agentId/reputation/recalculate — Explicit recalculation with optional owner address auth
 
 Full test suite: 369 tests, 9 files, all passing.
+
+## Backend Phase K deliverables
+
+Files created/modified in backend/:
+
+| File | Purpose |
+|---|---|
+| src/services/api-keys.ts | K1: Key generation (crypto.randomBytes 256-bit), scrypt hashing with per-key salt, timing-safe verification, CRUD operations (create/list/update/revoke), last_used_at tracking, health check |
+| src/middleware/auth.ts | K2: Scoped middleware — requireApiKey, requireApiKeyWithScope, optionalApiKey. Extracts key from Authorization: Bearer or x-api-key header. Scope enforcement with OR logic |
+| src/routes/api-keys.ts | K3: GET /api/api-keys (list by owner, prefix only), POST /api/api-keys (create, secret shown once), PATCH /api/api-keys/:keyId (update name/scopes), DELETE /api/api-keys/:keyId (soft revoke), GET /api/api-keys/health |
+| src/index.ts (modified) | Registered api-keys routes and middleware types |
+| tests/phase-k.test.ts | 69 tests: key generation, hashing/verification, create/list/no-secret exposure, lookup auth, invalid key rejection, scope enforcement, update, revoke, last_used_at, duplicate/security edge cases, nonexistent key, A-J preservation |
+
+API routes verified via curl:
+- POST /api/api-keys — Creates key with scrypt-hashed secret; returns raw secret once (64-char hex)
+- GET /api/api-keys?owner_address=X — Lists keys with prefix only; no secret/hashed_secret exposed
+- PATCH /api/api-keys/:keyId — Updates name/scopes; owner-only
+- DELETE /api/api-keys/:keyId — Soft-revokes (sets revoked_at); owner-only; revoked keys excluded from list+auth
+- GET /api/api-keys/health — Service health with total/active/revoked counts
+
+Full test suite: 438 tests, 10 files, all passing.
 
 ## Backend Phase A deliverables
 
@@ -174,6 +196,7 @@ POST /api/proofs/verify registered on Fastify server.
 | Senku: Phase H workflows | t_c44d9742 | done |
 | Senku: Phase I splits | t_a1571388 | done |
 | Senku: Phase J reputation | t_39aebe66 | done |
+| Senku: Phase K api keys | t_9e3d7666 | done |
 
 ## Blocky status
 
@@ -208,7 +231,7 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 ## Next Phase
 
-Phase K: API key management (backend/src/services/api-keys.ts, backend/src/middleware/auth.ts, backend/src/routes/api-keys.ts).
+Phase L: Verifier template backend (backend/src/services/verifiers.ts, backend/src/routes/verifiers.ts).
 
 ## Backend Phase G deliverables
 
