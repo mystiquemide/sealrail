@@ -1,0 +1,6 @@
+# Only the Next.js app deploys to Vercel; the backend and contracts ship elsewhere.
+backend
+contracts
+docs
+memory.md
+*.docx
