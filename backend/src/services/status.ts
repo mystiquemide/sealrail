@@ -284,6 +284,9 @@ export interface PublicStatusResponse {
   mode: "tee_verification_mode";
   casper_mode: string;
   casper_contract_ready: boolean;
+  casper_client_available: boolean;
+  casper_client_version: string | null;
+  casper_chain_name: string;
   blocky_cli_available: boolean;
   hosted_tee_ready: boolean;
   tee_hookup_blocked: boolean;
@@ -317,6 +320,9 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     mode: "tee_verification_mode",
     casper_mode: casper.mode,
     casper_contract_ready: !!casper.contractHash && casper.accountKeyConfigured,
+    casper_client_available: casper.clientInstalled,
+    casper_client_version: casper.clientVersion,
+    casper_chain_name: config.casperChainName,
     blocky_cli_available: blocky.cliInstalled,
     hosted_tee_ready: blocky.hostedConfigured,
     tee_hookup_blocked: blocky.teeHookupBlocked,

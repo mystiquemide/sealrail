@@ -225,6 +225,9 @@ export type PublicStatus = {
   mode: "tee_verification_mode";
   casper_mode: string;
   casper_contract_ready: boolean;
+  casper_client_available: boolean;
+  casper_client_version: string | null;
+  casper_chain_name: string;
   blocky_cli_available: boolean;
   hosted_tee_ready: boolean;
   tee_hookup_blocked: boolean;

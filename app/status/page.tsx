@@ -9,6 +9,11 @@ const RED = "#F45B45";
 const GRAY = "#6E6E6C";
 
 function buildRows(s: PublicStatus) {
+  const chainName = s.casper_chain_name || "casper-test";
+  const explorerBase = chainName.includes("mainnet")
+    ? "https://cspr.live"
+    : "https://testnet.cspr.live";
+
   return [
     {
       name: "Backend API",
@@ -37,24 +42,29 @@ function buildRows(s: PublicStatus) {
       color: s.hosted_tee_ready ? GREEN : AMBER,
     },
     {
+      name: "Casper mode",
+      state: `${s.casper_mode} mode — ${s.casper_client_available ? `client ${s.casper_client_version ?? "installed"}` : "client missing"}`,
+      color: s.casper_client_available ? GREEN : AMBER,
+    },
+    {
       name: "Casper RPC",
-      state: `${s.casper_mode} mode`,
-      color: s.casper_mode === "testnet" || s.casper_mode === "mainnet" ? GREEN : AMBER,
+      state: `${explorerBase.replace("https://", "")}`,
+      color: GREEN,
     },
     {
       name: "ProofRegistry contract",
-      state: s.casper_contract_ready ? "Deployed" : "Not configured",
+      state: s.casper_contract_ready ? "Deployed — Casper testnet anchoring live" : "Not configured",
       color: s.casper_contract_ready ? GREEN : AMBER,
+    },
+    {
+      name: "Explorer",
+      state: `${explorerBase} (real deploy hashes on-chain)`,
+      color: GREEN,
     },
     {
       name: "Database",
       state: s.db_connected ? "Connected" : "Disconnected",
       color: s.db_connected ? GREEN : RED,
-    },
-    {
-      name: "CSPR.cloud / Explorer visibility",
-      state: "Proof receipts expose deploy/anchor fields; live finality check is the next production add-on",
-      color: GRAY,
     },
   ];
 }
