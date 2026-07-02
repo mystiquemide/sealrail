@@ -1,3 +1,6 @@
+import type { Agent, AgentReputation, Proof, TaskDetail, VerifierTemplate } from "@/lib/api-types";
+import { formatMode } from "@/components/agents/agents-data";
+
 export type ReputationStats = {
   score: number;
   verifiedRuns: number;
@@ -37,37 +40,69 @@ export type AgentProfile = {
   proofHistory: ProofHistoryItem[];
 };
 
-const AGENT_PROFILES: Record<string, AgentProfile> = {
-  agent_invoice_risk: {
-    id: "agent_invoice_risk",
-    name: "Invoice Risk Agent",
-    category: "Invoice verification",
-    owner: "01a3f...9c2e",
-    status: "Active",
-    statusColor: "#64D96B",
-    runtimeType: "LLM worker",
-    supportedTaskTypes: ["invoice_risk_check", "invoice_risk_check_batch"],
-    listingHref: "/marketplace/listing_invoice_risk",
-    reputation: {
-      score: 92,
-      verifiedRuns: 21,
-      paidTasks: 20,
-      failedProofs: 1,
-      totalEarned: "80 CSPR",
-    },
-    verifier: {
-      name: "verifyInvoiceRisk",
-      inputSchema: "invoice json",
-      outputSchema: "risk decision json",
-      wasmHash: "b94f...bb69f",
-    },
-    proofHistory: [
-      { id: "proof_1024", task: "INV-1024", verifier: "verifyInvoiceRisk", payment: "Paid", payColor: "#64D96B", href: "/proofs/INV-1024" },
-      { id: "proof_1025", task: "INV-1025", verifier: "verifyInvoiceRisk", payment: "Blocked", payColor: "#F45B45", href: "/proofs/INV-1025" },
-    ],
-  },
+const STATUS_COLOR: Record<Agent["status"], string> = {
+  active: "#64D96B",
+  paused: "#F2B84B",
+  draft: "#6E6E6C",
 };
 
-export function getAgentProfile(agentId: string): AgentProfile | undefined {
-  return AGENT_PROFILES[agentId];
+const PAY_COLOR: Record<string, string> = {
+  paid: "#64D96B",
+  unlockable: "#F2B84B",
+  locked: "#F2B84B",
+  blocked: "#F45B45",
+};
+
+function paymentLabelFor(proof: Proof, taskDetail: TaskDetail | null): { label: string; color: string } {
+  if (proof.status === "failed") return { label: "Blocked", color: "#F45B45" };
+  const recipient = taskDetail?.payment?.recipients.find((r) => r.agent_id === proof.agent_id);
+  if (!recipient) return { label: "Pending", color: "#F2B84B" };
+  const label = recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1);
+  return { label, color: PAY_COLOR[recipient.status] ?? "#8C8C8A" };
 }
+
+export function buildAgentProfile(
+  agent: Agent,
+  reputation: AgentReputation,
+  verifier: VerifierTemplate | undefined,
+  proofHistory: ProofHistoryItem[]
+): AgentProfile {
+  return {
+    id: agent.id,
+    name: agent.name,
+    category: agent.category,
+    owner: agent.owner_address,
+    status: agent.status.charAt(0).toUpperCase() + agent.status.slice(1),
+    statusColor: STATUS_COLOR[agent.status],
+    runtimeType: agent.pricing_model === "workflow_split" ? "Workflow step" : "LLM worker",
+    supportedTaskTypes: agent.supported_task_types,
+    reputation: {
+      score: reputation.score,
+      verifiedRuns: reputation.verified_runs,
+      paidTasks: reputation.paid_tasks,
+      failedProofs: reputation.failed_runs,
+      totalEarned: `${reputation.total_earned} ${agent.currency}`,
+    },
+    verifier: {
+      name: verifier?.name ?? "No verifier attached",
+      inputSchema: verifier ? JSON.stringify(verifier.input_schema) : "—",
+      outputSchema: verifier ? JSON.stringify(verifier.output_schema) : "—",
+      wasmHash: verifier?.wasm_hash ?? "—",
+    },
+    proofHistory,
+  };
+}
+
+export function buildProofHistoryItem(proof: Proof, taskDetail: TaskDetail | null, verifierName: string): ProofHistoryItem {
+  const pay = paymentLabelFor(proof, taskDetail);
+  return {
+    id: proof.id,
+    task: taskDetail?.task.title || proof.task_id || "—",
+    verifier: verifierName,
+    payment: pay.label,
+    payColor: pay.color,
+    href: proof.task_id ? `/proofs/${taskDetail?.task.title || proof.task_id}` : "#",
+  };
+}
+
+export { formatMode };

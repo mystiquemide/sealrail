@@ -9,6 +9,9 @@ Positioning: No Proof without a Payment.
 
 ## Phase status
 
+- Phase O (frontend-backend wiring): DONE. All 19 screens wired to the real backend API — no fixture imports remain in any page. `npm run lint` and `npm run build` (frontend) both pass clean; backend test suite still at 737/751 (the 14 failures are `bky-as` CLI-absence cascades, unchanged baseline, not a regression). See "Phase O: frontend-backend wiring" section below for the full breakdown.
+
+  Backend local dev setup: added `@fastify/cors` (registered in `buildApp()`, allowed origin from new `FRONTEND_ORIGIN` env var), created `backend/vitest.config.ts` (scopes root to `backend/` so vitest/Vite stops climbing to the repo-root `postcss.config.mjs`, which was crashing test runs from a Linux-side Node install because the root `node_modules/lightningcss` binary was Windows-only). Backend runs via WSL (native Windows `npm install` fails on `better-sqlite3` — no MSVC build tools installed; WSL's `nvm` Node 24 has prebuilt binaries and works cleanly). One dev-db pollution incident: a test run against the real (non-`:memory:`) `DATABASE_PATH` default wrote a stray `L-test Verifier` row into `backend/data/sealrail.db`; cleared that file (gitignored, no real data) for a clean slate before starting frontend integration. Bootstrapped full-scope demo API keys (`owner_address` = `01a3f...9c2e`) via `POST /api/api-keys` for local testing.
 - DESIGN.md: approved by Mide.
 - Frontend UI: implemented across 19 screens, builds and passes lint. Docs page is rich and professional. Blockers were fixed: status truthfulness, demo-wording removal, CTA wiring, 404 recovery, proof-detail navigation.
 - Backend plan: approved. docs/plans/SEALRAIL_BACKEND_IMPLEMENTATION_PLAN.md (1178 lines).
@@ -314,9 +317,37 @@ Verified in-browser: hero (badge, 4 CTAs, flow code block), sticky sidebar track
 
 Next phase per the roadmap: **Phase O** — wire all these frontend-only fixtures to the real backend API (which is separately complete and A+ audited, see the Backend section above), then P (Casper testnet deploy), Q (real TEE hookup), R (deployment), S (demo video), T (submission).
 
-## Next Phase
+## Phase O: frontend-backend wiring
 
-Phase N is done — all 19 Claude Design screens are implemented, verified, and pushed to GitHub (commit history below). Backend is fully complete and A+ audited (631 tests). Next up is Phase O (wire the frontend's typed fixtures to the real backend API).
+Replaced every typed fixture with a real call to the local backend (`http://localhost:3001`, WSL-hosted dev server). No fixture data imports remain anywhere in `app/` or `components/`.
+
+| File | Purpose |
+|---|---|
+| `lib/api-types.ts` | Hand-mirrored copy of every backend model type (`Agent`, `MarketplaceListing`, `Task`, `Payment`, `PaymentRecipient`, `Proof`, `VerifierTemplate`, `WorkflowTemplate`/`WorkflowRun`/`WorkflowStepRun`, `AgentReputation`, `ApiKey`, `PublicStatus`, `TaskDetail`) |
+| `lib/session.ts` | Demo-identity session: bootstraps a full-scope API key via `POST /api/api-keys` on first use, caches `{secret, keyId, ownerAddress, prefix}` in `localStorage`. `ensureSession()` now validates the cached secret against `GET /api/api-keys` before trusting it and re-bootstraps if invalid — added after finding a stale cached secret (from before a local DB reset) was silently authenticating as nothing and falling through to an anonymous owner server-side |
+| `lib/api.ts` | Typed fetch client, one function per backend endpoint, `ApiClientError` wraps `{error, message}` bodies with `.status`/`.code` |
+| `.env.local` | `NEXT_PUBLIC_API_URL=http://localhost:3001` (gitignored) |
+| `backend/src/index.ts`, `backend/src/config.ts` | Added `@fastify/cors`, `FRONTEND_ORIGIN` env var |
+
+Per-screen wiring:
+
+- **`/agents`, `/agents/[agentId]`** — `GET /api/agents`, `/api/verifiers` (for mode/verifier badges), `/api/agents/:id/reputation`, `/api/agents/:id/proofs`. Honest empty state ("No agents registered yet") replaces the old static fixture when the DB has none.
+- **`/marketplace`, `/marketplace/[listingId]`** — `GET /api/marketplace`, listing detail + real "Create paid task" form calling `POST /api/marketplace/:id/tasks`.
+- **`/verifiers`, `/workflows`** — `GET /api/verifiers` / `GET /api/workflows`, static list pages, honest empty states.
+- **`/owner/agents/new`** — `POST /api/agents` (owner address now shown read-only, sourced from the session identity, not a free-text field, since the backend ignores any owner value in the body); optional `POST /api/marketplace/listings` when "Publish listing" is checked.
+- **`/verifiers/new`** — `POST /api/verifiers`, then a real "Test verifier" button calling `POST /api/verifiers/:id/test` (no more fake 1100ms timer).
+- **`/run`** — full real task lifecycle: `POST /api/tasks` → `POST /api/tasks/:id/run` → `POST /api/tasks/:id/verify` + `POST /api/tasks/:id/anchor` → `POST /api/tasks/:id/unlock-payment`. Rewrote `run-state.ts`'s stage model from a single `Stage` int with a `99`-sentinel "failed" state to separate `stage` (last confirmed success point, monotonic) / `busyStep` / `failedStep` — the old model broke because `stage >= N` checks matched `99 >= N` and rendered every downstream step as falsely succeeded when agent execution failed partway through. Caught via live QA against a real `AGENT_UNAVAILABLE` 503 (LLM provider not configured in this dev environment).
+- **`/workflows/[workflowId]`** — real run lifecycle: `POST /api/workflows/:id/run` creates a `WorkflowRun`, then sequential `POST /api/workflow-runs/:runId/steps/:stepId/run` per template step in order, then `POST /api/workflow-runs/:runId/finalize`. Payment split rows sourced from the template's real `payment_split_default`.
+- **`/proofs`, `/proofs/[proofId]`** — `GET /api/tasks` + parallel `GET /api/tasks/:id` detail fetches build the table (no bulk proof-list endpoint exists). `[proofId]` matches on task `title` (the human invoice ID used throughout, e.g. `INV-1030`) via a linear scan of the task list, then fetches full detail by the real task UUID.
+- **`/owner`** — real aggregation: owned agents via `GET /api/agents?owner_address=`, earnings computed client-side from `GET /api/agents/:id/reputation` + `GET /api/payments` recipient shares, incoming tasks filtered from `GET /api/tasks` to owned `agent_id`s.
+- **`/api-keys`** — full real CRUD: `GET/POST /api/api-keys`, `DELETE /api/api-keys/:id`. Found and fixed a backend bug in the process: `POST /api/api-keys` has no `preHandler` at all, so `request.apiKey` is always `undefined` there regardless of the `Authorization` header sent — it always fell through to `body.owner_address ?? "bootstrap"`. Worked around by having the frontend pass `owner_address` explicitly (the session's own verified address) rather than relying on the (currently non-functional) implicit-auth path. Confirmed via direct sqlite inspection that keys created this way now attribute correctly; the un-worked-around path was silently creating keys owned by the literal string `"bootstrap"`.
+- **`/status`** — now calls `GET /api/status` for real; all fields (LLM configured, Blocky readiness, Casper mode, DB connected, uptime) are live.
+
+Known non-bug behavior difference from the original mock: revoking an API key makes it disappear from the list entirely (rather than showing dimmed "Revoked") because `GET /api/api-keys` filters `WHERE revoked_at IS NULL` server-side by design — not a frontend defect.
+
+QA: full click-through against the live local backend for every wired page (agents list+profile, marketplace list+listing+task creation, verifiers list+register+test, owner dashboard, api-keys create+revoke, status, proofs list+detail, and a full `/run` task creation through to the agent-execution failure path, confirmed to render honestly). Backend test suite re-verified at 737/751 post-CORS-change (same 14 pre-existing `bky-as`-CLI-absence failures, no regression).
+
+Not wired (correctly out of scope): Casper anchor hashes and Blocky attestation remain `dry_run`/simulated since Phase P (testnet deploy) and Phase Q (real TEE hookup) haven't happened yet — the UI shows this honestly via the dry-run values the backend itself returns, not by faking anything client-side.
 
 ### Post-frontend plan
 

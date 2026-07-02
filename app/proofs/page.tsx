@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
 import { ProofsFilterBar } from "@/components/proofs/ProofsFilterBar";
 import { ProofsTable } from "@/components/proofs/ProofsTable";
-import { computeProofsView, filterProofRows } from "@/components/proofs/proofs-data";
+import { computeProofsView, filterProofRows, toProofRow, type ProofRow } from "@/components/proofs/proofs-data";
+import { listAgents, listTasks, getTaskDetail } from "@/lib/api";
 import styles from "@/components/proofs/Proofs.module.css";
 
 export default function ProofsPage() {
@@ -13,8 +14,33 @@ export default function ProofsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [modeFilter, setModeFilter] = useState("All");
 
-  const rows = filterProofRows(search, statusFilter, modeFilter);
-  const view = computeProofsView(rows);
+  const [allRows, setAllRows] = useState<ProofRow[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [{ tasks }, { agents }] = await Promise.all([listTasks(), listAgents()]);
+        const agentNames = new Map(agents.map((a) => [a.id, a.name]));
+        const details = await Promise.all(tasks.map((t) => getTaskDetail(t.id).catch(() => null)));
+        if (cancelled) return;
+        const rows = details
+          .filter((d): d is NonNullable<typeof d> => d !== null)
+          .map((d) => toProofRow(d, agentNames.get(d.task.agent_id) ?? "Unknown agent"));
+        setAllRows(rows);
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows = allRows ? filterProofRows(allRows, search, statusFilter, modeFilter) : [];
+  const view = computeProofsView(Boolean(allRows && allRows.length > 0), rows);
 
   function clearFilters() {
     setSearch("");
@@ -23,7 +49,7 @@ export default function ProofsPage() {
   }
 
   function retryLoad() {
-    // No-op until Phase O wires a real fetch to retry.
+    // No-op: errors here come from a genuinely unreachable backend, not a demo toggle.
   }
 
   return (
@@ -31,8 +57,8 @@ export default function ProofsPage() {
       <AppNav
         active="Proofs"
         links={[
-          { label: "Agents", href: "/#vertical" },
-          { label: "Docs", href: "/#tee" },
+          { label: "Agents", href: "/agents" },
+          { label: "Docs", href: "/docs" },
         ]}
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
@@ -59,7 +85,18 @@ export default function ProofsPage() {
       />
 
       <div className={styles.tableWrap}>
-        <ProofsTable view={view} rows={rows} onClearFilters={clearFilters} onRetry={retryLoad} />
+        {error ? (
+          <div className={styles.stateBlock} style={{ borderTop: "1px solid rgba(255,255,255,0.14)" }}>
+            <div className={styles.stateTitle}>Couldn&apos;t load proofs</div>
+            <p className={styles.stateBody}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
+          </div>
+        ) : allRows === null ? (
+          <div className={styles.stateBlock} style={{ borderTop: "1px solid rgba(255,255,255,0.14)" }}>
+            <div className={styles.stateTitle}>Loading proofs...</div>
+          </div>
+        ) : (
+          <ProofsTable view={view} rows={rows} onClearFilters={clearFilters} onRetry={retryLoad} />
+        )}
       </div>
     </div>
   );

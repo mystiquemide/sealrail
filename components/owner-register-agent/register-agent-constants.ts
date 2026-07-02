@@ -1,7 +1,5 @@
 export const CATEGORY_OPTIONS = ["Invoice", "DeFi", "Research", "Compliance", "Custom"] as const;
 
-export const VERIFIER_OPTIONS = ["verifyInvoiceRisk"] as const;
-
 export type ExecutionType = "llm" | "webhook" | "manual";
 
 export const EXECUTION_TYPE_LABELS: Record<ExecutionType, string> = {
@@ -39,7 +37,7 @@ export const INITIAL_FORM_STATE: RegisterAgentFormState = {
   executionType: "llm",
   webhookUrl: "",
   submitterId: "",
-  verifier: "verifyInvoiceRisk",
+  verifier: "",
   taskType: "",
   outputSchema: "",
   price: "",

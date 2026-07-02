@@ -2,122 +2,263 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
-import { TaskForm } from "@/components/run/TaskForm";
+import { EmptyState } from "@/components/app/EmptyState";
+import { TaskForm, type TaskFormFields } from "@/components/run/TaskForm";
 import { LiveProofRail } from "@/components/run/LiveProofRail";
 import { VerifiedOutputPanel } from "@/components/run/VerifiedOutputPanel";
 import { ProofHashesPanel } from "@/components/run/ProofHashesPanel";
 import {
-  PROOF_BUNDLE,
   computeButtonLabels,
   computeButtonVariants,
-  computeHashes,
-  computeOutput,
   computeSteps,
+  type BusyStep,
+  type FailedStep,
   type Stage,
 } from "@/components/run/run-state";
+import {
+  ApiClientError,
+  anchorTask,
+  createTask,
+  getTaskDetail,
+  getTaskOutput,
+  listAgents,
+  runTask,
+  unlockTaskPayment,
+  verifyTask,
+} from "@/lib/api";
+import { DEMO_BUYER_ADDRESS } from "@/lib/session";
+import type { Agent } from "@/lib/api-types";
 import styles from "@/components/run/Run.module.css";
 
+const GREEN = "#64D96B";
+const AMBER = "#F2B84B";
+const RED = "#F45B45";
+const GRAY = "#6E6E6C";
+const NEU = "#C9C9C7";
+
+const INITIAL_FIELDS: TaskFormFields = {
+  invoiceId: "INV-1030",
+  amount: "12400",
+  vendor: "Northwind Supply",
+  buyer: "Atlas Retail",
+  dueDate: "2026-07-30",
+  terms: "Net 30",
+  notes: "Recurring vendor. Due-date variance flagged on prior cycle.",
+};
+
+type OutputState = {
+  riskScore: string;
+  decision: string;
+  reason: string;
+  flags: string[];
+  outputHash: string;
+};
+
 export default function RunPage() {
-  const [stage, setStageState] = useState<Stage>(0);
-  const [simulateFail, setSimulateFailState] = useState(false);
+  const [agent, setAgent] = useState<Agent | null | undefined>(undefined);
+  const [fields, setFields] = useState<TaskFormFields>(INITIAL_FIELDS);
+  const [stage, setStage] = useState<Stage>(0);
+  const [busyStep, setBusyStep] = useState<BusyStep>(null);
+  const [failedStep, setFailedStep] = useState<FailedStep>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [output, setOutput] = useState<OutputState | null>(null);
+  const [wasmHash, setWasmHash] = useState("pending");
+  const [attHash, setAttHash] = useState("pending");
+  const [anchHash, setAnchHash] = useState("pending");
+  const [paymentState, setPaymentState] = useState("Not started");
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const stageRef = useRef<Stage>(0);
-  const failRef = useRef(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const setStage = useCallback((next: Stage) => {
-    stageRef.current = next;
-    setStageState(next);
-  }, []);
-
-  const setSimulateFail = useCallback((next: boolean) => {
-    failRef.current = next;
-    setSimulateFailState(next);
-  }, []);
-
-  const schedule = useCallback((ms: number, fn: () => void) => {
-    const t = setTimeout(fn, ms);
-    timers.current.push(t);
-  }, []);
-
-  const clearTimers = useCallback(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  }, []);
-
-  useEffect(() => () => clearTimers(), [clearTimers]);
-
-  const createTask = useCallback(() => {
-    if (stageRef.current !== 0) return;
-    setStage(1);
-  }, [setStage]);
-
-  const runAgent = useCallback(() => {
-    if (stageRef.current !== 1) return;
-    setStage(2);
-    schedule(1300, () => setStage(3));
-  }, [setStage, schedule]);
-
-  const verify = useCallback(() => {
-    if (stageRef.current !== 3) return;
-    const willFail = failRef.current;
-    setStage(4);
-    schedule(1500, () => setStage(willFail ? 99 : 5));
-  }, [setStage, schedule]);
-
-  const unlock = useCallback(() => {
-    if (stageRef.current !== 5) return;
-    setStage(6);
-  }, [setStage]);
-
-  const reset = useCallback(() => {
-    clearTimers();
-    setStage(0);
-    setCopied(false);
-  }, [clearTimers, setStage]);
-
-  const toggleFail = useCallback(() => {
-    if (stageRef.current >= 2) return;
-    setSimulateFail(!failRef.current);
-  }, [setSimulateFail]);
-
-  const runAll = useCallback(() => {
-    clearTimers();
-    setStage(0);
-    setCopied(false);
-    schedule(250, createTask);
-    schedule(900, runAgent);
-    schedule(2900, verify);
-    schedule(5100, () => {
-      if (!failRef.current) unlock();
+  useEffect(() => {
+    listAgents({ status: "active", category: "invoice" }).then(({ agents }) => {
+      setAgent(agents[0] ?? null);
     });
-  }, [clearTimers, setStage, schedule, createTask, runAgent, verify, unlock]);
+    return () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    };
+  }, []);
+
+  function updateField<K extends keyof TaskFormFields>(key: K, value: string) {
+    setFields((f) => ({ ...f, [key]: value }));
+  }
+
+  const handleCreateTask = useCallback(async () => {
+    if (!agent) return;
+    setBusyStep(1);
+    setErrorMessage(null);
+    try {
+      const res = await createTask({
+        agent_id: agent.id,
+        buyer_address: DEMO_BUYER_ADDRESS,
+        total_amount: Number(fields.amount) || 0,
+        currency: "USD",
+        title: fields.invoiceId,
+        task_type: agent.supported_task_types[0] ?? "invoice_risk_check",
+        input: {
+          invoice_id: fields.invoiceId,
+          vendor: fields.vendor,
+          buyer: fields.buyer,
+          due_date: fields.dueDate,
+          terms: fields.terms,
+          notes: fields.notes,
+          amount_usd: Number(fields.amount) || 0,
+        },
+      });
+      setTaskId(res.task_id);
+      setPaymentState("Locked");
+      setStage(1);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiClientError ? err.message : "Failed to create task.");
+    } finally {
+      setBusyStep(null);
+    }
+  }, [agent, fields]);
+
+  const handleRunAgent = useCallback(async () => {
+    if (!taskId) return;
+    setBusyStep(2);
+    setErrorMessage(null);
+    try {
+      await runTask(taskId);
+      const { output: out } = await getTaskOutput(taskId);
+      const result = out.result as {
+        risk_score?: number;
+        decision?: string;
+        reasoning?: string;
+        flags?: string[];
+      };
+      setOutput({
+        riskScore: result.risk_score !== undefined ? String(result.risk_score) : "—",
+        decision: result.decision ?? "—",
+        reason: result.reasoning ?? "No reasoning returned.",
+        flags: result.flags ?? [],
+        outputHash: out.output_hash,
+      });
+      setStage(3);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiClientError ? err.message : "Agent execution failed.");
+      setFailedStep(2);
+    } finally {
+      setBusyStep(null);
+    }
+  }, [taskId]);
+
+  const handleVerifyAndAnchor = useCallback(async () => {
+    if (!taskId) return;
+    setBusyStep(3);
+    setErrorMessage(null);
+    try {
+      await verifyTask(taskId);
+      const anchorRes = await anchorTask(taskId);
+      setAnchHash(anchorRes.anchor_hash);
+
+      const detail = await getTaskDetail(taskId);
+      const latestProof = detail.proofs[detail.proofs.length - 1];
+      if (latestProof) {
+        setWasmHash(latestProof.wasm_hash);
+        setAttHash(latestProof.attestation_hash);
+      }
+      setStage(5);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiClientError ? err.message : "Verification failed.");
+      setFailedStep(3);
+    } finally {
+      setBusyStep(null);
+    }
+  }, [taskId]);
+
+  const handleUnlockPayment = useCallback(async () => {
+    if (!taskId) return;
+    setBusyStep(4);
+    setErrorMessage(null);
+    try {
+      await unlockTaskPayment(taskId);
+      setPaymentState("Unlocked");
+      setStage(6);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiClientError ? err.message : "Payment unlock failed.");
+    } finally {
+      setBusyStep(null);
+    }
+  }, [taskId]);
+
+  function reset() {
+    setStage(0);
+    setBusyStep(null);
+    setFailedStep(null);
+    setTaskId(null);
+    setOutput(null);
+    setWasmHash("pending");
+    setAttHash("pending");
+    setAnchHash("pending");
+    setPaymentState("Not started");
+    setErrorMessage(null);
+    setCopied(false);
+  }
 
   const copyBundle = useCallback(() => {
-    if (stageRef.current < 5) return;
+    if (!taskId || !output) return;
+    const bundle = {
+      task: fields.invoiceId,
+      task_id: taskId,
+      decision: output.decision,
+      risk_score: output.riskScore,
+      flags: output.flags,
+      output_hash: output.outputHash,
+      wasm_hash: wasmHash,
+      attestation_hash: attHash,
+      casper_anchor: anchHash,
+      payment_state: paymentState,
+    };
     try {
-      navigator.clipboard.writeText(JSON.stringify(PROOF_BUNDLE, null, 2));
+      navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
     } catch {
       // clipboard unavailable, ignore
     }
     setCopied(true);
-    schedule(1800, () => setCopied(false));
-  }, [schedule]);
+    copyTimer.current = setTimeout(() => setCopied(false), 1800);
+  }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, paymentState]);
 
-  const steps = computeSteps(stage);
-  const variants = computeButtonVariants(stage);
-  const labels = computeButtonLabels(stage);
-  const output = computeOutput(stage);
-  const hashes = computeHashes(stage);
-  const failLocked = stage >= 2;
+  const steps = computeSteps(stage, busyStep, failedStep, anchHash !== "pending" ? anchHash : undefined);
+  const variants = computeButtonVariants(stage, busyStep, failedStep);
+  const labels = computeButtonLabels(stage, busyStep, failedStep);
+  const outVisible = stage >= 3;
+  const hasProof = stage >= 5;
 
   const buttons = [
-    { n: "01", label: labels.b1, variant: variants.b1, onClick: createTask },
-    { n: "02", label: labels.b2, variant: variants.b2, onClick: runAgent },
-    { n: "03", label: labels.b3, variant: variants.b3, onClick: verify },
-    { n: "04", label: labels.b4, variant: variants.b4, onClick: unlock },
+    { n: "01", label: labels.b1, variant: variants.b1, onClick: handleCreateTask },
+    { n: "02", label: labels.b2, variant: variants.b2, onClick: handleRunAgent },
+    { n: "03", label: labels.b3, variant: variants.b3, onClick: handleVerifyAndAnchor },
+    { n: "04", label: labels.b4, variant: variants.b4, onClick: handleUnlockPayment },
   ];
+
+  if (agent === undefined) {
+    return (
+      <div className={styles.page}>
+        <AppNav />
+        <div className={styles.headerWrap}>
+          <p className={styles.subtitle}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (agent === null) {
+    return (
+      <div className={styles.page}>
+        <AppNav />
+        <div className={styles.headerWrap}>
+          <EmptyState
+            title="No invoice-risk agent registered yet"
+            body="Register an agent in the &quot;invoice&quot; category to run a payment-backed proof task."
+            actionLabel="Register an agent"
+            actionHref="/owner/agents/new"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -138,9 +279,6 @@ export default function RunPage() {
               TEE Verification Mode
             </span>
             <div className={styles.headerButtons}>
-              <button className={styles.btnRunAll} onClick={runAll}>
-                Run full verification
-              </button>
               <button className={styles.btnReset} onClick={reset}>
                 Reset
               </button>
@@ -149,39 +287,46 @@ export default function RunPage() {
         </div>
       </div>
 
+      {errorMessage ? (
+        <div className={styles.workspaceWrap} style={{ paddingBottom: 0 }}>
+          <div style={{ color: RED, fontSize: 13, padding: "12px 0" }}>{errorMessage}</div>
+        </div>
+      ) : null}
+
       <div className={styles.workspaceWrap}>
         <div className={styles.workspaceGrid}>
-          <TaskForm buttons={buttons} simulateFail={simulateFail} failLocked={failLocked} onToggleFail={toggleFail} />
-          <LiveProofRail steps={steps} />
+          <TaskForm fields={fields} onFieldChange={updateField} fieldsLocked={stage > 0} buttons={buttons} />
+          <LiveProofRail steps={steps} taskTitle={fields.invoiceId} />
         </div>
 
         <div className={styles.outputGrid}>
           <VerifiedOutputPanel
-            outVisible={output.outVisible}
-            badge={output.badge}
-            color={output.color}
-            riskScore={output.riskScore}
-            decision={output.decision}
-            reason={output.reason}
-            flags={output.flags}
-            noFlags={output.noFlags}
-            flagsEmptyText={output.flagsEmptyText}
+            outVisible={outVisible}
+            badge={failedStep === 2 ? "Agent failed" : failedStep === 3 ? "Proof failed" : hasProof ? "Proof verified" : outVisible ? "Unverified" : "No output"}
+            color={failedStep ? RED : hasProof ? GREEN : AMBER}
+            riskScore={output?.riskScore ?? "—"}
+            decision={output?.decision ?? "—"}
+            reason={output?.reason ?? "Run the agent to produce a decision."}
+            flags={output?.flags ?? []}
+            noFlags={!output || output.flags.length === 0}
+            flagsEmptyText="No flags raised."
           />
           <ProofHashesPanel
-            outVisible={output.outVisible}
-            outputHash={hashes.outputHash}
-            outputHashColor={hashes.outputHashColor}
-            wasmHash={hashes.wasmHash}
-            wasmColor={hashes.wasmColor}
-            attHash={hashes.attHash}
-            attColor={hashes.attColor}
-            anchHash={hashes.anchHash}
-            anchColor={hashes.anchColor}
-            paymentState={hashes.paymentState}
-            paymentStateColor={hashes.paymentStateColor}
-            hasProof={hashes.hasProof}
+            outVisible={outVisible}
+            outputHash={output?.outputHash ?? "pending"}
+            outputHashColor={output ? NEU : GRAY}
+            wasmHash={wasmHash}
+            wasmColor={wasmHash !== "pending" ? NEU : GRAY}
+            attHash={attHash}
+            attColor={attHash !== "pending" ? NEU : GRAY}
+            anchHash={anchHash}
+            anchColor={anchHash !== "pending" ? GREEN : GRAY}
+            paymentState={paymentState}
+            paymentStateColor={stage >= 6 ? GREEN : failedStep ? RED : stage >= 1 ? AMBER : GRAY}
+            hasProof={hasProof}
             copyLabel={copied ? "Copied" : "Copy proof bundle"}
             onCopy={copyBundle}
+            detailHref={taskId ? `/proofs/${fields.invoiceId}` : "#"}
           />
         </div>
       </div>

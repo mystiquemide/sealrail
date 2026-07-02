@@ -1,19 +1,5 @@
-export type TaskDefaults = {
-  invoiceId: string;
-  amount: string;
-  vendor: string;
-  buyer: string;
-  dueDate: string;
-};
-
-export type RecentProof = {
-  id: string;
-  task: string;
-  state: string;
-  payment: string;
-  hash: string;
-  href: string;
-};
+import type { MarketplaceListing, VerifierTemplate } from "@/lib/api-types";
+import { formatMode } from "@/components/agents/agents-data";
 
 export type ListingDetail = {
   id: string;
@@ -21,42 +7,26 @@ export type ListingDetail = {
   tagline: string;
   price: string;
   proofRequirement: string;
-  taskDefaults: TaskDefaults;
   agentOwner: string;
   verifier: string;
   mode: string;
   reputation: string;
   verifiedRuns: number;
   failedProofs: number;
-  recentProofs: RecentProof[];
 };
 
-const LISTINGS: Record<string, ListingDetail> = {
-  listing_invoice_risk: {
-    id: "listing_invoice_risk",
-    agent: "Invoice Risk Agent",
-    tagline: "Payment-backed invoice risk verification.",
-    price: "4 CSPR",
-    proofRequirement: "verifyInvoiceRisk",
-    taskDefaults: {
-      invoiceId: "INV-1027",
-      amount: "4 CSPR + task amount",
-      vendor: "Northwind Supply",
-      buyer: "Atlas Retail",
-      dueDate: "2026-07-30",
-    },
-    agentOwner: "01a3f...9c2e",
-    verifier: "verifyInvoiceRisk",
-    mode: "TEE Verification Mode",
-    reputation: "92 / 100",
-    verifiedRuns: 21,
-    failedProofs: 1,
-    recentProofs: [
-      { id: "proof_1024", task: "INV-1024", state: "Verified", payment: "Paid", hash: "0x80d0...cd44", href: "/proofs/INV-1024" },
-    ],
-  },
-};
-
-export function getListingDetail(listingId: string): ListingDetail | undefined {
-  return LISTINGS[listingId];
+export function toListingDetail(listing: MarketplaceListing, verifier: VerifierTemplate | undefined): ListingDetail {
+  return {
+    id: listing.id,
+    agent: listing.title,
+    tagline: listing.summary || `Payment-backed ${listing.category} verification.`,
+    price: `${listing.price_amount} ${listing.currency}`,
+    proofRequirement: listing.proof_requirement || verifier?.name || "—",
+    agentOwner: listing.owner_address,
+    verifier: verifier?.name ?? listing.verifier_id,
+    mode: verifier?.mode_support?.[0] ? formatMode(verifier.mode_support[0]) : "TEE Verification Mode",
+    reputation: `${listing.reputation_score} / 100`,
+    verifiedRuns: listing.total_verified_runs,
+    failedProofs: 0,
+  };
 }

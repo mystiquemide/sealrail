@@ -16,6 +16,7 @@ type ProofHashesPanelProps = {
   hasProof: boolean;
   copyLabel: string;
   onCopy: () => void;
+  detailHref: string;
 };
 
 export function ProofHashesPanel({
@@ -33,6 +34,7 @@ export function ProofHashesPanel({
   hasProof,
   copyLabel,
   onCopy,
+  detailHref,
 }: ProofHashesPanelProps) {
   return (
     <div className={styles.panel} style={{ opacity: outVisible ? 1 : 0.4, transition: "opacity .4s" }}>
@@ -88,7 +90,7 @@ export function ProofHashesPanel({
           {copyLabel}
         </button>
         <Link
-          href="/proofs/INV-1024"
+          href={detailHref}
           className={styles.detailLink}
           style={{ opacity: hasProof ? 1 : 0.55, pointerEvents: hasProof ? "auto" : "none" }}
         >

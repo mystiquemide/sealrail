@@ -1,3 +1,5 @@
+import type { TaskDetail } from "@/lib/api-types";
+
 export type ProofRow = {
   task: string;
   agent: string;
@@ -13,45 +15,47 @@ export type ProofRow = {
 export const STATUS_OPTIONS = ["All", "Verified", "Pending", "Blocked", "Paid"] as const;
 export const MODE_OPTIONS = ["All", "TEE Verification Mode", "TEE Verification"] as const;
 
-export const ALL_PROOF_ROWS: ProofRow[] = [
-  {
-    task: "INV-1024",
-    agent: "Invoice AI",
-    proofState: "Verified",
-    proofColor: "#64D96B",
-    payState: "Payable",
-    payColor: "#64D96B",
-    hash: "0x80d0...cd44",
-    mode: "TEE Verification Mode",
-    href: "/proofs/INV-1024",
-  },
-  {
-    task: "INV-1025",
-    agent: "Invoice AI",
-    proofState: "Pending",
-    proofColor: "#F2B84B",
-    payState: "Blocked",
-    payColor: "#F45B45",
-    hash: "pending",
-    mode: "TEE Verification Mode",
-    href: "/proofs/INV-1025",
-  },
-  {
-    task: "INV-1026",
-    agent: "Invoice AI",
-    proofState: "Failed",
-    proofColor: "#F45B45",
-    payState: "Blocked",
-    payColor: "#F45B45",
-    hash: "none",
-    mode: "TEE Verification Mode",
-    href: "/proofs/INV-1026",
-  },
-];
+const GREEN = "#64D96B";
+const AMBER = "#F2B84B";
+const RED = "#F45B45";
+const GRAY = "#6E6E6C";
 
-export function filterProofRows(search: string, statusFilter: string, modeFilter: string): ProofRow[] {
+function proofStateFor(status: string): { label: string; color: string } {
+  if (status === "proof_verified" || status === "anchored" || status === "payable" || status === "paid") {
+    return { label: "Verified", color: GREEN };
+  }
+  if (status === "failed") return { label: "Failed", color: RED };
+  if (status === "proof_pending" || status === "running") return { label: "Pending", color: AMBER };
+  return { label: "Pending", color: GRAY };
+}
+
+function payStateFor(status: string): { label: string; color: string } {
+  if (status === "paid") return { label: "Paid", color: GREEN };
+  if (status === "payable") return { label: "Payable", color: GREEN };
+  if (status === "blocked" || status === "failed") return { label: "Blocked", color: RED };
+  return { label: "Blocked", color: AMBER };
+}
+
+export function toProofRow(detail: TaskDetail, agentName: string): ProofRow {
+  const proof = detail.proofs[detail.proofs.length - 1];
+  const proofState = proofStateFor(detail.task.status);
+  const payState = payStateFor(detail.task.status);
+  return {
+    task: detail.task.title || detail.task.id,
+    agent: agentName,
+    proofState: proofState.label,
+    proofColor: proofState.color,
+    payState: payState.label,
+    payColor: payState.color,
+    hash: proof?.casper_anchor_hash ?? (proof ? "pending" : "none"),
+    mode: "TEE Verification Mode",
+    href: `/proofs/${encodeURIComponent(detail.task.title || detail.task.id)}`,
+  };
+}
+
+export function filterProofRows(rows: ProofRow[], search: string, statusFilter: string, modeFilter: string): ProofRow[] {
   const q = search.trim().toLowerCase();
-  return ALL_PROOF_ROWS.filter((r) => {
+  return rows.filter((r) => {
     if (q && !r.task.toLowerCase().includes(q)) return false;
     if (statusFilter !== "All" && r.proofState !== statusFilter && r.payState !== statusFilter) return false;
     if (modeFilter !== "All" && r.mode !== modeFilter) return false;
@@ -59,8 +63,7 @@ export function filterProofRows(search: string, statusFilter: string, modeFilter
   });
 }
 
-export function computeProofsView(filtered: ProofRow[]) {
-  const hasAnyRecords = ALL_PROOF_ROWS.length > 0;
+export function computeProofsView(hasAnyRecords: boolean, filtered: ProofRow[]) {
   const isEmpty = !hasAnyRecords;
   const isNoResults = hasAnyRecords && filtered.length === 0;
 

@@ -6,6 +6,7 @@
 // ────────────────────────────────────────
 
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { config } from "./config.js";
 import { getDb, closeDb } from "./db.js";
 import { registerProofRoutes } from "./routes/proof.js";
@@ -40,6 +41,12 @@ export function buildApp() {
     logger: {
       level: config.nodeEnv === "production" ? "warn" : "info",
     },
+  });
+
+  app.register(cors, {
+    origin: config.frontendOrigin.split(",").map((o) => o.trim()),
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
   });
 
   // Track lifecycle state

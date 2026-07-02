@@ -1,4 +1,6 @@
-export type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 99;
+export type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type BusyStep = 1 | 2 | 3 | 4 | null;
+export type FailedStep = 2 | 3 | null;
 
 export type ButtonVariant = "primary" | "busy" | "done" | "failed" | "off";
 
@@ -55,45 +57,41 @@ export type RailStep = {
   pulse: boolean;
 };
 
-export function isFailedStage(stage: Stage): boolean {
-  return stage === 99;
-}
-
-export function computeSteps(stage: Stage): RailStep[] {
-  const failed = isFailedStage(stage);
-
+export function computeSteps(stage: Stage, busyStep: BusyStep, failedStep: FailedStep, anchorHash?: string): RailStep[] {
   const step1: RailStep =
     stage >= 1
       ? { n: "01", label: "Payment intent", statusText: "Created", color: AMBER, sub: "status: created", dotColor: AMBER, pulse: false }
       : { n: "01", label: "Payment intent", statusText: "Waiting", color: GRAY, sub: "status: waiting", dotColor: DOT_OFF, pulse: false };
 
   const step2: RailStep =
-    stage === 2
-      ? { n: "02", label: "Agent output", statusText: "Running", color: BLUE, sub: "invoice risk agent running", dotColor: BLUE, pulse: true }
-      : stage >= 3
-        ? { n: "02", label: "Agent output", statusText: "Ready", color: NEU, sub: "invoice_risk: medium", dotColor: NEU, pulse: false }
-        : { n: "02", label: "Agent output", statusText: "Waiting", color: GRAY, sub: "status: waiting", dotColor: DOT_OFF, pulse: false };
+    busyStep === 2
+      ? { n: "02", label: "Agent output", statusText: "Running", color: BLUE, sub: "agent executing", dotColor: BLUE, pulse: true }
+      : failedStep === 2
+        ? { n: "02", label: "Agent output", statusText: "Failed", color: RED, sub: "execution failed", dotColor: RED, pulse: false }
+        : stage >= 3
+          ? { n: "02", label: "Agent output", statusText: "Ready", color: NEU, sub: "output received", dotColor: NEU, pulse: false }
+          : { n: "02", label: "Agent output", statusText: "Waiting", color: GRAY, sub: "status: waiting", dotColor: DOT_OFF, pulse: false };
 
   const step3: RailStep =
-    stage === 4
-      ? { n: "03", label: "Blocky-compatible check", statusText: "Verifying", color: BLUE, sub: "verifyInvoiceRisk running", dotColor: BLUE, pulse: true }
-      : stage >= 5
-        ? { n: "03", label: "Blocky-compatible check", statusText: "Verified", color: GREEN, sub: "success: true", dotColor: GREEN, pulse: false }
-        : failed
-          ? { n: "03", label: "Blocky-compatible check", statusText: "Failed", color: RED, sub: "success: false", dotColor: RED, pulse: false }
+    busyStep === 3
+      ? { n: "03", label: "Blocky-compatible check", statusText: "Verifying", color: BLUE, sub: "verifier running", dotColor: BLUE, pulse: true }
+      : failedStep === 3
+        ? { n: "03", label: "Blocky-compatible check", statusText: "Failed", color: RED, sub: "success: false", dotColor: RED, pulse: false }
+        : stage >= 5
+          ? { n: "03", label: "Blocky-compatible check", statusText: "Verified", color: GREEN, sub: "success: true", dotColor: GREEN, pulse: false }
           : { n: "03", label: "Blocky-compatible check", statusText: "Waiting", color: GRAY, sub: "status: waiting", dotColor: DOT_OFF, pulse: false };
 
   const step4: RailStep =
     stage >= 5
-      ? { n: "04", label: "Casper anchor", statusText: "Anchored", color: GREEN, sub: "0x80d0...cd44", dotColor: GREEN, pulse: false }
-      : failed
+      ? { n: "04", label: "Casper anchor", statusText: "Anchored", color: GREEN, sub: anchorHash ?? "anchored", dotColor: GREEN, pulse: false }
+      : failedStep
         ? { n: "04", label: "Casper anchor", statusText: "None", color: RED, sub: "no proof to anchor", dotColor: RED, pulse: false }
         : { n: "04", label: "Casper anchor", statusText: "Waiting", color: GRAY, sub: "status: waiting", dotColor: DOT_OFF, pulse: false };
 
   const step5: RailStep =
     stage >= 6
       ? { n: "05", label: "Payment unlock", statusText: "Unlocked", color: GREEN, sub: "agent payable", dotColor: GREEN, pulse: false }
-      : failed
+      : failedStep
         ? { n: "05", label: "Payment unlock", statusText: "Blocked", color: RED, sub: "payment blocked", dotColor: RED, pulse: false }
         : stage >= 1
           ? { n: "05", label: "Payment unlock", statusText: "Locked", color: AMBER, sub: "held until proof", dotColor: AMBER, pulse: false }
@@ -102,79 +100,55 @@ export function computeSteps(stage: Stage): RailStep[] {
   return [step1, step2, step3, step4, step5];
 }
 
-export function computeButtonVariants(stage: Stage): {
-  b1: ButtonVariant;
-  b2: ButtonVariant;
-  b3: ButtonVariant;
-  b4: ButtonVariant;
-} {
-  const failed = isFailedStage(stage);
-  const b1: ButtonVariant = stage === 0 ? "primary" : "done";
-  const b2: ButtonVariant = stage < 1 ? "off" : stage === 1 ? "primary" : stage === 2 ? "busy" : "done";
-  const b3: ButtonVariant = stage < 3 ? "off" : stage === 3 ? "primary" : stage === 4 ? "busy" : failed ? "failed" : "done";
-  const b4: ButtonVariant = failed ? "off" : stage < 5 ? "off" : stage === 5 ? "primary" : "done";
+export function computeButtonVariants(
+  stage: Stage,
+  busyStep: BusyStep,
+  failedStep: FailedStep
+): { b1: ButtonVariant; b2: ButtonVariant; b3: ButtonVariant; b4: ButtonVariant } {
+  const b1: ButtonVariant = stage === 0 ? (busyStep === 1 ? "busy" : "primary") : "done";
+
+  const b2: ButtonVariant =
+    stage < 1 ? "off" : failedStep === 2 ? "failed" : busyStep === 2 ? "busy" : stage >= 3 ? "done" : "primary";
+
+  const b3: ButtonVariant =
+    stage < 3 ? "off" : failedStep === 3 ? "failed" : busyStep === 3 ? "busy" : stage >= 5 ? "done" : "primary";
+
+  const b4: ButtonVariant = failedStep
+    ? "off"
+    : stage < 5
+      ? "off"
+      : stage >= 6
+        ? "done"
+        : busyStep === 4
+          ? "busy"
+          : "primary";
+
   return { b1, b2, b3, b4 };
 }
 
-export function computeButtonLabels(stage: Stage): { b1: string; b2: string; b3: string; b4: string } {
-  const failed = isFailedStage(stage);
+export function computeButtonLabels(
+  stage: Stage,
+  busyStep: BusyStep,
+  failedStep: FailedStep
+): { b1: string; b2: string; b3: string; b4: string } {
   return {
     b1: stage === 0 ? "Create payment task" : "Payment task created",
-    b2: stage === 2 ? "Running agent check..." : stage >= 3 ? "Agent output ready" : "Run agent check",
-    b3: stage === 4 ? "Verifying proof..." : stage >= 5 ? "Proof verified" : failed ? "Proof failed" : "Verify proof",
+    b2:
+      busyStep === 2
+        ? "Running agent..."
+        : failedStep === 2
+          ? "Agent execution failed"
+          : stage >= 3
+            ? "Agent output ready"
+            : "Run agent check",
+    b3:
+      busyStep === 3
+        ? "Verifying proof..."
+        : failedStep === 3
+          ? "Proof failed"
+          : stage >= 5
+            ? "Proof verified"
+            : "Verify + anchor proof",
     b4: stage >= 6 ? "Payment unlocked" : "Unlock payment",
   };
 }
-
-export function computeOutput(stage: Stage) {
-  const failed = isFailedStage(stage);
-  const outVisible = stage >= 3;
-  const hasProof = stage >= 5;
-  return {
-    outVisible,
-    hasProof,
-    badge: failed ? "Proof failed" : hasProof ? "Proof verified" : outVisible ? "Unverified" : "No output",
-    color: failed ? RED : hasProof ? GREEN : AMBER,
-    riskScore: outVisible ? "Medium" : "—",
-    decision: outVisible ? "Approve with review" : "—",
-    reason: outVisible
-      ? "Payment history and due-date variance require review before settlement."
-      : "Run the agent to produce a decision.",
-    flags: outVisible ? ["due_date_variance", "recurring_vendor_review"] : [],
-    noFlags: !outVisible,
-    flagsEmptyText: "Run the agent to surface flags.",
-  };
-}
-
-export function computeHashes(stage: Stage) {
-  const failed = isFailedStage(stage);
-  const hasProof = stage >= 5;
-  const outVisible = stage >= 3;
-  return {
-    outputHash: outVisible ? "4c1a...e07b" : "pending",
-    outputHashColor: outVisible ? NEU : GRAY,
-    wasmHash: stage >= 4 ? "b94f...bb69f" : "pending",
-    wasmColor: stage >= 4 ? NEU : GRAY,
-    attHash: hasProof ? "80d0...cd44" : "pending",
-    attColor: hasProof ? NEU : GRAY,
-    anchHash: hasProof ? "0x80d0...cd44" : failed ? "none" : "pending",
-    anchColor: hasProof ? GREEN : failed ? RED : GRAY,
-    paymentState: stage >= 6 ? "Unlocked" : failed ? "Blocked" : stage >= 1 ? "Locked" : "Not started",
-    paymentStateColor: stage >= 6 ? GREEN : failed ? RED : stage >= 1 ? AMBER : GRAY,
-    hasProof,
-  };
-}
-
-export const PROOF_BUNDLE = {
-  task: "INV-1024",
-  mode: "TEE Verification Mode",
-  verifier: "verifyInvoiceRisk",
-  result: "Medium risk",
-  decision: "Approve with review",
-  flags: ["due_date_variance", "recurring_vendor_review"],
-  output_hash: "4c1a...e07b",
-  wasm_hash: "b94f...bb69f",
-  attestation_hash: "80d0...cd44",
-  casper_anchor: "0x80d0...cd44",
-  payment_state: "unlocked",
-};

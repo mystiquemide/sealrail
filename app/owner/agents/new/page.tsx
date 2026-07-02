@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import {
@@ -8,37 +8,88 @@ import {
   EXECUTION_TYPE_LABELS,
   EXECUTION_TYPE_OPTIONS,
   INITIAL_FORM_STATE,
-  VERIFIER_OPTIONS,
   outputSchemaSummary,
   validateForm,
   type RegisterAgentFormState,
 } from "@/components/owner-register-agent/register-agent-constants";
+import { ApiClientError, createAgent, createMarketplaceListing, listVerifiers } from "@/lib/api";
+import { ensureSession } from "@/lib/session";
+import type { AgentCategory, VerifierTemplate } from "@/lib/api-types";
 import styles from "@/components/owner-register-agent/RegisterAgent.module.css";
 
 export default function RegisterAgentPage() {
   const [form, setForm] = useState<RegisterAgentFormState>(INITIAL_FORM_STATE);
   const [validationMessage, setValidationMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [ownerAddress, setOwnerAddress] = useState("");
+  const [verifiers, setVerifiers] = useState<VerifierTemplate[] | null>(null);
+
+  useEffect(() => {
+    ensureSession().then((s) => setOwnerAddress(s.ownerAddress));
+    listVerifiers({ status: "active" }).then(({ verifiers }) => {
+      setVerifiers(verifiers);
+      if (verifiers.length > 0) setForm((f) => ({ ...f, verifier: verifiers[0].id }));
+    });
+  }, []);
 
   function update<K extends keyof RegisterAgentFormState>(key: K, value: RegisterAgentFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function createAgent() {
+  async function createAgentSubmit() {
     const error = validateForm(form);
     if (error) {
       setValidationMessage(error);
       return;
     }
     setValidationMessage("");
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      const { agent } = await createAgent({
+        name: form.name,
+        category: form.category.toLowerCase() as AgentCategory,
+        description: form.description,
+        short_pitch: form.taskType || form.description,
+        pricing_model: "fixed",
+        base_price: Number(form.price),
+        currency: form.currency as "CSPR" | "USD",
+        verifier_ids: form.verifier ? [form.verifier] : [],
+        supported_task_types: form.taskTypes
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+      });
+
+      if (form.publish && form.verifier) {
+        await createMarketplaceListing({
+          agent_id: agent.id,
+          title: agent.name,
+          category: agent.category,
+          price_amount: Number(form.price),
+          currency: form.currency as "CSPR" | "USD",
+          verifier_id: form.verifier,
+          summary: form.description,
+        }).catch(() => {
+          // Agent was created successfully even if listing publish failed; not fatal to this flow.
+        });
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setValidationMessage(err instanceof ApiClientError ? err.message : "Failed to create agent.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function resetForm() {
-    setForm(INITIAL_FORM_STATE);
+    setForm({ ...INITIAL_FORM_STATE, verifier: verifiers?.[0]?.id ?? "" });
     setValidationMessage("");
     setSubmitted(false);
   }
+
+  const verifierName = verifiers?.find((v) => v.id === form.verifier)?.name ?? form.verifier;
 
   return (
     <div className={styles.page}>
@@ -139,6 +190,10 @@ export default function RegisterAgentPage() {
                         className={styles.execTypeConditionalInput}
                       />
                     ) : null}
+                    <p className={styles.fieldNote}>
+                      Execution type isn&apos;t part of the current agent record yet — captured here for the roadmap,
+                      not persisted server-side.
+                    </p>
                   </div>
                   <div>
                     <label className={styles.formLabel}>Supported task types</label>
@@ -151,12 +206,8 @@ export default function RegisterAgentPage() {
                   </div>
                   <div>
                     <label className={styles.formLabel}>Owner wallet</label>
-                    <input
-                      value={form.ownerWallet}
-                      onChange={(e) => update("ownerWallet", e.target.value)}
-                      placeholder="0x..."
-                      className={styles.formInputMono}
-                    />
+                    <input value={ownerAddress} readOnly className={styles.formInputMono} style={{ opacity: 0.7 }} />
+                    <p className={styles.fieldNote}>Determined by your session&apos;s API key identity.</p>
                   </div>
                 </div>
               </div>
@@ -166,17 +217,29 @@ export default function RegisterAgentPage() {
                 <div className={styles.fields}>
                   <div>
                     <label className={styles.formLabel}>Verifier template</label>
-                    <select
-                      value={form.verifier}
-                      onChange={(e) => update("verifier", e.target.value)}
-                      className={styles.formSelect}
-                    >
-                      {VERIFIER_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
+                    {verifiers === null ? (
+                      <p className={styles.fieldNote}>Loading verifiers...</p>
+                    ) : verifiers.length === 0 ? (
+                      <p className={styles.fieldNote}>
+                        No verifier templates exist yet.{" "}
+                        <Link href="/verifiers/new" style={{ textDecoration: "underline" }}>
+                          Register one first
+                        </Link>
+                        .
+                      </p>
+                    ) : (
+                      <select
+                        value={form.verifier}
+                        onChange={(e) => update("verifier", e.target.value)}
+                        className={styles.formSelect}
+                      >
+                        {verifiers.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     <p className={styles.fieldNote}>
                       Only verifier templates already registered as VerifierTemplate records can be selected.
                     </p>
@@ -247,8 +310,8 @@ export default function RegisterAgentPage() {
 
             {validationMessage ? <div className={styles.validationError}>{validationMessage}</div> : null}
 
-            <button onClick={createAgent} className={styles.submitButton}>
-              Create agent
+            <button onClick={createAgentSubmit} disabled={submitting} className={styles.submitButton}>
+              {submitting ? "Creating..." : "Create agent"}
             </button>
           </>
         ) : (
@@ -265,14 +328,11 @@ export default function RegisterAgentPage() {
               </div>
               <div className={styles.successRow}>
                 <span className={styles.successRowLabel}>Verifier</span>
-                <span className={styles.successRowValue}>{form.verifier}</span>
+                <span className={styles.successRowValue}>{verifierName}</span>
               </div>
               <div className={styles.successRow}>
                 <span className={styles.successRowLabel}>Output schema</span>
-                <span
-                  className={styles.successRowValue}
-                  style={{ textAlign: "right", maxWidth: "60%" }}
-                >
+                <span className={styles.successRowValue} style={{ textAlign: "right", maxWidth: "60%" }}>
                   {outputSchemaSummary(form.outputSchema)}
                 </span>
               </div>
@@ -286,7 +346,7 @@ export default function RegisterAgentPage() {
                 <span className={styles.successRowLabel}>Marketplace listing</span>
                 <span className={styles.listingTag} style={{ color: form.publish ? "#64D96B" : "#6E6E6C" }}>
                   <span className={styles.listingDot} style={{ background: form.publish ? "#64D96B" : "#6E6E6C" }} />
-                  {form.publish ? "Published" : "Not published"}
+                  {form.publish ? "Publish attempted" : "Not published"}
                 </span>
               </div>
             </div>

@@ -1,4 +1,8 @@
+import type { MarketplaceListing } from "@/lib/api-types";
+import { formatMode } from "@/components/agents/agents-data";
+
 export type Listing = {
+  id: string;
   agent: string;
   verifier: string;
   price: string;
@@ -13,25 +17,31 @@ export const CATEGORY_OPTIONS = ["All", "Invoice", "DeFi", "Research", "Complian
 export const MODE_OPTIONS = ["All", "TEE Verification Mode", "TEE Verification"] as const;
 export const STATUS_OPTIONS = ["Live", "Paused", "All"] as const;
 
-export const ALL_LISTINGS: Listing[] = [
-  {
-    agent: "Invoice Risk Agent",
-    verifier: "verifyInvoiceRisk",
-    price: "4 CSPR",
-    reputation: "92 / 100",
-    category: "Invoice",
-    mode: "TEE Verification Mode",
-    status: "Live",
-    href: "/marketplace/listing_invoice_risk",
-  },
-];
+function categoryLabel(category: string): string {
+  if (!category) return "Custom";
+  return category.charAt(0).toUpperCase() + category.slice(1);
+}
 
-export function filterListings(
-  categoryFilter: string,
-  modeFilter: string,
-  statusFilter: string
-): Listing[] {
-  return ALL_LISTINGS.filter((l) => {
+function statusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+export function toListing(listing: MarketplaceListing, verifierMode?: string): Listing {
+  return {
+    id: listing.id,
+    agent: listing.title,
+    verifier: listing.proof_requirement || "—",
+    price: `${listing.price_amount} ${listing.currency}`,
+    reputation: `${listing.reputation_score} / 100`,
+    category: categoryLabel(listing.category),
+    mode: verifierMode ? formatMode(verifierMode) : "TEE Verification Mode",
+    status: statusLabel(listing.status),
+    href: `/marketplace/${listing.id}`,
+  };
+}
+
+export function filterListings(listings: Listing[], categoryFilter: string, modeFilter: string, statusFilter: string): Listing[] {
+  return listings.filter((l) => {
     if (categoryFilter !== "All" && l.category !== categoryFilter) return false;
     if (modeFilter !== "All" && l.mode !== modeFilter) return false;
     if (statusFilter !== "All" && l.status !== statusFilter) return false;
@@ -41,10 +51,10 @@ export function filterListings(
 
 export function emptyReasonFor(categoryFilter: string, statusFilter: string): string {
   if (statusFilter === "Paused") {
-    return "No paused listings right now. Every published listing is currently live.";
+    return "No paused listings right now.";
   }
-  if (categoryFilter !== "All" && categoryFilter !== "Invoice") {
-    return `No live ${categoryFilter} listings yet. This category is still in development.`;
+  if (categoryFilter !== "All") {
+    return `No live ${categoryFilter} listings yet.`;
   }
   return "Register an agent, attach a verifier, and publish a listing to see it here.";
 }

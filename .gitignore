@@ -10,6 +10,7 @@ backend/data/
 
 # Environment (secrets)
 .env
+.env.local
 !.env.example
 
 # Rust / Odra

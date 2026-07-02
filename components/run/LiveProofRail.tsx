@@ -1,7 +1,7 @@
 import type { RailStep } from "./run-state";
 import styles from "./Run.module.css";
 
-export function LiveProofRail({ steps }: { steps: RailStep[] }) {
+export function LiveProofRail({ steps, taskTitle }: { steps: RailStep[]; taskTitle: string }) {
   return (
     <div className={styles.railRight}>
       <div className={styles.railPanel}>
@@ -9,7 +9,7 @@ export function LiveProofRail({ steps }: { steps: RailStep[] }) {
         <div className={styles.railLineInner} />
         <div className={styles.railHeader}>
           <span className={styles.panelLabel}>Live proof rail</span>
-          <span className={styles.railHeaderTask}>INV-1024</span>
+          <span className={styles.railHeaderTask}>{taskTitle}</span>
         </div>
 
         <div className={styles.railSteps}>

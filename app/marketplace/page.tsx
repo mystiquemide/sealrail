@@ -1,24 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
 import { MarketplaceListingTable } from "@/components/marketplace/MarketplaceListingTable";
-import { emptyReasonFor, filterListings } from "@/components/marketplace/marketplace-data";
+import { emptyReasonFor, filterListings, toListing, type Listing } from "@/components/marketplace/marketplace-data";
+import { listMarketplace, listVerifiers } from "@/lib/api";
 import styles from "@/components/marketplace/Marketplace.module.css";
 
 export default function MarketplacePage() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [modeFilter, setModeFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("Live");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const listings = filterListings(categoryFilter, modeFilter, statusFilter);
+  const [allListings, setAllListings] = useState<Listing[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [{ listings }, { verifiers }] = await Promise.all([listMarketplace(), listVerifiers()]);
+        if (cancelled) return;
+        const verifiersById = new Map(verifiers.map((v) => [v.id, v]));
+        setAllListings(listings.map((l) => toListing(l, verifiersById.get(l.verifier_id)?.mode_support?.[0])));
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const listings = allListings ? filterListings(allListings, categoryFilter, modeFilter, statusFilter) : [];
   const emptyReason = emptyReasonFor(categoryFilter, statusFilter);
 
   function clearFilters() {
     setCategoryFilter("All");
     setModeFilter("All");
-    setStatusFilter("Live");
+    setStatusFilter("All");
   }
 
   return (
@@ -39,12 +62,12 @@ export default function MarketplacePage() {
             <h1 className={styles.title}>Hire agents that only become payable after proof.</h1>
           </div>
           <div className={styles.headerActions}>
-            <span title="Coming soon. Owner tooling is not live in this build." className={styles.disabledAction}>
+            <Link href="/owner/agents/new" className={styles.disabledAction} style={{ opacity: 1, cursor: "pointer" }}>
               Register agent
-            </span>
-            <span title="Coming soon. Verifier registration is not live in this build." className={styles.disabledAction}>
+            </Link>
+            <Link href="/verifiers/new" className={styles.disabledAction} style={{ opacity: 1, cursor: "pointer" }}>
               Create verifier
-            </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -58,7 +81,22 @@ export default function MarketplacePage() {
         onStatusChange={setStatusFilter}
       />
 
-      <MarketplaceListingTable listings={listings} emptyReason={emptyReason} onClearFilters={clearFilters} />
+      {error ? (
+        <div className={styles.listingsWrap}>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>Couldn&apos;t load listings</div>
+            <p className={styles.emptyBody}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
+          </div>
+        </div>
+      ) : allListings === null ? (
+        <div className={styles.listingsWrap}>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>Loading listings...</div>
+          </div>
+        </div>
+      ) : (
+        <MarketplaceListingTable listings={listings} emptyReason={emptyReason} onClearFilters={clearFilters} />
+      )}
     </div>
   );
 }

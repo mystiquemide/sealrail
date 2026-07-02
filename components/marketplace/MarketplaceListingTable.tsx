@@ -34,12 +34,12 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters 
           <span style={{ textAlign: "right" }}>Action</span>
         </div>
         {listings.map((l) => (
-          <div key={l.agent} className={`${styles.listingRow} ${styles.listingGridCols}`}>
+          <div key={l.id} className={`${styles.listingRow} ${styles.listingGridCols}`}>
             <div>
               <div className={styles.listingAgent}>{l.agent}</div>
               <div className={styles.listingLiveTag}>
                 <span className={styles.listingLiveDot} />
-                Live
+                {l.status}
               </div>
             </div>
             <span className={styles.listingVerifier}>{l.verifier}</span>

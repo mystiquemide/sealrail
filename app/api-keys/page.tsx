@@ -4,11 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
 import { ApiKeyTable } from "@/components/api-keys/ApiKeyTable";
 import { CreateApiKeyModal } from "@/components/api-keys/CreateApiKeyModal";
-import { INITIAL_KEYS, generateKeySecret, type ApiKey } from "@/components/api-keys/api-keys-types";
+import { EmptyState } from "@/components/app/EmptyState";
+import { ApiClientError, createApiKey, listApiKeys, revokeApiKey } from "@/lib/api";
+import { ensureSession } from "@/lib/session";
+import type { ApiKey } from "@/lib/api-types";
 import styles from "@/components/api-keys/ApiKeys.module.css";
 
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<ApiKey[]>(INITIAL_KEYS);
+  const [keys, setKeys] = useState<ApiKey[] | null>(null);
+  const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [stage, setStage] = useState<"form" | "secret">("form");
   const [newKeyName, setNewKeyName] = useState("");
@@ -16,14 +20,24 @@ export default function ApiKeysPage() {
   const [generatedSecret, setGeneratedSecret] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    loadKeys();
+    return () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
-    },
-    []
-  );
+    };
+  }, []);
+
+  async function loadKeys() {
+    try {
+      const { keys } = await listApiKeys();
+      setKeys(keys);
+    } catch {
+      setError(true);
+    }
+  }
 
   function openModal() {
     setModalOpen(true);
@@ -35,13 +49,14 @@ export default function ApiKeysPage() {
 
   function closeModal() {
     setModalOpen(false);
+    loadKeys();
   }
 
   function toggleScope(scope: string) {
     setSelectedScopes((prev) => (prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]));
   }
 
-  function createKey() {
+  async function handleCreateKey() {
     if (!newKeyName.trim()) {
       setValidationMessage("Key name is required.");
       return;
@@ -50,19 +65,22 @@ export default function ApiKeysPage() {
       setValidationMessage("Select at least one scope.");
       return;
     }
-    const { prefix, secret } = generateKeySecret();
-    const newKey: ApiKey = {
-      id: Date.now(),
-      name: newKeyName.trim(),
-      prefix,
-      scopes: [...selectedScopes],
-      lastUsed: "Never",
-      revoked: false,
-    };
-    setKeys((prev) => [newKey, ...prev]);
-    setGeneratedSecret(secret);
-    setStage("secret");
+    setCreating(true);
     setValidationMessage("");
+    try {
+      const session = await ensureSession();
+      const { secret } = await createApiKey({
+        name: newKeyName.trim(),
+        scopes: selectedScopes,
+        owner_address: session.ownerAddress,
+      });
+      setGeneratedSecret(secret);
+      setStage("secret");
+    } catch (err) {
+      setValidationMessage(err instanceof ApiClientError ? err.message : "Failed to create key.");
+    } finally {
+      setCreating(false);
+    }
   }
 
   function copySecret() {
@@ -76,8 +94,13 @@ export default function ApiKeysPage() {
     copyTimer.current = setTimeout(() => setCopied(false), 1600);
   }
 
-  function revokeKey(id: number) {
-    setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, revoked: true } : k)));
+  async function handleRevoke(id: string) {
+    try {
+      await revokeApiKey(id);
+      loadKeys();
+    } catch {
+      // Revoke failures surface implicitly: row stays non-revoked and stays clickable to retry.
+    }
   }
 
   return (
@@ -103,19 +126,25 @@ export default function ApiKeysPage() {
           </button>
         </div>
 
-        <ApiKeyTable keys={keys} onRevoke={revokeKey} />
+        {error ? (
+          <EmptyState error title="Couldn't load API keys" body="The backend at NEXT_PUBLIC_API_URL could not be reached." />
+        ) : keys === null ? (
+          <p style={{ color: "#8c8c8a", fontSize: 13 }}>Loading...</p>
+        ) : (
+          <ApiKeyTable keys={keys} onRevoke={handleRevoke} />
+        )}
 
         {modalOpen ? (
           <CreateApiKeyModal
             stage={stage}
             newKeyName={newKeyName}
             selectedScopes={selectedScopes}
-            validationMessage={validationMessage}
+            validationMessage={creating ? "Creating..." : validationMessage}
             generatedSecret={generatedSecret}
             copyLabel={copied ? "Copied" : "Copy secret"}
             onNameChange={setNewKeyName}
             onToggleScope={toggleScope}
-            onCreate={createKey}
+            onCreate={handleCreateKey}
             onCopySecret={copySecret}
             onClose={closeModal}
           />

@@ -14,7 +14,12 @@ export function FinalProofBundle({ bundleText, ready, copyLabel, onCopy }: Final
         <div className={styles.sectionLabel} style={{ marginBottom: 0 }}>
           Final proof bundle
         </div>
-        <button onClick={onCopy} disabled={!ready} className={styles.copyButton} style={{ cursor: ready ? "pointer" : "not-allowed" }}>
+        <button
+          onClick={onCopy}
+          disabled={!ready}
+          className={styles.copyButton}
+          style={{ cursor: ready ? "pointer" : "not-allowed", opacity: ready ? 1 : 0.55 }}
+        >
           {copyLabel}
         </button>
       </div>

@@ -1,9 +1,10 @@
-export type WorkflowStage = 0 | 1 | 2 | 3 | 4 | 5;
+import type { WorkflowRun, WorkflowStepRun, WorkflowStepTemplate } from "@/lib/api-types";
 
 const GREEN = "#64D96B";
 const AMBER = "#F2B84B";
 const BLUE = "#3C8DFF";
 const GRAY = "#6E6E6C";
+const RED = "#F45B45";
 const DOT_OFF = "#0E0E0E";
 
 export type StepRun = {
@@ -17,30 +18,50 @@ export type StepRun = {
   pulse: boolean;
 };
 
-const STEP_DEFS = [
-  { n: "01", name: "Invoice Risk Agent", verifier: "verifyInvoiceRisk" },
-  { n: "02", name: "Payment Approval Agent", verifier: "approvalVerifier" },
-  { n: "03", name: "Settlement Verifier", verifier: "finalProofVerifier" },
-];
+const STATUS_LABEL: Record<WorkflowStepRun["status"], string> = {
+  waiting: "Waiting",
+  running: "Running",
+  verified: "Verified",
+  failed: "Failed",
+};
 
-export function computeSteps(stage: WorkflowStage): StepRun[] {
-  return STEP_DEFS.map((d, i) => {
-    const idx = i + 1;
-    let status: string;
-    let color: string;
-    if (stage > idx) {
-      status = "Verified";
-      color = GREEN;
-    } else if (stage === idx) {
-      status = "Running";
-      color = BLUE;
-    } else {
-      status = "Waiting";
-      color = GRAY;
-    }
-    const dotBg = stage === idx ? color : stage > idx ? color : DOT_OFF;
-    return { ...d, status, color, dotBg, dotBorder: color, pulse: stage === idx };
-  });
+const STATUS_COLOR: Record<WorkflowStepRun["status"], string> = {
+  waiting: GRAY,
+  running: BLUE,
+  verified: GREEN,
+  failed: RED,
+};
+
+export function computeSteps(
+  stepRuns: WorkflowStepRun[],
+  templateSteps: WorkflowStepTemplate[],
+  agentNames: Map<string, string>,
+  verifierNames: Map<string, string>,
+  busyStepId: string | null
+): StepRun[] {
+  const byTemplateId = new Map(templateSteps.map((t) => [t.id, t]));
+  return stepRuns
+    .slice()
+    .sort((a, b) => {
+      const orderA = byTemplateId.get(a.step_template_id)?.order ?? 0;
+      const orderB = byTemplateId.get(b.step_template_id)?.order ?? 0;
+      return orderA - orderB;
+    })
+    .map((sr, i) => {
+      const template = byTemplateId.get(sr.step_template_id);
+      const status = busyStepId === sr.id ? "running" : sr.status;
+      const color = STATUS_COLOR[status];
+      return {
+        n: String(i + 1).padStart(2, "0"),
+        name: template ? (agentNames.get(template.agent_id) ?? template.name) : "Step",
+        verifier: template ? (verifierNames.get(template.verifier_id) ?? template.verifier_id) : "—",
+        status: STATUS_LABEL[status],
+        color,
+        dotBg: status === "waiting" ? DOT_OFF : color,
+        dotBorder: color,
+        pulse: status === "running",
+      };
+    });
 }
 
 export type SplitRow = {
@@ -51,49 +72,33 @@ export type SplitRow = {
   color: string;
 };
 
-const SPLIT_DEFS = [
-  { recipient: "Invoice Risk Agent", role: "primary_agent", share: "60%", unlockAt: 2 },
-  { recipient: "Payment Approval Agent", role: "workflow_step", share: "30%", unlockAt: 3 },
-  { recipient: "Platform / verifier fee", role: "verifier", share: "10%", unlockAt: 4 },
-];
-
-export function computeSplits(stage: WorkflowStage): SplitRow[] {
-  return SPLIT_DEFS.map((d) => ({
-    recipient: d.recipient,
+export function computeSplits(
+  splitDefault: Array<{ address: string; role: string; share_bps: number; agent_id?: string | null }>,
+  runStatus: WorkflowRun["status"],
+  agentNames: Map<string, string>
+): SplitRow[] {
+  const unlocked = runStatus === "anchored" || runStatus === "payable" || runStatus === "paid";
+  return splitDefault.map((d) => ({
+    recipient: (d.agent_id && agentNames.get(d.agent_id)) || d.address,
     role: d.role,
-    share: d.share,
-    state: stage >= d.unlockAt ? "Unlocked" : "Locked",
-    color: stage >= d.unlockAt ? GREEN : AMBER,
+    share: `${Math.round(d.share_bps / 100)}%`,
+    state: runStatus === "paid" ? "Paid" : unlocked ? "Unlocked" : "Locked",
+    color: runStatus === "paid" || unlocked ? GREEN : AMBER,
   }));
 }
 
-export function computeBundleText(stage: WorkflowStage): string {
-  if (stage < 5) return "Run the workflow to generate the final proof bundle.";
-  return [
-    "step_proof_hash_01: 0x80d0...cd44",
-    "step_proof_hash_02: 0x4e91...02aa",
-    "step_proof_hash_03: 0x1c7b...ff31",
-    "split_bundle_hash: 0x9d3e...11bc",
-    "casper_anchor: 0x9d3e...11bc (anchored)",
-  ].join("\n");
+export function computeBundleText(run: WorkflowRun | null, stepProofHashes: string[]): string {
+  if (!run || run.status !== "paid" && run.status !== "payable" && run.status !== "anchored") {
+    return "Run and finalize the workflow to generate the final proof bundle.";
+  }
+  const lines = stepProofHashes.map((h, i) => `step_proof_hash_${String(i + 1).padStart(2, "0")}: ${h}`);
+  lines.push(`final_proof_id: ${run.final_proof_id ?? "pending"}`);
+  return lines.join("\n");
 }
 
-export function computeRunButton(stage: WorkflowStage) {
-  const label = stage === 0 ? "Run workflow" : stage >= 5 ? "Workflow complete" : "Running workflow...";
-  const background = stage === 0 ? "#FFFFFF" : stage >= 5 ? "transparent" : "rgba(60,141,255,0.14)";
-  const color = stage === 0 ? "#080808" : stage >= 5 ? "#64D96B" : "#9DC4FF";
-  const borderColor = stage === 0 ? "#FFFFFF" : stage >= 5 ? "rgba(100,217,107,0.4)" : "rgba(60,141,255,0.45)";
-  const cursor = stage === 0 ? "pointer" : "default";
-  return { label, background, color, borderColor, cursor };
+export function computeRunButtonLabel(run: WorkflowRun | null, busy: boolean): string {
+  if (!run) return busy ? "Starting run..." : "Run workflow";
+  if (run.status === "paid" || run.status === "payable" || run.status === "anchored") return "Workflow complete";
+  if (run.status === "step_failed") return "Workflow failed";
+  return busy ? "Running..." : "Continue workflow";
 }
-
-export const WORKFLOW_BUNDLE = {
-  workflow: "invoice_settlement",
-  steps: [
-    { agent: "Invoice Risk Agent", verifier: "verifyInvoiceRisk", proof_hash: "0x80d0...cd44" },
-    { agent: "Payment Approval Agent", verifier: "approvalVerifier", proof_hash: "0x4e91...02aa" },
-    { agent: "Settlement Verifier", verifier: "finalProofVerifier", proof_hash: "0x1c7b...ff31" },
-  ],
-  split_bundle_hash: "0x9d3e...11bc",
-  casper_anchor: "0x9d3e...11bc",
-};

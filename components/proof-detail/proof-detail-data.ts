@@ -1,3 +1,11 @@
+import type { Proof, TaskDetail } from "@/lib/api-types";
+
+const GREEN = "#64D96B";
+const RED = "#F45B45";
+const AMBER = "#F2B84B";
+const GRAY = "#6E6E6C";
+const NEU = "#C9C9C7";
+
 export type ProofDetailRecord = {
   amount: string;
   payState: string;
@@ -5,6 +13,8 @@ export type ProofDetailRecord = {
   result: string;
   decision: string;
   timestamp: string;
+  agentId: string;
+  verifierId: string;
   wasmHash: string;
   wasmColor: string;
   attHash: string;
@@ -18,75 +28,61 @@ export type ProofDetailRecord = {
   statusSentence: string;
 };
 
-const PROOF_RECORDS: Record<string, ProofDetailRecord> = {
-  "INV-1024": {
-    amount: "12,400 USD",
-    payState: "Payable",
-    payColor: "#64D96B",
-    result: "Medium risk",
-    decision: "Approve with review",
-    timestamp: "2026-06-30 14:02 UTC",
-    wasmHash: "b94f...bb69f",
-    wasmColor: "#C9C9C7",
-    attHash: "80d0...cd44",
-    attColor: "#C9C9C7",
-    verifyResult: "success: true",
-    verifyColor: "#64D96B",
-    proofKey: "0x80d0...cd44",
-    anchorStatus: "Anchored",
-    anchorColor: "#64D96B",
-    explorerLink: "available after live anchor",
-    statusSentence: "Proof verified. Payment unlocked.",
-  },
-  "INV-1025": {
-    amount: "8,150 USD",
-    payState: "Blocked",
-    payColor: "#F45B45",
-    result: "Pending",
-    decision: "Awaiting verification",
-    timestamp: "2026-06-30 15:41 UTC",
-    wasmHash: "b94f...bb69f",
-    wasmColor: "#C9C9C7",
-    attHash: "pending",
-    attColor: "#6E6E6C",
-    verifyResult: "pending",
-    verifyColor: "#F2B84B",
-    proofKey: "pending",
-    anchorStatus: "Pending",
-    anchorColor: "#F2B84B",
-    explorerLink: "available after live anchor",
-    statusSentence: "Proof pending. Payment blocked until verified.",
-  },
-  "INV-1026": {
-    amount: "5,980 USD",
-    payState: "Blocked",
-    payColor: "#F45B45",
-    result: "High risk",
-    decision: "Reject",
-    timestamp: "2026-06-30 09:17 UTC",
-    wasmHash: "b94f...bb69f",
-    wasmColor: "#C9C9C7",
-    attHash: "none",
-    attColor: "#6E6E6C",
-    verifyResult: "success: false",
-    verifyColor: "#F45B45",
-    proofKey: "none",
-    anchorStatus: "None",
-    anchorColor: "#F45B45",
-    explorerLink: "not available",
-    statusSentence: "Proof failed. Payment blocked.",
-  },
-};
-
-export function getProofDetail(taskId: string): ProofDetailRecord | undefined {
-  return PROOF_RECORDS[taskId];
+function latestProof(proofs: Proof[]): Proof | undefined {
+  return proofs[proofs.length - 1];
 }
 
-export function buildProofBundle(taskId: string, r: ProofDetailRecord) {
+export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
+  const { task, payment } = detail;
+  const proof = latestProof(detail.proofs);
+  const result = task.input?.result as Record<string, unknown> | undefined;
+
+  const payState = payment
+    ? payment.status === "paid"
+      ? "Paid"
+      : payment.status === "unlockable"
+        ? "Payable"
+        : "Blocked"
+    : "No payment";
+  const payColor = payState === "Paid" || payState === "Payable" ? GREEN : payState === "Blocked" ? RED : GRAY;
+
+  const verified = proof?.status === "verified" || proof?.status === "anchored";
+  const failed = proof?.status === "failed";
+
   return {
-    task: taskId,
-    mode: "TEE Verification Mode",
-    verifier: "verifyInvoiceRisk",
+    amount: payment ? `${payment.total_amount} ${payment.currency}` : "—",
+    payState,
+    payColor,
+    result: (result?.decision as string) ?? (task.status === "failed" ? "Failed" : "Pending"),
+    decision: (result?.reasoning as string) ?? "No decision recorded yet.",
+    timestamp: task.updated_at,
+    agentId: task.agent_id,
+    verifierId: proof?.verifier_id ?? "—",
+    wasmHash: proof?.wasm_hash ?? "pending",
+    wasmColor: proof ? NEU : GRAY,
+    attHash: proof?.attestation_hash ?? "pending",
+    attColor: proof ? NEU : GRAY,
+    verifyResult: verified ? "success: true" : failed ? "success: false" : "pending",
+    verifyColor: verified ? GREEN : failed ? RED : AMBER,
+    proofKey: proof?.casper_anchor_hash ?? "pending",
+    anchorStatus: proof?.casper_anchor_hash ? "Anchored" : task.status === "failed" ? "None" : "Pending",
+    anchorColor: proof?.casper_anchor_hash ? GREEN : task.status === "failed" ? RED : AMBER,
+    explorerLink: proof?.casper_anchor_hash ? "available after live anchor" : "not available",
+    statusSentence:
+      task.status === "paid" || task.status === "payable"
+        ? "Proof verified. Payment unlocked."
+        : task.status === "failed" || task.status === "blocked"
+          ? "Proof failed or blocked. Payment blocked."
+          : "Proof pending. Payment blocked until verified.",
+  };
+}
+
+export function buildProofBundle(taskTitle: string, detail: TaskDetail, r: ProofDetailRecord) {
+  return {
+    task: taskTitle,
+    task_id: detail.task.id,
+    mode: "tee_verification_mode",
+    verifier: r.verifierId,
     result: r.result,
     decision: r.decision,
     wasm_hash: r.wasmHash,

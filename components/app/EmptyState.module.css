@@ -1,0 +1,48 @@
+.block {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 72px 4px;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: #f6f5f3;
+}
+
+.body {
+  font-size: 14px;
+  color: #8c8c8a;
+  margin: 10px auto 0;
+  max-width: 420px;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 22px;
+  padding: 11px 20px;
+  background: #ffffff;
+  color: #080808;
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 13.5px;
+}
+
+.errorTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f45b45;
+  margin-bottom: 10px;
+}
+
+.errorDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f45b45;
+}

@@ -1,9 +1,21 @@
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
-import { VERIFIER_TEMPLATES } from "@/components/verifiers/verifiers-data";
+import { EmptyState } from "@/components/app/EmptyState";
+import { toVerifierRow } from "@/components/verifiers/verifiers-data";
+import { listVerifiers } from "@/lib/api";
 import styles from "@/components/verifiers/Verifiers.module.css";
 
-export default function VerifiersPage() {
+export default async function VerifiersPage() {
+  let rows: ReturnType<typeof toVerifierRow>[] = [];
+  let error = false;
+
+  try {
+    const { verifiers } = await listVerifiers();
+    rows = verifiers.map(toVerifierRow);
+  } catch {
+    error = true;
+  }
+
   return (
     <div className={styles.page}>
       <AppNav
@@ -30,29 +42,46 @@ export default function VerifiersPage() {
       </div>
 
       <div className={styles.listWrap}>
-        <div className={styles.table}>
-          <div className={`${styles.tableHead} ${styles.gridCols}`}>
-            <span>Name</span>
-            <span>Task type</span>
-            <span>WASM hash</span>
-            <span style={{ textAlign: "right" }}>State</span>
-          </div>
-          {VERIFIER_TEMPLATES.map((v) => (
-            <div key={v.name} className={`${styles.row} ${styles.gridCols}`}>
-              <span className={styles.name}>{v.name}</span>
-              <span className={styles.taskType}>{v.taskType}</span>
-              <span className={styles.wasmHash}>{v.wasmHash}</span>
-              <span className={styles.stateTag}>
-                <span className={styles.stateDot} />
-                {v.state}
-              </span>
+        {error ? (
+          <EmptyState
+            error
+            title="Couldn't load verifiers"
+            body="The backend at NEXT_PUBLIC_API_URL could not be reached."
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="No verifier templates yet"
+            body="Register a verifier template backed by a WASM artifact hash to see it here."
+            actionLabel="Register a verifier"
+            actionHref="/verifiers/new"
+          />
+        ) : (
+          <>
+            <div className={styles.table}>
+              <div className={`${styles.tableHead} ${styles.gridCols}`}>
+                <span>Name</span>
+                <span>Task type</span>
+                <span>WASM hash</span>
+                <span style={{ textAlign: "right" }}>State</span>
+              </div>
+              {rows.map((v) => (
+                <div key={v.id} className={`${styles.row} ${styles.gridCols}`}>
+                  <span className={styles.name}>{v.name}</span>
+                  <span className={styles.taskType}>{v.taskType}</span>
+                  <span className={styles.wasmHash}>{v.wasmHash}</span>
+                  <span className={styles.stateTag}>
+                    <span className={styles.stateDot} />
+                    {v.state}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className={styles.footNote}>
-          Verifier templates only appear here once registered and backed by a WASM artifact hash. No unverified
-          templates are listed.
-        </p>
+            <p className={styles.footNote}>
+              Verifier templates only appear here once registered and backed by a WASM artifact hash. No unverified
+              templates are listed.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

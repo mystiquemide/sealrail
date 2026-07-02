@@ -1,15 +1,73 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
-import { getListingDetail } from "@/components/marketplace-listing/listing-data";
+import { toListingDetail, type ListingDetail } from "@/components/marketplace-listing/listing-data";
+import { ApiClientError, createTaskFromListing, getMarketplaceListing, getVerifier } from "@/lib/api";
+import { DEMO_BUYER_ADDRESS } from "@/lib/session";
 import styles from "@/components/marketplace-listing/ListingDetail.module.css";
 
 type ListingPageProps = {
   params: Promise<{ listingId: string }>;
 };
 
-export default async function MarketplaceListingPage({ params }: ListingPageProps) {
-  const { listingId } = await params;
-  const listing = getListingDetail(listingId);
+export default function MarketplaceListingPage({ params }: ListingPageProps) {
+  const { listingId } = use(params);
+
+  const [listing, setListing] = useState<ListingDetail | null | undefined>(undefined);
+  const [error, setError] = useState(false);
+
+  const [invoiceId, setInvoiceId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [vendor, setVendor] = useState("");
+  const [buyer, setBuyer] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ taskId: string; title: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const { listing: raw } = await getMarketplaceListing(listingId);
+        const verifier = await getVerifier(raw.verifier_id).then((r) => r.verifier).catch(() => undefined);
+        if (!cancelled) setListing(toListingDetail(raw, verifier));
+      } catch (err) {
+        if (cancelled) return;
+        if (err instanceof ApiClientError && err.status === 404) {
+          setListing(null);
+        } else {
+          setError(true);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [listingId]);
+
+  async function handleCreateTask() {
+    if (!invoiceId.trim() || !amount.trim()) {
+      setSubmitError("Invoice ID and amount are required.");
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { task } = await createTaskFromListing(listingId, {
+        buyer_address: DEMO_BUYER_ADDRESS,
+        input: { invoice_id: invoiceId, amount, vendor, buyer, due_date: dueDate },
+      });
+      setCreated({ taskId: task.id, title: task.title || invoiceId });
+    } catch (err) {
+      setSubmitError(err instanceof ApiClientError ? err.message : "Failed to create task.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -28,7 +86,16 @@ export default async function MarketplaceListingPage({ params }: ListingPageProp
           Back to marketplace
         </Link>
 
-        {!listing ? (
+        {error ? (
+          <div style={{ marginTop: 40 }}>
+            <div className={styles.title}>Couldn&apos;t load this listing</div>
+            <p className={styles.subtitle}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
+          </div>
+        ) : listing === undefined ? (
+          <div style={{ marginTop: 40 }}>
+            <div className={styles.title}>Loading listing...</div>
+          </div>
+        ) : !listing ? (
           <div style={{ marginTop: 40 }}>
             <div className={styles.title}>Listing not found</div>
             <p className={styles.subtitle}>
@@ -55,47 +122,71 @@ export default async function MarketplaceListingPage({ params }: ListingPageProp
                   </div>
                 </div>
               </div>
-              <div className={styles.headerActions}>
-                <Link href="/run" className={styles.btnPrimary}>
-                  Start paid task
-                </Link>
-                <span
-                  title="Coming soon. Public agent profiles are not live in this build."
-                  className={styles.disabledAction}
-                >
-                  View agent profile
-                </span>
-              </div>
             </div>
 
             <div className={styles.panelsWrap}>
               <div className={styles.panel}>
                 <div className={styles.panelLabel}>Task input</div>
-                <div className={styles.formFields}>
-                  <div>
-                    <label className={styles.formLabel}>Invoice ID</label>
-                    <input value={listing.taskDefaults.invoiceId} readOnly className={styles.formInputMono} />
+                {created ? (
+                  <div style={{ marginTop: 16 }}>
+                    <p className={styles.formLabel} style={{ color: "#64D96B" }}>
+                      Task created — {created.title}
+                    </p>
+                    <div className={styles.formFields} style={{ marginTop: 12 }}>
+                      <Link href={`/proofs/${created.title}`} className={styles.createTaskButton}>
+                        View proof status
+                      </Link>
+                    </div>
                   </div>
-                  <div>
-                    <label className={styles.formLabel}>Amount</label>
-                    <input value={listing.taskDefaults.amount} readOnly className={styles.formInput} />
-                  </div>
-                  <div>
-                    <label className={styles.formLabel}>Vendor</label>
-                    <input value={listing.taskDefaults.vendor} readOnly className={styles.formInput} />
-                  </div>
-                  <div>
-                    <label className={styles.formLabel}>Buyer</label>
-                    <input value={listing.taskDefaults.buyer} readOnly className={styles.formInput} />
-                  </div>
-                  <div>
-                    <label className={styles.formLabel}>Due date</label>
-                    <input value={listing.taskDefaults.dueDate} readOnly className={styles.formInputMono} />
-                  </div>
-                </div>
-                <Link href="/run" className={styles.createTaskButton}>
-                  Create paid task
-                </Link>
+                ) : (
+                  <>
+                    <div className={styles.formFields}>
+                      <div>
+                        <label className={styles.formLabel}>Invoice ID</label>
+                        <input
+                          value={invoiceId}
+                          onChange={(e) => setInvoiceId(e.target.value)}
+                          placeholder="INV-1030"
+                          className={styles.formInputMono}
+                        />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Amount</label>
+                        <input
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="12400"
+                          className={styles.formInput}
+                        />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Vendor</label>
+                        <input value={vendor} onChange={(e) => setVendor(e.target.value)} className={styles.formInput} />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Buyer</label>
+                        <input value={buyer} onChange={(e) => setBuyer(e.target.value)} className={styles.formInput} />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Due date</label>
+                        <input
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          placeholder="2026-07-30"
+                          className={styles.formInputMono}
+                        />
+                      </div>
+                    </div>
+                    {submitError ? (
+                      <p className={styles.formLabel} style={{ color: "#F45B45", marginTop: 10 }}>
+                        {submitError}
+                      </p>
+                    ) : null}
+                    <button onClick={handleCreateTask} disabled={submitting} className={styles.createTaskButton}>
+                      {submitting ? "Creating..." : "Create paid task"}
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className={styles.panel}>
@@ -126,41 +217,7 @@ export default async function MarketplaceListingPage({ params }: ListingPageProp
                       {listing.verifiedRuns}
                     </span>
                   </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoRowLabel}>Failed proofs</span>
-                    <span className={styles.infoRowValuePlain} style={{ color: "#F45B45" }}>
-                      {listing.failedProofs}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className={styles.proofsSection}>
-              <div className={styles.proofsLabel}>Recent proofs</div>
-              <div className={styles.proofsTable}>
-                <div className={`${styles.proofHead} ${styles.proofGridCols}`}>
-                  <span>Proof ID</span>
-                  <span>Task</span>
-                  <span>State</span>
-                  <span>Payment</span>
-                  <span>Casper</span>
-                </div>
-                {listing.recentProofs.map((p) => (
-                  <Link key={p.id} href={p.href} className={`${styles.proofRow} ${styles.proofGridCols}`}>
-                    <span className={styles.proofId}>{p.id}</span>
-                    <span className={styles.proofTask}>{p.task}</span>
-                    <span className={styles.proofState}>
-                      <span className={styles.proofStateDot} />
-                      {p.state}
-                    </span>
-                    <span className={styles.proofState}>
-                      <span className={styles.proofStateDot} />
-                      {p.payment}
-                    </span>
-                    <span className={styles.proofHash}>{p.hash}</span>
-                  </Link>
-                ))}
               </div>
             </div>
           </>

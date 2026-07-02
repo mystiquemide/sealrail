@@ -14,6 +14,7 @@ function StageButton({ n, label, variant, onClick }: StageButtonProps) {
   return (
     <button
       onClick={onClick}
+      disabled={variant === "off" || variant === "busy" || variant === "done"}
       className={styles.stageButton}
       style={{ background: v.background, color: v.color, borderColor: v.borderColor, opacity: v.opacity, cursor: v.cursor }}
     >
@@ -23,49 +24,90 @@ function StageButton({ n, label, variant, onClick }: StageButtonProps) {
   );
 }
 
-type TaskFormProps = {
-  buttons: { n: string; label: string; variant: ButtonVariant; onClick: () => void }[];
-  simulateFail: boolean;
-  failLocked: boolean;
-  onToggleFail: () => void;
+export type TaskFormFields = {
+  invoiceId: string;
+  amount: string;
+  vendor: string;
+  buyer: string;
+  dueDate: string;
+  terms: string;
+  notes: string;
 };
 
-export function TaskForm({ buttons, simulateFail, failLocked, onToggleFail }: TaskFormProps) {
+type TaskFormProps = {
+  fields: TaskFormFields;
+  onFieldChange: <K extends keyof TaskFormFields>(key: K, value: string) => void;
+  fieldsLocked: boolean;
+  buttons: { n: string; label: string; variant: ButtonVariant; onClick: () => void }[];
+};
+
+export function TaskForm({ fields, onFieldChange, fieldsLocked, buttons }: TaskFormProps) {
   return (
     <div className={styles.panel} style={{ flex: "1 1 380px" }}>
       <div className={styles.panelLabel}>Task input</div>
       <div className={styles.formGrid}>
         <div>
           <label className={styles.formLabel}>Invoice ID</label>
-          <input value="INV-1024" readOnly className={styles.formInputMono} />
+          <input
+            value={fields.invoiceId}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("invoiceId", e.target.value)}
+            className={styles.formInputMono}
+          />
         </div>
         <div>
-          <label className={styles.formLabel}>Amount</label>
-          <input value="12,400 USD" readOnly className={styles.formInput} />
+          <label className={styles.formLabel}>Amount (USD)</label>
+          <input
+            value={fields.amount}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("amount", e.target.value)}
+            className={styles.formInput}
+          />
         </div>
         <div>
           <label className={styles.formLabel}>Vendor</label>
-          <input value="Northwind Supply" readOnly className={styles.formInput} />
+          <input
+            value={fields.vendor}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("vendor", e.target.value)}
+            className={styles.formInput}
+          />
         </div>
         <div>
           <label className={styles.formLabel}>Buyer</label>
-          <input value="Atlas Retail" readOnly className={styles.formInput} />
+          <input
+            value={fields.buyer}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("buyer", e.target.value)}
+            className={styles.formInput}
+          />
         </div>
         <div>
           <label className={styles.formLabel}>Due date</label>
-          <input value="2026-07-30" readOnly className={styles.formInputMono} />
+          <input
+            value={fields.dueDate}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("dueDate", e.target.value)}
+            className={styles.formInputMono}
+          />
         </div>
         <div>
           <label className={styles.formLabel}>Terms</label>
-          <input value="Net 30" readOnly className={styles.formInput} />
+          <input
+            value={fields.terms}
+            readOnly={fieldsLocked}
+            onChange={(e) => onFieldChange("terms", e.target.value)}
+            className={styles.formInput}
+          />
         </div>
         <div className={styles.formFieldFull}>
           <label className={styles.formLabel}>Notes</label>
           <textarea
-            readOnly
+            readOnly={fieldsLocked}
             rows={2}
+            onChange={(e) => onFieldChange("notes", e.target.value)}
             className={styles.formTextarea}
-            value="Recurring vendor. Due-date variance flagged on prior cycle."
+            value={fields.notes}
           />
         </div>
       </div>
@@ -75,17 +117,6 @@ export function TaskForm({ buttons, simulateFail, failLocked, onToggleFail }: Ta
           <StageButton key={b.n} n={b.n} label={b.label} variant={b.variant} onClick={b.onClick} />
         ))}
       </div>
-
-      <label className={styles.failRow} style={{ cursor: failLocked ? "not-allowed" : "pointer" }}>
-        <input
-          type="checkbox"
-          checked={simulateFail}
-          disabled={failLocked}
-          onChange={onToggleFail}
-          className={styles.failCheckbox}
-        />
-        Simulate a failed proof
-      </label>
     </div>
   );
 }

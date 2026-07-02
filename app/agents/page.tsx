@@ -1,10 +1,27 @@
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import { AgentRow } from "@/components/agents/AgentRow";
-import { AGENTS } from "@/components/agents/agents-data";
+import { EmptyState } from "@/components/app/EmptyState";
+import { toAgentListItem } from "@/components/agents/agents-data";
+import { listAgents, listVerifiers } from "@/lib/api";
 import styles from "@/components/agents/Agents.module.css";
 
-export default function AgentsPage() {
+export default async function AgentsPage() {
+  let agents: Awaited<ReturnType<typeof listAgents>>["agents"] = [];
+  let verifiers: Awaited<ReturnType<typeof listVerifiers>>["verifiers"] = [];
+  let error = false;
+
+  try {
+    const [agentsRes, verifiersRes] = await Promise.all([listAgents(), listVerifiers()]);
+    agents = agentsRes.agents;
+    verifiers = verifiersRes.verifiers;
+  } catch {
+    error = true;
+  }
+
+  const verifiersById = new Map(verifiers.map((v) => [v.id, v]));
+  const rows = agents.map((a) => toAgentListItem(a, verifiersById));
+
   return (
     <div className={styles.page}>
       <AppNav
@@ -30,9 +47,22 @@ export default function AgentsPage() {
       </div>
 
       <div className={styles.listWrap}>
-        {AGENTS.map((agent) => (
-          <AgentRow key={agent.name} agent={agent} />
-        ))}
+        {error ? (
+          <EmptyState
+            error
+            title="Couldn't load agents"
+            body="The backend at NEXT_PUBLIC_API_URL could not be reached. Check that the Sealrail backend is running."
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="No agents registered yet"
+            body="Register an agent to see it listed here with its verifier and proof mode."
+            actionLabel="Register an agent"
+            actionHref="/owner/agents/new"
+          />
+        ) : (
+          rows.map((agent) => <AgentRow key={agent.id} agent={agent} />)
+        )}
       </div>
     </div>
   );

@@ -36,6 +36,7 @@ export const config = {
   port: envInt("PORT", 3001),
   host: envStr("HOST", "0.0.0.0"),
   nodeEnv: envStr("NODE_ENV", "development") as "development" | "production" | "test",
+  frontendOrigin: envStr("FRONTEND_ORIGIN", "http://localhost:3000"),
 
   // Security
   apiKeyScryptSaltLength: envInt("API_KEY_SCRYPT_SALT_LENGTH", 32),

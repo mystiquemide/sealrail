@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import {
@@ -8,56 +8,71 @@ import {
   validateVerifierForm,
   type RegisterVerifierFormState,
 } from "@/components/register-verifier/register-verifier-constants";
+import { ApiClientError, createVerifier, testVerifier } from "@/lib/api";
 import styles from "@/components/register-verifier/RegisterVerifier.module.css";
 
 export default function RegisterVerifierPage() {
   const [form, setForm] = useState<RegisterVerifierFormState>(INITIAL_VERIFIER_FORM_STATE);
-  const [testing, setTesting] = useState(false);
-  const [testPassed, setTestPassed] = useState(false);
   const [validationMessage, setValidationMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const testTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
-  useEffect(
-    () => () => {
-      if (testTimer.current) clearTimeout(testTimer.current);
-    },
-    []
-  );
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ valid: boolean; [key: string]: unknown } | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   function update<K extends keyof RegisterVerifierFormState>(key: K, value: RegisterVerifierFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  const testVerifier = useCallback(() => {
-    setTesting((isTesting) => {
-      if (isTesting) return isTesting;
-      setTestPassed(false);
-      if (testTimer.current) clearTimeout(testTimer.current);
-      testTimer.current = setTimeout(() => {
-        setTesting(false);
-        setTestPassed(true);
-      }, 1100);
-      return true;
-    });
-  }, []);
-
-  function publishTemplate() {
+  async function publishTemplate() {
     const error = validateVerifierForm(form);
     if (error) {
       setValidationMessage(error);
       return;
     }
     setValidationMessage("");
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      const { verifier } = await createVerifier({
+        name: form.name,
+        task_type: form.taskType,
+        wasm_hash: form.wasmHash,
+        description: form.description,
+        input_schema: form.inputSchema ? { schema: form.inputSchema } : {},
+        output_schema: form.outputSchema ? { schema: form.outputSchema } : {},
+        mode_support: ["tee_verification_mode"],
+        status: "active",
+      });
+      setCreatedId(verifier.id);
+    } catch (err) {
+      setValidationMessage(err instanceof ApiClientError ? err.message : "Failed to publish verifier.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function runTest() {
+    if (!createdId) return;
+    setTesting(true);
+    setTestError(null);
+    try {
+      const { result } = await testVerifier(createdId, { sample: true });
+      setTestResult(result);
+    } catch (err) {
+      setTestError(err instanceof ApiClientError ? err.message : "Test failed.");
+    } finally {
+      setTesting(false);
+    }
   }
 
   function resetForm() {
     setForm(INITIAL_VERIFIER_FORM_STATE);
-    setTesting(false);
-    setTestPassed(false);
     setValidationMessage("");
-    setSubmitted(false);
+    setCreatedId(null);
+    setTesting(false);
+    setTestResult(null);
+    setTestError(null);
   }
 
   return (
@@ -75,7 +90,7 @@ export default function RegisterVerifierPage() {
           <h1 className={styles.title}>Store verifier schema and WASM hash metadata.</h1>
         </div>
 
-        {!submitted ? (
+        {!createdId ? (
           <div className={styles.panelsWrap}>
             <div className={styles.panel}>
               <div className={styles.panelLabel}>Verifier details</div>
@@ -116,22 +131,12 @@ export default function RegisterVerifierPage() {
                     placeholder="0x..."
                     className={styles.formInputMono}
                   />
+                  <p className={styles.fieldNote}>
+                    The record is actually owned by your session&apos;s API key identity, not this field — kept here
+                    for reference only.
+                  </p>
                 </div>
               </div>
-
-              <button onClick={testVerifier} className={styles.testButton} style={{ cursor: testing ? "default" : "pointer" }}>
-                {testing ? "Testing verifier..." : "Test verifier"}
-              </button>
-
-              {testPassed ? (
-                <div className={styles.testResult}>
-                  <div className={styles.testResultTag}>
-                    <span className={styles.testResultDot} />
-                    Test passed
-                  </div>
-                  <div className={styles.testResultOutput}>sample_input -&gt; success: true</div>
-                </div>
-              ) : null}
             </div>
 
             <div className={styles.panel}>
@@ -173,8 +178,8 @@ export default function RegisterVerifierPage() {
                 </div>
               </div>
 
-              <button onClick={publishTemplate} className={styles.publishButton}>
-                Publish template
+              <button onClick={publishTemplate} disabled={submitting} className={styles.publishButton}>
+                {submitting ? "Publishing..." : "Publish template"}
               </button>
 
               {validationMessage ? <div className={styles.validationError}>{validationMessage}</div> : null}
@@ -201,6 +206,29 @@ export default function RegisterVerifierPage() {
                 <span className={styles.successRowValueMode}>{form.mode}</span>
               </div>
             </div>
+
+            <button onClick={runTest} disabled={testing} className={styles.testButton} style={{ marginTop: 18 }}>
+              {testing ? "Testing verifier..." : "Test verifier"}
+            </button>
+
+            {testResult ? (
+              <div className={styles.testResult}>
+                <div
+                  className={styles.testResultTag}
+                  style={!testResult.valid ? { color: "#F45B45" } : undefined}
+                >
+                  <span className={styles.testResultDot} style={!testResult.valid ? { background: "#F45B45" } : undefined} />
+                  {testResult.valid ? "Test passed" : "Test failed"}
+                </div>
+                <div className={styles.testResultOutput}>{JSON.stringify(testResult)}</div>
+              </div>
+            ) : null}
+            {testError ? (
+              <div className={styles.validationError} style={{ marginTop: 12 }}>
+                {testError}
+              </div>
+            ) : null}
+
             <div className={styles.successActions}>
               <Link href="/verifiers" className={styles.btnPrimary}>
                 Back to verifiers

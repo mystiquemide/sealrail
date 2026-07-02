@@ -3,7 +3,9 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
-import { buildProofBundle, getProofDetail } from "@/components/proof-detail/proof-detail-data";
+import { buildProofBundle, buildProofDetailRecord, type ProofDetailRecord } from "@/components/proof-detail/proof-detail-data";
+import { getAgent, getTaskDetail, listTasks } from "@/lib/api";
+import type { TaskDetail } from "@/lib/api-types";
 import styles from "@/components/proof-detail/ProofDetail.module.css";
 
 type ProofDetailPageProps = {
@@ -12,10 +14,38 @@ type ProofDetailPageProps = {
 
 export default function ProofDetailPage({ params }: ProofDetailPageProps) {
   const { proofId } = use(params);
-  const record = getProofDetail(proofId);
 
+  const [detail, setDetail] = useState<TaskDetail | null | undefined>(undefined);
+  const [record, setRecord] = useState<ProofDetailRecord | null>(null);
+  const [agentName, setAgentName] = useState("Unknown agent");
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const { tasks } = await listTasks();
+        const match = tasks.find((t) => t.title === proofId || t.id === proofId);
+        if (!match) {
+          if (!cancelled) setDetail(null);
+          return;
+        }
+        const full = await getTaskDetail(match.id);
+        if (cancelled) return;
+        setDetail(full);
+        setRecord(buildProofDetailRecord(full));
+        const { agent } = await getAgent(full.task.agent_id).catch(() => ({ agent: null }));
+        if (!cancelled && agent) setAgentName(agent.name);
+      } catch {
+        if (!cancelled) setDetail(null);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [proofId]);
 
   useEffect(
     () => () => {
@@ -25,8 +55,8 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
   );
 
   function copyBundle() {
-    if (!record) return;
-    const bundle = buildProofBundle(proofId, record);
+    if (!detail || !record) return;
+    const bundle = buildProofBundle(proofId, detail, record);
     try {
       navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
     } catch {
@@ -45,13 +75,23 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
         maxWidth={1080}
         links={[
           { label: "Proofs", href: "/proofs" },
-          { label: "Agents", href: "/#vertical" },
+          { label: "Agents", href: "/agents" },
         ]}
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
       <div className={styles.wrap}>
-        {!record ? (
+        {detail === undefined ? (
+          <>
+            <Link href="/proofs" className={styles.backLink}>
+              <span className={styles.backArrow}>{"<-"}</span>
+              Back to proofs
+            </Link>
+            <div style={{ marginTop: 40 }}>
+              <div className={styles.title}>Loading...</div>
+            </div>
+          </>
+        ) : !detail || !record ? (
           <>
             <Link href="/proofs" className={styles.backLink}>
               <span className={styles.backArrow}>{"<-"}</span>
@@ -90,7 +130,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
                 <div className={styles.infoRows}>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Payment intent</span>
-                    <span className={styles.infoRowValueMono}>created</span>
+                    <span className={styles.infoRowValueMono}>{detail.payment?.status ?? "none"}</span>
                   </div>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Amount</span>
@@ -105,7 +145,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
                   </div>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Unlock rule</span>
-                    <span className={styles.infoRowValue}>proof required</span>
+                    <span className={styles.infoRowValue}>{detail.payment?.unlock_rule ?? "proof required"}</span>
                   </div>
                 </div>
               </div>
@@ -115,7 +155,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
                 <div className={styles.infoRows}>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Agent</span>
-                    <span className={styles.infoRowValue}>Invoice Risk Agent</span>
+                    <span className={styles.infoRowValue}>{agentName}</span>
                   </div>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Result</span>
@@ -144,7 +184,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
               <div className={styles.infoRows}>
                 <div className={styles.infoRow}>
                   <span className={styles.infoRowLabel}>Verifier</span>
-                  <span className={styles.infoRowValueMono}>verifyInvoiceRisk</span>
+                  <span className={styles.infoRowValueMono}>{record.verifierId}</span>
                 </div>
                 <div className={styles.infoRow}>
                   <span className={styles.infoRowLabel}>WASM hash</span>
@@ -204,7 +244,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
                   {copyLabel}
                 </button>
               </div>
-              <pre className={styles.bundlePre}>{JSON.stringify(buildProofBundle(proofId, record), null, 2)}</pre>
+              <pre className={styles.bundlePre}>{JSON.stringify(buildProofBundle(proofId, detail, record), null, 2)}</pre>
             </div>
           </>
         )}
