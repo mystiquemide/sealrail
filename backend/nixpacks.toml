@@ -5,9 +5,12 @@
 [phases.setup]
 nixPkgs = ["nodejs_22", "npm-9_x"]
 cmds = [
-  # Casper client for testnet anchoring (prebuilt binary)
-  "curl -fsSL -o /usr/local/bin/casper-client https://github.com/casper-network/casper-node/releases/download/v2.2.2/casper-client",
-  "chmod +x /usr/local/bin/casper-client",
+  # Casper APT repo and client for testnet anchoring
+  "mkdir -m 0755 -p /etc/apt/keyrings/",
+  "curl -fsSL https://repo.casper.network/casper-repo-pubkey.gpg -o /etc/apt/keyrings/casper-repo-pubkey.gpg",
+  "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/casper-repo-pubkey.gpg] https://repo.casper.network/releases jammy main' > /etc/apt/sources.list.d/casper.list",
+  "apt-get update -qq",
+  "apt-get install -y -qq casper-client",
 ]
 
 [phases.install]
