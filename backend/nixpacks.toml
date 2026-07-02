@@ -4,6 +4,11 @@
 
 [phases.setup]
 nixPkgs = ["nodejs_22", "npm-9_x"]
+cmds = [
+  # Casper client for testnet anchoring (prebuilt binary)
+  "curl -fsSL -o /usr/local/bin/casper-client https://github.com/casper-network/casper-node/releases/download/v2.2.2/casper-client",
+  "chmod +x /usr/local/bin/casper-client",
+]
 
 [phases.install]
 cmds = ["npm ci"]

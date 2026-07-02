@@ -35,9 +35,12 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
   // Blocky CLI is always recommended but only required for non-dry-run
   if (!isCliAvailable()) {
     if (mode !== "dry_run") {
+      // In testnet mode, bky-as CLI is optional (TEE verification can be simulated).
+      // In production/mainnet, it's a hard requirement.
+      const severity = mode === "testnet" ? "warning" : "error";
       issues.push({
         key: "bky-as CLI",
-        severity: "error",
+        severity,
         message:
           "bky-as CLI is required for TEE verification in non-dry_run mode. " +
           "Install from https://github.com/blocky/blocky-as or switch to CASPER_MODE=dry_run.",
