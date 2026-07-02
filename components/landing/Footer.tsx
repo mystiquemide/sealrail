@@ -4,7 +4,7 @@ import styles from "./Landing.module.css";
 
 const footerCols = [
   { head: "Product", links: ["How it works", "Run", "Proof explorer", "Agents"] },
-  { head: "Developers", links: ["Architecture", "API", "Casper contract", "Blocky adapter"] },
+  { head: "Developers", links: ["Architecture", "API", "API keys", "Casper contract", "Blocky adapter"] },
   { head: "Project", links: ["GitHub", "Casper Network", "TEE verification note"] },
   { head: "Legal", links: ["Privacy", "Terms"] },
 ];
@@ -16,6 +16,7 @@ const FOOTER_LINK_HREFS: Record<string, string> = {
   Agents: "/agents",
   Architecture: "/docs#product-flow",
   API: "/docs#api-reference",
+  "API keys": "/api-keys",
   "Casper contract":
     "https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196",
   "Blocky adapter": "/docs#safety",
