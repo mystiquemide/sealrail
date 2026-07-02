@@ -54,7 +54,7 @@
 }
 
 /* At mobile widths the inline links collapse into the hamburger menu */
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   .links {
     display: none;
   }

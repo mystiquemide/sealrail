@@ -1,6 +1,15 @@
 import type { RailStep } from "./run-state";
 import styles from "./Run.module.css";
 
+// Matches the GREEN completed-state color in run-state.ts
+const COMPLETE_GREEN = "#64D96B";
+
+function dotAnimation(step: RailStep): string {
+  if (step.pulse) return "srPulse 1.1s ease-in-out infinite";
+  if (step.dotColor === COMPLETE_GREEN) return "srCompleteGlow 0.9s ease-out";
+  return "none";
+}
+
 export function LiveProofRail({ steps, taskTitle }: { steps: RailStep[]; taskTitle: string }) {
   return (
     <div className={styles.railRight}>
@@ -20,7 +29,7 @@ export function LiveProofRail({ steps, taskTitle }: { steps: RailStep[]; taskTit
                 style={{
                   borderColor: s.dotColor,
                   background: s.dotColor,
-                  animation: s.pulse ? "srPulse 1.1s ease-in-out infinite" : "none",
+                  animation: dotAnimation(s),
                 }}
               />
               <div className={styles.railStepRow}>

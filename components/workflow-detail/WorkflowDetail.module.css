@@ -6,15 +6,8 @@
   color: #f6f5f3;
 }
 
-@keyframes srPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
+/* srPulse keyframes live in globals.css — inline animation styles can't
+   reference CSS-module-scoped keyframe names. */
 
 @media (prefers-reduced-motion: reduce) {
   .dotPulse {

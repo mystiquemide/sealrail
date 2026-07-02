@@ -39,6 +39,33 @@ body {
   }
 }
 
+/* Global keyframes referenced from inline styles (CSS-module keyframes are
+   name-scoped, so inline animation shorthand can't reach them). */
+@keyframes srPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* One-shot expanding ring when a proof rail step lands in a completed state.
+   The 3px #0e0e0e inner ring must persist — it masks the rail line. */
+@keyframes srCompleteGlow {
+  0% {
+    box-shadow:
+      0 0 0 3px #0e0e0e,
+      0 0 0 0 rgba(100, 217, 107, 0.55);
+  }
+  100% {
+    box-shadow:
+      0 0 0 3px #0e0e0e,
+      0 0 0 11px rgba(100, 217, 107, 0);
+  }
+}
+
 /* Keyboard-only skip navigation: visually hidden until focused */
 .skip-link {
   position: absolute;

@@ -161,6 +161,27 @@ export async function startServer() {
     `Sealrail backend running at http://${config.host}:${config.port} — mode: ${config.teeVerificationMode}`
   );
 
+  // One-line config-state summary so a misconfigured start is impossible to miss
+  const llmConfigured = Boolean(config.llmApiBaseUrl && config.llmApiKey);
+  app.log.info(
+    `Config state: llm_configured=${llmConfigured} llm_model=${config.llmModel} casper_mode=${config.casperMode} contract_hash_set=${Boolean(config.casperContractHash)}`
+  );
+  if (!llmConfigured) {
+    try {
+      const { readFileSync } = await import("node:fs");
+      const envFile = readFileSync(new URL("../.env", import.meta.url), "utf8");
+      if (/^LLM_API_KEY=.+/m.test(envFile)) {
+        app.log.warn(
+          "backend/.env defines LLM_API_KEY but it was NOT loaded — config froze before env vars were set. " +
+            "Start the server via `npm run dev` or `npm start` (they pass --env-file-if-exists=.env), " +
+            "or export the variables before launching."
+        );
+      }
+    } catch {
+      // no .env file — defaults are intentional
+    }
+  }
+
   return app;
 }
 

@@ -709,3 +709,16 @@ Self-audit saved to docs/audits/SEALRAIL_SELF_AUDIT_2026-07-02.md (42-point live
 Gotchas learned: Git Bash mangles /mnt/... args to wsl — prefix MSYS_NO_PATHCONV=1; dev-server first-hit compiles need retries in HTTP check scripts; Chrome extension for browser automation not connected on this machine.
 
 Still open: repo remains PRIVATE (flip pending user's go: gh repo edit --visibility public); CASPER_MODE still dry_run (showcase testnet anchor = Phase 2.2); Dependabot PRs (checkout v7, setup-node v6) unreviewed; dev servers left running in WSL (tsx watch :3001, next dev :3000).
+
+## Session log — 2026-07-02 (Re-Audit #3 response)
+
+Hermes re-audit #3 on 3157c09: B+ (86), ZERO criticals, all re-audit #2 findings confirmed fixed. Two mediums: MED-1 "LLM not configured" is stale for the third time (verified live: llm_configured=true, uptime'd server; casper_contract_ready=false is honest — status requires contractHash AND accountKeyConfigured, and no funded Casper signing key exists yet; dry_run mode is the deliberate Phase 2.2 posture). MED-2 breakpoint fixed: hamburger now 640px (was 760) across all 4 CSS files.
+
+Also this pass:
+- OPP-3: proof rail polish — color transitions on rail dots/status, one-shot srCompleteGlow expanding ring when a step lands green. IMPORTANT FIND: CSS-module @keyframes are name-scoped, so the existing inline style animation "srPulse" references NEVER animated; moved srPulse + srCompleteGlow to globals.css and left comments in both module files.
+- Backend startup now logs one line: "Config state: llm_configured=... llm_model=... casper_mode=... contract_hash_set=..." and warns loudly if backend/.env defines LLM_API_KEY but config didn't load it (the exact false-negative auditors keep hitting when starting the server without npm scripts).
+- OPP-2: seed epilogue points to scripts/e2e-check.py to produce a real proof record (populates /proofs without faking anything).
+
+Gotcha: a junk dir literally named "C:\Users\Prince\Projects\hackathons\sealrail" (WSL unicode-escaped on NTFS) appeared in repo root containing 7.7MB .next/dev cache — created by the WSL next dev server (likely replaying a Windows abs path from stale .next cache). It made local eslint report 3267 problems (CI unaffected). Deleted; if it recurs, delete .next entirely. Inspect/remove it from WSL side (backslashes are literal there).
+
+To reach testnet anchoring (flips casper_contract_ready): needs CASPER_MODE=testnet + CASPER_ACCOUNT_KEY_PATH with a funded testnet key — user decision.

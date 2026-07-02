@@ -6,15 +6,8 @@
   color: #f6f5f3;
 }
 
-@keyframes srPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
+/* srPulse and srCompleteGlow keyframes live in globals.css — inline animation
+   styles can't reference CSS-module-scoped keyframe names. */
 
 @media (prefers-reduced-motion: reduce) {
   .dotPulse {
@@ -345,6 +338,9 @@
   height: 9px;
   border-radius: 50%;
   box-shadow: 0 0 0 3px #0e0e0e;
+  transition:
+    background 0.35s,
+    border-color 0.35s;
 }
 
 .railStepRow {
@@ -368,12 +364,14 @@
   font-size: 10.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  transition: color 0.35s;
 }
 
 .railStepStatusDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  transition: background 0.35s;
 }
 
 .railStepSub {

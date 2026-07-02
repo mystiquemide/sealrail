@@ -147,6 +147,8 @@ function main(): void {
 
   console.log("\nSeed complete. Proof and payment records are never seeded —");
   console.log("run a task (POST /api/tasks/:id/run) with an LLM configured to produce real ones.");
+  console.log("Quickest way with the server running: python3 scripts/e2e-check.py");
+  console.log("(runs one invoice through fund -> execute -> verify -> anchor -> unlock, populating /proofs)");
 }
 
 main();
