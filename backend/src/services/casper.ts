@@ -174,14 +174,15 @@ async function runCasperDeploy(sessionArgs: string[]): Promise<string> {
 
   let output: string;
   try {
+    // Call casper-client directly via execFile (no bash -c) to preserve
+    // single-quoted session-arg values that casper-client requires.
     const { stdout } = await _execAsync(
-      "bash",
-      ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
+      CASPER_CLIENT_BIN,
+      args,
       { timeout: 60000, maxBuffer: 10 * 1024 * 1024 }
     );
     output = stdout.toString();
   } catch (err: unknown) {
-    // execFile throws on non-zero exit; capture stdout/stderr from the error object
     const execErr = err as NodeJS.ErrnoException & { stdout?: string; stderr?: string; code?: number };
     const detail = [
       execErr.stdout?.toString() || "",
@@ -194,7 +195,11 @@ async function runCasperDeploy(sessionArgs: string[]): Promise<string> {
   }
 
   try {
-    const parsed = JSON.parse(output);
+    // casper-client prints a deprecation banner to stdout before the JSON.
+    // Strip everything before the first '{' to extract the JSON payload.
+    const jsonStart = output.indexOf("{");
+    const jsonText = jsonStart >= 0 ? output.slice(jsonStart) : output;
+    const parsed = JSON.parse(jsonText);
     if (parsed?.result?.deploy_hash) {
       return parsed.result.deploy_hash;
     }
