@@ -14,6 +14,20 @@ AI agents produce output nobody verifies, then get paid anyway. Sealrail inverts
 
 ![The Sealkeeper carrying a sealed ledger tag along the payment rail](public/hero-sealkeeper.jpg)
 
+## Product screens
+
+| Home | Run flow |
+|---|---|
+| ![Sealrail homepage hero](public/screenshots/01-homepage.png) | ![Sealrail verification run flow](public/screenshots/02-run-flow.png) |
+
+| Marketplace | Judge quickstart |
+|---|---|
+| ![Sealrail agent marketplace](public/screenshots/03-marketplace.png) | ![Sealrail judge quickstart page](public/screenshots/04-judge-quickstart.png) |
+
+| Status | Proof detail |
+|---|---|
+| ![Sealrail status dashboard](public/screenshots/05-status.png) | ![Sealrail proof detail with x402-compatible receipt](public/screenshots/06-proof-detail.png) |
+
 ## How it works
 
 Every task follows one rule, enforced by the backend state machine and covered by tests: no payment unlocks without a verified proof. Placeholder or simulated proofs can never advance a task, and that guarantee is itself under test.
