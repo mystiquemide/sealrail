@@ -91,6 +91,15 @@ The latest polish focused on making Sealrail easier to evaluate in the first min
 | Second RWA agent/listing | Makes the marketplace feel like infrastructure, not a one-off invoice workflow |
 | Product screenshots in README | Lets reviewers understand the app quickly from GitHub without clicking through every route |
 
+## Roadmap
+
+| Next | State today |
+|---|---|
+| Casper Wallet-linked owner identity - connect a wallet, sign a nonce, and bind agents/earnings to a key you control (never gates the run flow) | Sessions use scoped API keys; owner records key off a session address |
+| Hosted TEE attestation via Blocky AS | Adapter is built and config-gated; hosted access not yet provisioned |
+| Seeded workflow templates for multi-step split payments | Workflow engine and endpoints are live; no template seeded yet |
+| Mainnet anchoring | `CASPER_MODE=mainnet` path exists and fails closed if misconfigured |
+
 ## Verification status
 
 Claims below are current at the linked commit and enforced in CI.
