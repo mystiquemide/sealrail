@@ -64,13 +64,32 @@ sequenceDiagram
 ## What's in the box
 
 - **Proof-gated payments** — tasks fund a payment that unlocks only after proof verification, with per-recipient splits and claim ownership checks
-- **First-party agent runtime** — an Invoice Risk Agent that sends structured prompts to a configurable LLM and returns hash-bound, schema-validated output (risk score, decision, reasoning, flags)
+- **First-party agent runtime** — the Invoice Risk Agent sends structured prompts to a configurable LLM and returns hash-bound, schema-validated output (risk score, decision, reasoning, flags)
+- **RWA Compliance Agent** — a second seeded marketplace agent for real-world asset review, compliance checks, document risk, and finance operations demos
 - **Verifier registry** — templates bound to a WASM artifact hash, with input/output schemas and a test endpoint
-- **Marketplace** — list agents, create paid tasks against live listings
+- **Marketplace** — list live agents, inspect listing details, and create paid tasks against seeded marketplace listings
+- **Proof detail pages** — `/proofs/:proofId` resolves live proof data, including verification result, task context, hashes, Casper anchor state, and payment state
+- **x402-compatible receipts** — proof bundles include a payment-required receipt shape with `402`, proof requirement, unlock condition, network, and payment state metadata
+- **Casper/CSPR visibility** — proof screens and status surfaces show anchor status, dry-run versus testnet language, and explorer/CSPR.cloud-ready proof metadata
+- **Judge quickstart** — `/judge` gives reviewers a direct path to the live app, API status, run flow, marketplace, proof detail, track fit, and caveats
 - **Workflows** — multi-step runs with ordered execution and progressive payment splits
 - **Reputation** — scores computed from real proof and payment history, never hand-set
 - **Casper contract** — Odra-based ProofRegistry deployed to testnet: agent registry, proof anchoring, payment state transitions
+- **Product screenshots** — README includes current screens for the homepage, run flow, marketplace, judge quickstart, status, and proof detail
 - **19-screen web app** — the full loop in a browser, with honest empty, loading, and error states throughout
+
+## Latest demo upgrades
+
+The latest hackathon polish focused on making the project easier for judges to understand in the first minute:
+
+| Upgrade | Why it matters |
+|---|---|
+| `/judge` quickstart | Gives judges one page with live links, expected flow, sponsor fit, and known trust boundaries |
+| Real proof detail routing | Prevents stale invoice/task pages; proof links now open the actual proof bundle |
+| x402-compatible receipt panel | Makes the payment-required/proof-required settlement story visible in the UI and API bundle |
+| Casper/CSPR proof language | Shows how proof anchoring maps to Casper testnet/explorer verification while staying honest about `dry_run` mode |
+| Second RWA agent/listing | Makes the marketplace feel like infrastructure, not a one-off invoice demo |
+| Product screenshots in README | Lets reviewers understand the app quickly from GitHub/DoraHacks without clicking through every route |
 
 ## Verification status
 
@@ -113,6 +132,16 @@ npm run dev               # http://localhost:3000
 ```
 
 Then open http://localhost:3000/run. Task creation, verification, anchoring, and payment unlock all run against the local API. Agent execution calls a real LLM: set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint works). Without a provider configured, runs fail honestly with a 503 rather than fabricating output.
+
+For the hosted judge path, start with:
+
+| Page | Purpose |
+|---|---|
+| [`/judge`](https://sealrail.vercel.app/judge) | Reviewer quickstart, live links, track fit, and demo caveats |
+| [`/run`](https://sealrail.vercel.app/run) | One-click proof-gated payment flow |
+| [`/marketplace`](https://sealrail.vercel.app/marketplace) | Seeded Invoice Risk and RWA Compliance agents |
+| [`/status`](https://sealrail.vercel.app/status) | Backend, LLM, verifier, Casper, and trust-boundary status |
+| [`/proofs`](https://sealrail.vercel.app/proofs) | Proof trail and proof detail links |
 
 ## Environment variables
 
