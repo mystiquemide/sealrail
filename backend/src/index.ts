@@ -55,6 +55,35 @@ export function buildApp() {
     allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
   });
 
+  // Fixed-window per-IP rate limiter as a plain onRequest hook. A hook (unlike
+  // @fastify/rate-limit's onRoute mechanism) covers every route regardless of
+  // plugin/route registration order in this synchronous factory.
+  if (config.rateLimitMax > 0) {
+    const WINDOW_MS = 60_000;
+    const hits = new Map<string, { count: number; resetAt: number }>();
+    app.addHook("onRequest", async (request, reply) => {
+      const now = Date.now();
+      if (hits.size > 5_000) {
+        for (const [ip, entry] of hits) {
+          if (now >= entry.resetAt) hits.delete(ip);
+        }
+      }
+      const entry = hits.get(request.ip);
+      if (!entry || now >= entry.resetAt) {
+        hits.set(request.ip, { count: 1, resetAt: now + WINDOW_MS });
+        return;
+      }
+      entry.count += 1;
+      if (entry.count > config.rateLimitMax) {
+        reply.header("retry-after", String(Math.ceil((entry.resetAt - now) / 1000)));
+        return reply.code(429).send({
+          error: "RATE_LIMITED",
+          message: "Too many requests from this address. Try again in a moment.",
+        });
+      }
+    });
+  }
+
   // Track lifecycle state
   let dbInitialized = false;
   const startTime = Date.now();

@@ -39,3 +39,11 @@ __pycache__/
 
 # Logs
 *.log
+
+# Internal working artifacts (kept locally, not part of the repository)
+memory.md
+*.docx
+docs/audits/SEALRAIL_ELITE_HACKATHON_AUDIT.md
+
+# Vercel
+.vercel

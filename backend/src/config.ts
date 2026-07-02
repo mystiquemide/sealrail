@@ -41,6 +41,9 @@ export const config = {
   // Security
   apiKeyScryptSaltLength: envInt("API_KEY_SCRYPT_SALT_LENGTH", 32),
   apiKeyHashLength: envInt("API_KEY_HASH_LENGTH", 64),
+  // Requests per minute per client IP. 0 disables rate limiting (local dev
+  // and tests); set a positive value on any internet-facing deployment.
+  rateLimitMax: envInt("RATE_LIMIT_MAX", 0),
   // Unauthenticated key creation (self-serve onboarding). Set ALLOW_BOOTSTRAP_KEYS=false
   // to require an authenticated key for POST /api/api-keys.
   allowBootstrapKeys: envStr("ALLOW_BOOTSTRAP_KEYS", "true") !== "false",

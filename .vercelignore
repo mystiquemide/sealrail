@@ -1,0 +1,7 @@
+# Only the Next.js app deploys to Vercel; the backend and contracts ship elsewhere.
+# Patterns are root-anchored so app routes like app/docs are NOT excluded.
+/backend
+/contracts
+/docs
+memory.md
+*.docx

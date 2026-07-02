@@ -64,6 +64,7 @@ export default function OwnerPage() {
         links={[
           { label: "Agents", href: "/agents" },
           { label: "Marketplace", href: "/marketplace" },
+          { label: "API keys", href: "/api-keys" },
         ]}
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />

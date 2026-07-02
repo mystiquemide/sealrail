@@ -475,7 +475,7 @@ export interface UploadVerifierParams {
  * it must be a valid SHA-256/SHA3 hex string.
  *
  * Note: WASM content is NOT stored in the database. Only the hash is stored.
- * This is a deliberate design choice for the hackathon phase — full WASM
+ * This is a deliberate design choice for the current release — full WASM
  * storage requires blob/file system integration.
  */
 export function uploadVerifier(params: UploadVerifierParams): VerifierTemplate {
