@@ -168,7 +168,42 @@ export function buildApp() {
 /**
  * Start the server on the configured port/host.
  */
+/**
+ * Bootstrap Casper key file from CASPER_SECRET_KEY env var (Railway secret).
+ * Railway cannot persist files across deploys, so we store the key as a
+ * secret variable and write it to disk on every cold start.
+ */
+async function bootstrapCasperKey(): Promise<void> {
+  const secretKey = process.env.CASPER_SECRET_KEY;
+  const keyPath = process.env.CASPER_ACCOUNT_KEY_PATH;
+  if (!secretKey || !keyPath) return;
+
+  try {
+    const { writeFileSync, existsSync, mkdirSync, statSync } = await import("node:fs");
+    const { dirname } = await import("node:path");
+
+    // Only write if the file is missing or empty
+    let needsWrite = true;
+    try {
+      needsWrite = !existsSync(keyPath) || statSync(keyPath).size === 0;
+    } catch {
+      needsWrite = true;
+    }
+
+    if (needsWrite) {
+      mkdirSync(dirname(keyPath), { recursive: true });
+      writeFileSync(keyPath, secretKey, { mode: 0o600 });
+      console.log(`Casper key bootstrapped to ${keyPath} (${secretKey.length} bytes)`);
+    }
+  } catch (err) {
+    console.error("Failed to bootstrap Casper key file:", err);
+    throw err;
+  }
+}
+
 export async function startServer() {
+  await bootstrapCasperKey();
+
   const app = buildApp();
 
   const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
