@@ -139,7 +139,7 @@ export default function RegisterVerifierPage() {
                     className={styles.formInputMono}
                   />
                   <p className={styles.fieldNote}>
-                    The record is actually owned by your session&apos;s API key identity, not this field — kept here
+                    The record is actually owned by your session&apos;s API key identity, not this field - kept here
                     for reference only.
                   </p>
                 </div>

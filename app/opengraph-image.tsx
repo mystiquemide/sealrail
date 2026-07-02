@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Sealrail — No Proof without a Payment. A Casper-native proof and payment rail for AI-agent work.";
+export const alt = "Sealrail - No Proof without a Payment. A Casper-native proof and payment rail for AI-agent work.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

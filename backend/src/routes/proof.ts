@@ -1,6 +1,6 @@
 // ────────────────────────────────────────
 // Sealrail Proof Routes
-// POST /api/proofs/verify — TEE verification endpoint
+// POST /api/proofs/verify - TEE verification endpoint
 // Phase C
 // Audit fix C1+H2: Auth required on verification endpoint
 // ────────────────────────────────────────
@@ -46,7 +46,7 @@ const verifySchema = {
  */
 export function registerProofRoutes(app: FastifyInstance): void {
   // ── GET /api/proofs/:proofId ────────────
-  // Canonical proof receipt — public, no auth required.
+  // Canonical proof receipt - public, no auth required.
   // Returns proof detail with task context and payment state.
   app.get<{ Params: { proofId: string } }>(
     "/api/proofs/:proofId",
@@ -69,7 +69,7 @@ export function registerProofRoutes(app: FastifyInstance): void {
   // List all proofs (public). Returns lightweight rows.
   app.get("/api/proofs", async (_request, reply) => {
     // Reuse the lightweight proof list from getProofById via task trail
-    // For now, return an empty array — proofs are accessible through
+    // For now, return an empty array - proofs are accessible through
     // /api/tasks/:taskId which includes proof_ids.
     // A full proof list endpoint can be added later with pagination.
     return reply.status(200).send({

@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase E Tests
+// Sealrail Backend - Phase E Tests
 // Task and payment state machine
 // Covers E1-E5: services, routes, state enforcement
 // ────────────────────────────────────────
@@ -65,7 +65,7 @@ describe("Phase E: Task and Payment State Machine", () => {
   // E1: Task Service
   // ═══════════════════════════════════════
 
-  describe("E1: Task Service — CRUD + State Transitions", () => {
+  describe("E1: Task Service - CRUD + State Transitions", () => {
 
     describe("createTask", () => {
       it("creates a task with default status 'draft'", () => {
@@ -490,7 +490,7 @@ describe("Phase E: Task and Payment State Machine", () => {
           totalAmount: 100,
           currency: "CSPR",
         });
-        // Transition past locked to unlockable — splits can't be recalculated
+        // Transition past locked to unlockable - splits can't be recalculated
         updatePaymentStatus(payment.id, "locked");
         updatePaymentStatus(payment.id, "unlockable");
 
@@ -881,7 +881,7 @@ describe("Phase E: Task and Payment State Machine", () => {
         });
 
         // anchorTaskProof in dry_run creates a synthetic placeholder proof
-        // and returns dry_run_simulated — but does NOT advance task to 'anchored'.
+        // and returns dry_run_simulated - but does NOT advance task to 'anchored'.
         await anchorTaskProof(task.id);
 
         // Placeholder/simulated proofs must never unlock real payments.

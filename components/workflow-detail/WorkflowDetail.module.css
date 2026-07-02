@@ -1,4 +1,4 @@
-/* Sealrail /workflows/[workflowId] page — ported from Sealrail Workflow Detail.dc.html */
+/* Sealrail /workflows/[workflowId] page - ported from Sealrail Workflow Detail.dc.html */
 
 .page {
   min-height: 100vh;
@@ -6,7 +6,7 @@
   color: #f6f5f3;
 }
 
-/* srPulse keyframes live in globals.css — inline animation styles can't
+/* srPulse keyframes live in globals.css - inline animation styles can't
    reference CSS-module-scoped keyframe names. */
 
 @media (prefers-reduced-motion: reduce) {

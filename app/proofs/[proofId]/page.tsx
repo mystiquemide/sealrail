@@ -81,7 +81,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
   }
 
   const copyLabel =
-    copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy proof bundle";
+    copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy proof bundle";
 
   return (
     <div className={styles.page}>

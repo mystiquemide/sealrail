@@ -224,9 +224,9 @@ cd backend && npm run start
 Observed server logs:
 
 ```text
-Database initialized — all 12 tables migrated
+Database initialized - all 12 tables migrated
 Server listening at http://127.0.0.1:3001
-Sealrail backend running at http://0.0.0.0:3001 — mode: tee_verification_mode
+Sealrail backend running at http://0.0.0.0:3001 - mode: tee_verification_mode
 ```
 
 Curl smoke checks returned 200 for:

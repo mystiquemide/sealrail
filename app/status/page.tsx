@@ -17,12 +17,12 @@ function buildRows(s: PublicStatus) {
     },
     {
       name: "LLM provider configured",
-      state: s.llm_configured ? "Yes" : "Provider config pending — no runtime active",
+      state: s.llm_configured ? "Yes" : "Provider config pending - no runtime active",
       color: s.llm_configured ? GREEN : AMBER,
     },
     {
       name: "LLM provider health",
-      state: s.llm_configured ? "Configured — health checked per run" : "No runtime active until configured",
+      state: s.llm_configured ? "Configured - health checked per run" : "No runtime active until configured",
       color: s.llm_configured ? GREEN : GRAY,
     },
     {
@@ -30,7 +30,7 @@ function buildRows(s: PublicStatus) {
       state: s.hosted_tee_ready
         ? "Ready"
         : s.tee_hookup_blocked
-          ? "Pending — hosted access not configured"
+          ? "Pending - hosted access not configured"
           : s.blocky_cli_available
             ? "CLI available (dry-run mode)"
             : "Unavailable",
@@ -70,14 +70,14 @@ export default async function StatusPage() {
   }
 
   const rows = error
-    ? [{ name: "Backend API", state: "Unreachable — check NEXT_PUBLIC_API_URL and that the backend is running", color: RED }]
+    ? [{ name: "Backend API", state: "Unreachable - check NEXT_PUBLIC_API_URL and that the backend is running", color: RED }]
     : status
       ? buildRows(status)
       : [];
 
   return (
     <div className={styles.page}>
-      <AppNav active="Status" maxWidth={860} links={[{ label: "Docs", href: "/docs" }, { label: "Judge", href: "/judge" }]} cta={null} />
+      <AppNav active="Status" maxWidth={860} links={[{ label: "Docs", href: "/docs" }, { label: "Review", href: "/review" }]} cta={null} />
 
       <main id="main" tabIndex={-1} className={styles.wrap}>
         <div className={styles.eyebrow}>System status</div>

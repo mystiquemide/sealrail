@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Status Routes
+// Sealrail Backend - Status Routes
 // Public + admin status endpoints with
 // comprehensive subsystem readiness
 // ────────────────────────────────────────
@@ -34,7 +34,7 @@ export function registerStatusRoutes(app: FastifyInstance): void {
     return reply.send(getPublicStatus(_startTime));
   });
 
-  // ── Detailed status (public — shows read-only readiness without secrets) ──
+  // ── Detailed status (public - shows read-only readiness without secrets) ──
   app.get("/api/status/detailed", async (_request: FastifyRequest, reply: FastifyReply) => {
     return reply.send(getPublicStatus(_startTime));
   });

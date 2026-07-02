@@ -262,7 +262,7 @@ export function updateTaskStatus(id: string, status: TaskStatus): Task | null {
     try {
       recalculateReputation(current.agent_id);
     } catch {
-      // Silently skip — reputation recalculation should not break task transitions
+      // Silently skip - reputation recalculation should not break task transitions
     }
   }
 
@@ -326,7 +326,7 @@ export function getPaymentById(id: string): Payment | null {
 // ── Proof helpers ────────────────────────
 
 /**
- * Get a proof by ID — public export for the canonical proof receipt endpoint.
+ * Get a proof by ID - public export for the canonical proof receipt endpoint.
  * Returns the raw DB row. For enriched detail (with task context), use getProofDetail().
  */
 export function getProofById(id: string): ProofRow | null {
@@ -516,7 +516,7 @@ export async function anchorTaskProof(taskId: string): Promise<{
   // Use the first non-placeholder verified/anchored proof.
   // Placeholder proofs (attestation-hash-pending, wasm-hash-default,
   // input-*/output-*) must NEVER anchor through the normal path.
-  // 'pending' proofs are no longer accepted — only real verified or
+  // 'pending' proofs are no longer accepted - only real verified or
   // previously anchored non-placeholder proofs qualify.
   let proof = existingProofs.find(
     (p) =>
@@ -525,7 +525,7 @@ export async function anchorTaskProof(taskId: string): Promise<{
   );
 
   if (!proof) {
-    // Check if we have placeholder proofs in dry_run — allow demo
+    // Check if we have placeholder proofs in dry_run - allow demo
     // anchoring with simulated labels but do NOT update task status.
     const placeholderProof = existingProofs.find((p) => isPlaceholderProof(p));
     if (placeholderProof && config.casperMode === "dry_run") {
@@ -552,11 +552,11 @@ export async function anchorTaskProof(taskId: string): Promise<{
       }
 
       // 5. Do NOT persist anchor hash or set status='anchored' on placeholder
-      //    proof rows — placeholder proofs must stay status='pending' with no
+      //    proof rows - placeholder proofs must stay status='pending' with no
       //    casper_anchor_hash so the proof row does not look like a real anchor.
       //    The simulated anchorHash is returned only in the API response.
 
-      // 6. Do NOT transition task to 'anchored' — placeholder proofs
+      // 6. Do NOT transition task to 'anchored' - placeholder proofs
       //    must never unlock payment or advance real state.
       return {
         taskId,
@@ -667,14 +667,14 @@ export async function runTaskVerification(taskId: string): Promise<{
         line_items: [],
         ai_suggested_risk: 0,
       };
-      // Set a short timeout for the verification call — don't block tests
+      // Set a short timeout for the verification call - don't block tests
       verificationResult = await Promise.race([
         blockyVerify(verifyInput),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
       ]);
     }
   } catch {
-    // Verification attempt failed — create a pending proof (no hang)
+    // Verification attempt failed - create a pending proof (no hang)
     verificationResult = null;
   }
 
@@ -682,7 +682,7 @@ export async function runTaskVerification(taskId: string): Promise<{
   const proofId = randomUUID();
 
   if (verificationResult?.status === "verified") {
-    // Real verification succeeded — store real claims
+    // Real verification succeeded - store real claims
     db.prepare(`
       INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
         wasm_hash, attestation_hash, mode, status, created_at)
@@ -700,7 +700,7 @@ export async function runTaskVerification(taskId: string): Promise<{
       now,
     );
   } else {
-    // Verification not available or failed — create pending proof
+    // Verification not available or failed - create pending proof
     // This is truthfully labeled as pending, not falsely verified
     const inputHash = `input-${taskId}-${now}`;
     const outputHash = `output-${taskId}-${now}`;
@@ -739,7 +739,7 @@ export async function runTaskVerification(taskId: string): Promise<{
     proofId,
     message: verificationResult?.status === "verified"
       ? "TEE verification complete. Proof verified with real attestation claims."
-      : "TEE verification initiated. Blocky CLI not available — proof is pending verification.",
+      : "TEE verification initiated. Blocky CLI not available - proof is pending verification.",
   };
 }
 
@@ -790,12 +790,12 @@ export function verifyTaskProof(taskId: string): {
     if (proofRow.status === "pending") {
       if (isPlaceholder) {
         // Blocker 2: Placeholder proofs can NEVER become verified, even in dry_run.
-        // They stay pending — no DB status change to "verified".
+        // They stay pending - no DB status change to "verified".
         placeholderCount++;
-        // Do NOT count placeholder proofs toward verification — they
+        // Do NOT count placeholder proofs toward verification - they
         // must never satisfy real verification, not even in dry_run.
       } else {
-        // Real attestation data — safe to verify
+        // Real attestation data - safe to verify
         db.prepare(`UPDATE proofs SET status = 'verified' WHERE id = ?`).run(proofId);
         verifiedCount++;
       }
@@ -810,7 +810,7 @@ export function verifyTaskProof(taskId: string): {
   if (verifiedCount === 0) {
     if (placeholderCount > 0 && isDryRun) {
       // Dry-run with placeholder-only proofs: task stays at proof_pending.
-      // Do NOT advance to proof_verified — placeholder proofs must never
+      // Do NOT advance to proof_verified - placeholder proofs must never
       // satisfy real verification. The caller gets a simulated label so
       // demos can still render a flow, but machine-readable status is truthful.
       return {

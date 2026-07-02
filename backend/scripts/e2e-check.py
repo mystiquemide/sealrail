@@ -40,10 +40,10 @@ res = call("POST", "/api/api-keys", {
 key = res["secret"]
 print(f"key: {key[:10]}...")
 
-# 2. Seeded listing — prefer the invoice-risk listing; dev DBs may hold junk rows
+# 2. Seeded listing - prefer the invoice-risk listing; dev DBs may hold junk rows
 listings = call("GET", "/api/marketplace")["listings"]
 if not listings:
-    print("FAIL: no marketplace listings — run `npm run seed` first")
+    print("FAIL: no marketplace listings - run `npm run seed` first")
     sys.exit(1)
 listing = next((l for l in listings if "invoice" in l["title"].lower()), listings[0])
 listing_id = listing["id"]
@@ -66,7 +66,7 @@ task = res.get("task") or res
 task_id = task["id"]
 print(f"task: {task_id} status={task['status']}")
 
-# 4. Run the agent — the real LLM call happens here
+# 4. Run the agent - the real LLM call happens here
 res = call("POST", f"/api/tasks/{task_id}/run", {}, key)
 print(f"run: agent_executed={res.get('agent_executed')} status={res.get('task', {}).get('status')}")
 

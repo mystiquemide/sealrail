@@ -1,4 +1,4 @@
-//! Verified Agent Payments — Payment-backed proof registry for AI-agent work on Casper.
+//! Verified Agent Payments - Payment-backed proof registry for AI-agent work on Casper.
 //! Core positioning: No Proof without a Payment.
 //!
 //! Entry points:
@@ -122,7 +122,7 @@ pub struct PaymentMarkedPaid {
     ]
 )]
 pub struct VerifiedAgentPayments {
-    /// Owner of the contract — set once during init.
+    /// Owner of the contract - set once during init.
     owner: Var<Address>,
     /// Mapping from agent_id to AgentRecord.
     agents: Mapping<String, AgentRecord>,
@@ -153,10 +153,10 @@ impl VerifiedAgentPayments {
     /// Registers a new agent. Only the contract owner may call this.
     ///
     /// # Arguments
-    /// - `agent_id` — unique identifier for the agent.
-    /// - `name` — human-readable agent name.
-    /// - `verifier_function` — name of the verification function (e.g., "verifyInvoiceRisk").
-    /// - `wasm_code_hash` — hash of the WASM code used for verification.
+    /// - `agent_id` - unique identifier for the agent.
+    /// - `name` - human-readable agent name.
+    /// - `verifier_function` - name of the verification function (e.g., "verifyInvoiceRisk").
+    /// - `wasm_code_hash` - hash of the WASM code used for verification.
     pub fn register_agent(
         &mut self,
         agent_id: String,
@@ -201,9 +201,9 @@ impl VerifiedAgentPayments {
     /// Creates a payment-backed task intent. The caller becomes the task buyer.
     ///
     /// # Arguments
-    /// - `task_id` — unique task identifier.
-    /// - `agent_id` — the agent assigned to this task.
-    /// - `payment_amount` — locked payment amount in motes (U512).
+    /// - `task_id` - unique task identifier.
+    /// - `agent_id` - the agent assigned to this task.
+    /// - `payment_amount` - locked payment amount in motes (U512).
     pub fn create_payment(
         &mut self,
         task_id: String,
@@ -254,10 +254,10 @@ impl VerifiedAgentPayments {
     /// Only the contract owner may call this.
     ///
     /// # Arguments
-    /// - `task_id` — the task to anchor proof for.
-    /// - `input_hash` — SHA-256 hash of the task input.
-    /// - `output_hash` — SHA-256 hash of the verified output.
-    /// - `attestation_hash` — hash of the full attestation document.
+    /// - `task_id` - the task to anchor proof for.
+    /// - `input_hash` - SHA-256 hash of the task input.
+    /// - `output_hash` - SHA-256 hash of the verified output.
+    /// - `attestation_hash` - hash of the full attestation document.
     pub fn anchor_proof(
         &mut self,
         task_id: String,

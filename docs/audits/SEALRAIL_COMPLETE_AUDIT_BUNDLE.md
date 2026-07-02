@@ -1,4 +1,4 @@
-# Sealrail — Complete Audit Bundle
+# Sealrail - Complete Audit Bundle
 
 **Date:** 2026-07-02
 **Project:** Sealrail (Verified Agent Payments on Casper)
@@ -11,10 +11,10 @@
 
 ## Contents
 
-1. [Elite Hackathon Audit](#1-elite-hackathon-audit) — Judge-facing product, code, submission, and rubric assessment
-2. [Repo Audit & Improvement Plan](#2-repo-audit--improvement-plan) — Engineering-facing codebase health and task plan
-3. [Website UX Audit](#3-website-ux-audit) — 11-category scored UX/design review of all 19 screens
-4. [Post-Audit Decisions](#4-post-audit-decisions) — From Mide, 2026-07-02
+1. [Elite Hackathon Audit](#1-elite-hackathon-audit) - Judge-facing product, code, submission, and rubric assessment
+2. [Repo Audit & Improvement Plan](#2-repo-audit--improvement-plan) - Engineering-facing codebase health and task plan
+3. [Website UX Audit](#3-website-ux-audit) - 11-category scored UX/design review of all 19 screens
+4. [Post-Audit Decisions](#4-post-audit-decisions) - From Mide, 2026-07-02
 
 ---
 
@@ -194,11 +194,11 @@ Test discipline that most production repos don't have, a genuinely deployed and 
 
 ## 2.4 Improvement Strategy
 
-**Theme 1 — The repo hides its own quality.** Boilerplate README, private visibility, no LICENSE, no CI, clutter at root. Target state: a stranger understands and trusts the project in 60 seconds from the GitHub landing page. Principle: evidence you can't see doesn't exist.
+**Theme 1 - The repo hides its own quality.** Boilerplate README, private visibility, no LICENSE, no CI, clutter at root. Target state: a stranger understands and trusts the project in 60 seconds from the GitHub landing page. Principle: evidence you can't see doesn't exist.
 
-**Theme 2 — Quality gates are machine-dependent.** Tests pass only on the right WSL setup, 12 fail on clean clones. Target state: npm test is green on a fresh ubuntu machine, enforced by CI. Principle: a test suite that needs a specific laptop proves nothing.
+**Theme 2 - Quality gates are machine-dependent.** Tests pass only on the right WSL setup, 12 fail on clean clones. Target state: npm test is green on a fresh ubuntu machine, enforced by CI. Principle: a test suite that needs a specific laptop proves nothing.
 
-**Theme 3 — One auth hole in a consistent model.** Key creation bypasses the ownership enforcement everything else follows. Target state: bootstrap is either explicitly dev-only or removed. Principle: an invariant with one exception isn't an invariant.
+**Theme 3 - One auth hole in a consistent model.** Key creation bypasses the ownership enforcement everything else follows. Target state: bootstrap is either explicitly dev-only or removed. Principle: an invariant with one exception isn't an invariant.
 
 Explicitly not fixing before the deadline: frontend unit tests, the shared-types drift, the N+1 fan-outs, the clipboard hook, rate limiting beyond a basic plugin. All are real but none moves the submission, and refactors this week add risk without payoff.
 
@@ -206,36 +206,36 @@ Done looks like: repo public, README rewritten, LICENSE present, CI green on pus
 
 ## 2.5 Task Plan
 
-### Milestone 0 — Safety Net
+### Milestone 0 - Safety Net
 
 | # | Task | Effort | Risk | Depends |
 |---|---|---|---|---|
-| 0.1 | Add GitHub Actions CI: backend tests + tsc on ubuntu, frontend lint + build | S | None | — |
+| 0.1 | Add GitHub Actions CI: backend tests + tsc on ubuntu, frontend lint + build | S | None | - |
 
-### Milestone 1 — Critical Fixes
+### Milestone 1 - Critical Fixes
 
 | # | Task | Effort | Risk | Depends |
 |---|---|---|---|---|
-| 1.1 | Fix environment-dependent tests (skip phase-c with reason when CLI absent, narrow the URL assertion) | S | Low | — |
-| 1.2 | Gate POST /api/api-keys: require auth, or restrict bootstrap to dev / ALLOW_BOOTSTRAP_KEYS=true | M | Medium (frontend session bootstrap depends on it) | — |
-| 1.3 | Rewrite README.md | S | None | — |
+| 1.1 | Fix environment-dependent tests (skip phase-c with reason when CLI absent, narrow the URL assertion) | S | Low | - |
+| 1.2 | Gate POST /api/api-keys: require auth, or restrict bootstrap to dev / ALLOW_BOOTSTRAP_KEYS=true | M | Medium (frontend session bootstrap depends on it) | - |
+| 1.3 | Rewrite README.md | S | None | - |
 | 1.4 | Add MIT LICENSE, fix package name, make repo public | S | None | 1.3 |
 
-### Milestone 2 — High Leverage
+### Milestone 2 - High Leverage
 
 | # | Task | Effort | Risk | Depends |
 |---|---|---|---|---|
 | 2.1 | Phase R deploy (Vercel + backend host), set FRONTEND_ORIGIN, LLM key, add @fastify/rate-limit | L | Medium | 1.2 |
 | 2.2 | Wire one showcase testnet anchor into the demo path | M | Medium | 2.1 |
-| 2.3 | Prune/relocate internal artifacts (memory.md, .docx files) — DEFERRED per Mide | S | Low | — |
+| 2.3 | Prune/relocate internal artifacts (memory.md, .docx files) - DEFERRED per Mide | S | Low | - |
 
-### Milestone 3 — Quality & Polish (post-deadline)
+### Milestone 3 - Quality & Polish (post-deadline)
 
 Frontend unit tests for the pure state modules, useCopyFeedback() hook, bulk proof-list endpoint, shared types package.
 
 ### Quick wins (do immediately)
 
-0.1, 1.1, 1.3, 1.4 — all S-effort, and together they flip the repo from "can't evaluate" to "green CI, real README, public, licensed."
+0.1, 1.1, 1.3, 1.4 - all S-effort, and together they flip the repo from "can't evaluate" to "green CI, real README, public, licensed."
 
 ### Top-3 implementation sketches
 
@@ -809,7 +809,7 @@ Not as a live product. I would recommend the concept and the direction, but I wo
 From Mide, 2026-07-02:
 
 1. API key bootstrap: keep frictionless for the deployed judge demo.
-2. LLM provider for deployment: undecided — this blocks Phase R and the video.
+2. LLM provider for deployment: undecided - this blocks Phase R and the video.
 3. Internal artifact pruning (memory.md, .docx files): deferred until later.
 4. Testnet anchoring in demo: showcase anchor approach (one real anchor linked in the UI, not per-run).
 
@@ -818,4 +818,4 @@ From Mide, 2026-07-02:
 **Generated:** 2026-07-02
 **Auditors:** Hermes Agent (UX audit), Elite Hackathon Audit (code + product + submission), Repo Audit (engineering)
 **Audited commit:** b83bc12
-**Project:** Sealrail — No Proof without a Payment.
+**Project:** Sealrail - No Proof without a Payment.

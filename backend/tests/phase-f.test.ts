@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase F Tests
+// Sealrail Backend - Phase F Tests
 // Agent registry service: CRUD, reputation, proofs, Casper sync
 // Covers F1-F3: services, routes, state enforcement
 // ────────────────────────────────────────
@@ -50,10 +50,10 @@ describe("Phase F: Agent Registry Service", () => {
   });
 
   // ═══════════════════════════════════════
-  // F1: Agent Service — CRUD
+  // F1: Agent Service - CRUD
   // ═══════════════════════════════════════
 
-  describe("F1: Agent Service — CRUD", () => {
+  describe("F1: Agent Service - CRUD", () => {
 
     describe("createAgent", () => {
       it("creates an agent with required fields", () => {
@@ -638,12 +638,12 @@ describe("Phase F: Agent Registry Service", () => {
     it("handle agent with special characters in name", () => {
       const agent = createAgent({
         ownerAddress: "0xAlice",
-        name: "Agent — \"Special\" Chars!",
+        name: "Agent - \"Special\" Chars!",
         category: "custom",
       });
 
       expect(agent.slug).toMatch(/^[a-z0-9-]+-[a-f0-9]{8}$/);
-      expect(agent.slug).not.toContain("—");
+      expect(agent.slug).not.toContain("\u2014");
       expect(agent.slug).not.toContain('"');
       expect(agent.slug).not.toContain("!");
     });

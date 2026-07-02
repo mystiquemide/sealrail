@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase A Tests
+// Sealrail Backend - Phase A Tests
 // Health endpoint + database migration
 // ────────────────────────────────────────
 
@@ -186,7 +186,7 @@ describe("Phase A: Foundation", () => {
     });
 
     it("config is frozen / readonly", () => {
-      // config is 'as const', typescript readonly — smoke test key access
+      // config is 'as const', typescript readonly - smoke test key access
       expect(typeof config.port).toBe("number");
       expect(typeof config.teeVerificationMode).toBe("string");
     });

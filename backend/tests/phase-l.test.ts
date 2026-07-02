@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase L Tests
+// Sealrail Backend - Phase L Tests
 // Verifier template: create, list, get, update,
 // schema validation, duplicate slug, wasm hash,
 // upload/register, test-verifier action,
@@ -441,7 +441,7 @@ describe("Phase L: Verifier Template Backend", () => {
         expect(hash).toMatch(/^[0-9a-f]{64}$/);
       });
 
-      it("is deterministic — same bytes produce same hash", () => {
+      it("is deterministic - same bytes produce same hash", () => {
         const bytes = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
         const h1 = hashWasmBytes(bytes);
         const h2 = hashWasmBytes(bytes);

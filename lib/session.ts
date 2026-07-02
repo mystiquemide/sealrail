@@ -62,9 +62,9 @@ async function isSessionValid(session: StoredSession): Promise<boolean> {
 /**
  * Bootstraps a full-scope API key on first use (POST /api/api-keys accepts
  * no auth for the very first key). Real multi-user auth is out of scope for this
- * release — every browser session acts as the same default owner identity.
+ * release - every browser session acts as the same default owner identity.
  *
- * Validates the cached secret against the backend before trusting it — if the
+ * Validates the cached secret against the backend before trusting it - if the
  * backend's database was reset (e.g. a fresh local dev DB), a stale cached
  * secret would otherwise silently fail auth and fall back to an anonymous
  * "bootstrap" owner server-side instead of erroring.

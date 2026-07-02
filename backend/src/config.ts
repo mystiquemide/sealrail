@@ -1,4 +1,4 @@
-// Sealrail Backend — Environment Config Loader
+// Sealrail Backend - Environment Config Loader
 // Reads from process.env; callers should load dotenv before importing config.
 
 function envStr(key: string, fallback: string): string {
@@ -48,7 +48,7 @@ export const config = {
   // to require an authenticated key for POST /api/api-keys.
   allowBootstrapKeys: envStr("ALLOW_BOOTSTRAP_KEYS", "true") !== "false",
 
-  // Verification mode — TEE verification adapter (no hosted enclave claims)
+  // Verification mode - TEE verification adapter (no hosted enclave claims)
   teeVerificationMode: "tee_verification_mode" as const,
 
   // Phase N: LLM Provider (agent execution runtime)

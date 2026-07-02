@@ -1,8 +1,8 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Deploy Prep Tests
+// Sealrail Backend - Deploy Prep Tests
 // Status service, config validation, API routes
 // Tests run with default config (dry_run, no hosted Blocky)
-// Config is cached at module import — env changes mid-test don't propagate
+// Config is cached at module import - env changes mid-test don't propagate
 // ────────────────────────────────────────
 
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
@@ -251,7 +251,7 @@ describe("Deployment Readiness", () => {
     expect(json).not.toContain("sk-");
     expect(json).not.toContain("secret");
     expect(json).not.toContain("token");
-    // These are env var names, not values — they should appear
+    // These are env var names, not values - they should appear
     // But actual key values should not
   });
 });

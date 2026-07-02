@@ -2,7 +2,7 @@
 // Sealrail Casper Anchoring Adapter
 // Casper provider: dry-run + testnet modes
 // Phase D1-D3: provider interface, deterministic deploy hash, casper-client path
-// Audit fix C2: testnet/mainnet fail-closed — simulated success removed from non-dry-run
+// Audit fix C2: testnet/mainnet fail-closed - simulated success removed from non-dry-run
 // ────────────────────────────────────────
 
 import { execFile, execSync } from "child_process";
@@ -81,7 +81,7 @@ export function getCasperClientVersion(): string | null {
 /**
  * Compute a deterministic anchor hash for dry-run mode.
  * Uses SHA-256 of all proof fields + a salt derived from the task ID.
- * This hash is reproducible — same input always yields the same anchor hash.
+ * This hash is reproducible - same input always yields the same anchor hash.
  */
 function computeDryRunAnchorHash(input: AnchorProofInput): string {
   const canonical = [
@@ -103,7 +103,7 @@ function computeDryRunAnchorHash(input: AnchorProofInput): string {
 
 /**
  * Create a dry-run anchor with a deterministic deploy hash.
- * No network calls — purely local computation.
+ * No network calls - purely local computation.
  * Only mode where success: true with simulated data is acceptable.
  */
 export async function createDryRunAnchor(
@@ -139,7 +139,7 @@ async function submitCasperDeploy(
   const chainName = config.casperChainName;
   const nodeAddress = config.casperRpcUrl;
 
-  // C2: Require account key — fail if missing (no simulated hashes)
+  // C2: Require account key - fail if missing (no simulated hashes)
   if (!config.casperAccountKeyPath) {
     throw new Error(
       "CASPER_ACCOUNT_KEY_MISSING: No Casper account key configured. " +
@@ -184,7 +184,7 @@ async function submitCasperDeploy(
 
 /**
  * Create a testnet anchor using casper-client.
- * C2: Fails closed — missing client, missing key, or deploy error = failure.
+ * C2: Fails closed - missing client, missing key, or deploy error = failure.
  * No simulated success fallback in testnet mode.
  */
 export async function createTestnetAnchor(
@@ -214,7 +214,7 @@ export async function createTestnetAnchor(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
 
-    // C2: Fail closed on any error — no fallback hash
+    // C2: Fail closed on any error - no fallback hash
     return {
       success: false,
       anchorHash: "",
@@ -242,7 +242,7 @@ export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult
     return createTestnetAnchor(input);
   }
 
-  // Blocker 1: mainnet and unsupported modes must fail closed — never dry-run
+  // Blocker 1: mainnet and unsupported modes must fail closed - never dry-run
   // Only dry_run mode is allowed to return simulated success.
   if (mode === "mainnet") {
     return {
@@ -255,7 +255,7 @@ export async function anchorProof(input: AnchorProofInput): Promise<AnchorResult
     };
   }
 
-  // Unknown/unrecognized mode — fail closed
+  // Unknown/unrecognized mode - fail closed
   return {
     success: false,
     anchorHash: "",
@@ -286,11 +286,11 @@ export async function verifyAnchor(
     return { valid: anchorHash === expected };
   }
 
-  // C2: Testnet — fail if client is unavailable (no silent success)
+  // C2: Testnet - fail if client is unavailable (no silent success)
   if (!isCasperClientAvailable()) {
     return {
       valid: false,
-      error: "CASPER_CLIENT_UNAVAILABLE: Cannot verify anchor — casper-client not found.",
+      error: "CASPER_CLIENT_UNAVAILABLE: Cannot verify anchor - casper-client not found.",
     };
   }
 

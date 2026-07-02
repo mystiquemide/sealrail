@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Split Service — Phase I
+// Sealrail Split Service - Phase I
 // I1: Split calculator (share basis points) with role/address validation
 // I2: Split proof dependency resolution using proof/task/workflow state
 // I3: Split unlock per-recipient state with partial-unlock support
@@ -236,7 +236,7 @@ export function resolveRecipientProofDependency(
   if (recipientConditions.length > 0) {
     conditions.push(`(${recipientConditions.join(" OR ")})`);
   } else {
-    // Recipient has neither agent_id nor verifier_id — can't match any proof
+    // Recipient has neither agent_id nor verifier_id - can't match any proof
     return {
       satisfied: false,
       proofIds: [],
@@ -387,7 +387,7 @@ export function unlockRecipientIfProofSatisfied(
     unlocked: true,
     status: "unlockable",
     proofSatisfied: true,
-    message: "Recipient unlocked — proof dependency satisfied",
+    message: "Recipient unlocked - proof dependency satisfied",
   };
 }
 
@@ -463,7 +463,7 @@ export function unlockAllSatisfiedRecipients(paymentId: string): {
           recipientId: recipient.id,
           unlocked: false,
           proofSatisfied: false,
-          message: `Already in '${recipient.status}' state — skipping`,
+          message: `Already in '${recipient.status}' state - skipping`,
         });
         continue;
       }

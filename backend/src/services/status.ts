@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Status Service
+// Sealrail Backend - Status Service
 // Comprehensive health/status for all subsystems
 // Deploy prep: exposes readiness without leaking secrets
 // ────────────────────────────────────────

@@ -11,7 +11,7 @@ import type { ApiKey } from "../types.js";
 
 declare module "fastify" {
   interface FastifyRequest {
-    /** Authenticated API key — set by requireApiKey middleware */
+    /** Authenticated API key - set by requireApiKey middleware */
     apiKey?: ApiKey;
   }
 }
@@ -49,7 +49,7 @@ function extractApiKey(request: FastifyRequest): string | null {
 /**
  * Middleware: Require a valid API key.
  * Sets request.apiKey on success, returns 401 on failure.
- * Does NOT check scopes — use requireApiKeyWithScope for scope enforcement.
+ * Does NOT check scopes - use requireApiKeyWithScope for scope enforcement.
  */
 export async function requireApiKey(
   request: FastifyRequest,
@@ -82,7 +82,7 @@ export async function requireApiKey(
  * Sets request.apiKey on success, returns 401 on invalid key,
  * returns 403 if key is valid but lacks required scopes.
  *
- * @param requiredScopes — list of scopes, any one of which is sufficient (OR logic)
+ * @param requiredScopes - list of scopes, any one of which is sufficient (OR logic)
  */
 export function requireApiKeyWithScope(requiredScopes: string[]) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -104,7 +104,7 @@ export function requireApiKeyWithScope(requiredScopes: string[]) {
       });
     }
 
-    // Check scopes — any one matching scope grants access (OR logic)
+    // Check scopes - any one matching scope grants access (OR logic)
     if (requiredScopes.length > 0) {
       const hasScope = requiredScopes.some((required) => key.scopes.includes(required));
       if (!hasScope) {

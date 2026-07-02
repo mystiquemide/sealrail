@@ -132,7 +132,7 @@ export function createListing(params: {
     );
   }
 
-  // 3b. Validate proof requirement — it becomes the payment unlock_rule for
+  // 3b. Validate proof requirement - it becomes the payment unlock_rule for
   // every task created from this listing, so reject bad values here (400)
   // instead of failing with a CHECK-constraint 500 at task-creation time.
   const validProofRequirements = ["proof_verified", "workflow_verified"];

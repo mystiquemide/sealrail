@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase M Integration Tests
+// Sealrail Backend - Phase M Integration Tests
 // Full-loop coverage: health → agents → verifiers → marketplace → tasks
 // → payments → proofs → anchoring → workflows → reputation → API keys
 // M3: State machine enforcement tests
@@ -142,7 +142,7 @@ process.env.DATABASE_PATH = ":memory:";
 closeDb();
 
 // ──────────────────────────────────────────
-// Phase M — Full Integration Test Suite
+// Phase M - Full Integration Test Suite
 // ──────────────────────────────────────────
 
 describe("Phase M: Backend Integration Gates", () => {
@@ -534,7 +534,7 @@ describe("Phase M: Backend Integration Gates", () => {
           currency: "USD",
         });
 
-        // Run + verify first — then inject a real verified proof so anchor works
+        // Run + verify first - then inject a real verified proof so anchor works
         await runTaskVerification(task.id);
         verifyTaskProof(task.id);
 
@@ -739,7 +739,7 @@ describe("Phase M: Backend Integration Gates", () => {
         expect(workflow.status).toBe("active");
         expect(workflow.steps.length).toBe(2);
 
-        // Create run — step_runs get auto-generated UUIDs
+        // Create run - step_runs get auto-generated UUIDs
         const run = createWorkflowRun(workflow.id, "0xBuyerA");
         expect(run.id).toBeDefined();
         expect(run.status).toBe("created");
@@ -790,7 +790,7 @@ describe("Phase M: Backend Integration Gates", () => {
         const run = createWorkflowRun(workflow.id, "0xBuyerA");
         const step2RunId = run.step_runs[1].id; // order 1
 
-        // Try to execute step 2 (order 1) before step 1 (order 0) — should fail
+        // Try to execute step 2 (order 1) before step 1 (order 0) - should fail
         expect(() =>
           executeWorkflowStep(run.id, step2RunId, agent2.id)
         ).toThrow("STEP_ORDER_VIOLATION");
@@ -1138,7 +1138,7 @@ describe("Phase M: Backend Integration Gates", () => {
         executeWorkflowStep(run.id, stepRunId, agent.id);
         finalizeWorkflowRun(run.id);
 
-        // Run is now proofs_verified — cannot add new steps
+        // Run is now proofs_verified - cannot add new steps
         expect(() =>
           executeWorkflowStep(run.id, stepRunId, agent.id)
         ).toThrow("INVALID_RUN_STATE");
@@ -1171,7 +1171,7 @@ describe("Phase M: Backend Integration Gates", () => {
         // Only execute step 1, not step 2
         executeWorkflowStep(run.id, run.step_runs[0].id, agent1.id);
 
-        // Should fail — not all steps verified
+        // Should fail - not all steps verified
         expect(() => finalizeWorkflowRun(run.id)).toThrow("STEPS_NOT_VERIFIED");
       });
     });
@@ -1534,7 +1534,7 @@ describe("Phase M: Backend Integration Gates", () => {
       expect(tables.length).toBeGreaterThanOrEqual(12);
     });
 
-    it("Phase B: (contract tests are separate — cargo odra)", () => {
+    it("Phase B: (contract tests are separate - cargo odra)", () => {
       // Contract tests live in contracts/verified-agent-payments/tests/
       expect(true).toBe(true);
     });

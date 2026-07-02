@@ -1,7 +1,7 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Fastify Server Entry
+// Sealrail Backend - Fastify Server Entry
 // Phase A: Foundation with health check
-// Audit fix: C1+H2 — extracted buildApp() factory for testing + auth wiring
+// Audit fix: C1+H2 - extracted buildApp() factory for testing + auth wiring
 // Deploy prep: Status routes with comprehensive subsystem readiness
 // ────────────────────────────────────────
 
@@ -24,7 +24,7 @@ import { validateDeploymentConfig, getValidationSummary } from "./services/confi
 import { getPublicStatus } from "./services/status.js";
 
 // NOTE: `config` is frozen when config.js is first imported, which happens
-// during the static imports above — before this line runs. Env loading for
+// during the static imports above - before this line runs. Env loading for
 // the server therefore happens in the npm scripts via --env-file-if-exists,
 // which Node applies before any module executes. The dotenv call below runs
 // too late to affect `config`; it remains only as a fallback for the few
@@ -34,12 +34,12 @@ try {
   const dotenv = await import("dotenv");
   dotenv.default.config();
 } catch {
-  // dotenv not available — use process.env directly
+  // dotenv not available - use process.env directly
 }
 
 /**
  * Build the Fastify app instance with all routes registered.
- * Does NOT call listen() — callers can use app.inject() for testing
+ * Does NOT call listen() - callers can use app.inject() for testing
  * or start the server with startServer().
  */
 export function buildApp() {
@@ -93,7 +93,7 @@ export function buildApp() {
     try {
       getDb();
       dbInitialized = true;
-      app.log.info("Database initialized — all 12 tables migrated");
+      app.log.info("Database initialized - all 12 tables migrated");
     } catch (err) {
       app.log.error({ err }, "Database initialization failed");
     }
@@ -108,7 +108,7 @@ export function buildApp() {
   });
 
   // ── Health endpoint (public) ──
-  // Delegates to status service — no duplicate inline logic
+  // Delegates to status service - no duplicate inline logic
   app.get("/api/health", async (_request, reply) => {
     const { getHealth } = await import("./services/status.js");
     return reply.send(getHealth(startTime));
@@ -174,7 +174,7 @@ export async function startServer() {
   const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
   for (const signal of signals) {
     process.on(signal, async () => {
-      app.log.info(`Received ${signal} — shutting down`);
+      app.log.info(`Received ${signal} - shutting down`);
       closeDb();
       await app.close();
       process.exit(0);
@@ -187,7 +187,7 @@ export async function startServer() {
 
   await app.listen({ port: config.port, host: config.host });
   app.log.info(
-    `Sealrail backend running at http://${config.host}:${config.port} — mode: ${config.teeVerificationMode}`
+    `Sealrail backend running at http://${config.host}:${config.port} - mode: ${config.teeVerificationMode}`
   );
 
   // One-line config-state summary so a misconfigured start is impossible to miss
@@ -201,13 +201,13 @@ export async function startServer() {
       const envFile = readFileSync(new URL("../.env", import.meta.url), "utf8");
       if (/^LLM_API_KEY=.+/m.test(envFile)) {
         app.log.warn(
-          "backend/.env defines LLM_API_KEY but it was NOT loaded — config froze before env vars were set. " +
+          "backend/.env defines LLM_API_KEY but it was NOT loaded - config froze before env vars were set. " +
             "Start the server via `npm run dev` or `npm start` (they pass --env-file-if-exists=.env), " +
             "or export the variables before launching."
         );
       }
     } catch {
-      // no .env file — defaults are intentional
+      // no .env file - defaults are intentional
     }
   }
 

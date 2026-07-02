@@ -12,7 +12,7 @@ cd backend && npm run dev
 # Server starts on http://localhost:3001
 ```
 
-Expected output includes: `Sealrail backend running — mode: tee_verification_mode`
+Expected output includes: `Sealrail backend running - mode: tee_verification_mode`
 
 ---
 
@@ -532,7 +532,7 @@ RUN_ID=$(curl -s -X POST http://localhost:3001/api/workflows/PLACEHOLDER_WORKFLO
   -H "Content-Type: application/json" \
   -d '{"buyer_address":"0xTest"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['run']['id'])")
 
-# Try step-analyze (order 1) before step-parse (order 0) — should fail
+# Try step-analyze (order 1) before step-parse (order 0) - should fail
 curl -s -X POST http://localhost:3001/api/workflow-runs/$RUN_ID/steps/step-analyze/run \
   -H "Content-Type: application/json" \
   -d '{"agent_id": "PLACEHOLDER_AGENT_ID_2"}' | python3 -m json.tool
@@ -577,7 +577,7 @@ curl -s -X POST http://localhost:3001/api/api-keys \
 
 **Expected status code:** 201
 **Expected fields:** `key.id`, `key.prefix`, `secret` (64-char hex string), `message`
-**IMPORTANT:** Copy the `secret` value — this is the only time it is returned.
+**IMPORTANT:** Copy the `secret` value - this is the only time it is returned.
 
 ### 8.2 List API keys (prefix only, no secret)
 
@@ -690,7 +690,7 @@ curl -s -X PATCH http://localhost:3001/api/agents/PLACEHOLDER_AGENT_ID \
 ### 9.4 Reject unlock before TEE verification + anchor
 
 ```bash
-# Create a task but do NOT run verification or anchor — then try to unlock
+# Create a task but do NOT run verification or anchor - then try to unlock
 TASK_ID=$(curl -s -X POST http://localhost:3001/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"agent_id":"PLACEHOLDER_AGENT_ID","buyer_address":"0xTest","total_amount":10,"currency":"USD"}' \

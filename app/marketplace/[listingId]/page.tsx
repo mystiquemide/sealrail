@@ -131,7 +131,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                 {created ? (
                   <div style={{ marginTop: 16 }}>
                     <p className={styles.formLabel} style={{ color: "#64D96B" }}>
-                      Task created — {created.title}
+                      Task created - {created.title}
                     </p>
                     <div className={styles.formFields} style={{ marginTop: 12 }}>
                       <Link href={`/proofs/${created.taskId}`} className={styles.createTaskButton}>

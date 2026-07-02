@@ -151,7 +151,7 @@ export interface AgentExecutionOutput {
   output_hash: string;
   /** SHA-256 hash of the task input */
   input_hash: string;
-  /** Provider/model metadata (only safe fields — no keys) */
+  /** Provider/model metadata (only safe fields - no keys) */
   model_metadata: {
     provider: string;
     model: string;
@@ -178,7 +178,7 @@ export interface LlmCompletionResponse {
   };
 }
 
-/** LLM provider interface — swappable backends. */
+/** LLM provider interface - swappable backends. */
 export interface LlmProvider {
   name: string;
   complete(prompt: string, options?: { temperature?: number; maxTokens?: number }): Promise<LlmCompletionResponse>;

@@ -288,7 +288,7 @@ export function registerPaymentRoutes(app: FastifyInstance): void {
           });
         }
 
-        // Blocker 3: Bind claim to authenticated API key owner — address string match is not enough.
+        // Blocker 3: Bind claim to authenticated API key owner - address string match is not enough.
         // The API key owner must control the recipient address.
         const apiKey = request.apiKey;
         if (!apiKey) {

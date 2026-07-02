@@ -21,7 +21,7 @@ Verdict: NEEDS ONE MORE FIX PASS. Senku fixed the mainnet dry-run bug and fixed 
 6. All required gates pass: backend tests, backend build, root lint, root build, backend lint.
 7. Final grade remains B+, not A/A+, because the proof/payment truth boundary is still not clean at the state-machine label level.
 
-## Verification Commands — Exact Outputs
+## Verification Commands - Exact Outputs
 
 ### 1. Git state before report edits
 
@@ -84,7 +84,7 @@ Observed output:
     "taskId": "3ff37840-29fd-4a2f-bbcd-eb9f117783e6",
     "status": "proof_pending",
     "proofId": "e49931b8-87a3-4ed3-a222-abefedb77bb7",
-    "message": "TEE verification initiated. Blocky CLI not available — proof is pending verification."
+    "message": "TEE verification initiated. Blocky CLI not available - proof is pending verification."
   },
   "before": [
     {
@@ -103,7 +103,7 @@ Observed output:
     "proofIds": [
       "e49931b8-87a3-4ed3-a222-abefedb77bb7"
     ],
-    "message": "Task proofs verified. Ready for anchoring. (dry_run simulated — placeholder proofs were not marked verified)"
+    "message": "Task proofs verified. Ready for anchoring. (dry_run simulated - placeholder proofs were not marked verified)"
   },
   "afterVerifyTask": {
     "id": "3ff37840-29fd-4a2f-bbcd-eb9f117783e6",
@@ -289,7 +289,7 @@ Observed output:
 
 ## Re-Audit Findings
 
-### B2 still blocking — placeholder proofs can still produce `proof_verified` and `anchored` task labels
+### B2 still blocking - placeholder proofs can still produce `proof_verified` and `anchored` task labels
 
 Severity: Critical for A/A+ target.
 
@@ -374,4 +374,4 @@ A/A+ bar for the next re-audit:
 
 Final grade: B+
 Target met: NO
-Blockers: 1 Critical — placeholder dry-run proof can still advance task to `proof_verified` and `anchored` labels.
+Blockers: 1 Critical - placeholder dry-run proof can still advance task to `proof_verified` and `anchored` labels.

@@ -37,7 +37,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
         .slice(0, 10)
         .map(async (p) => {
           const detail = await getTaskDetail(p.task_id as string).catch(() => null);
-          return buildProofHistoryItem(p, detail, verifier?.name ?? "—");
+          return buildProofHistoryItem(p, detail, verifier?.name ?? "-");
         })
     );
 

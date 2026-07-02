@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail — HTTP Auth Integration Tests (H3)
+// Sealrail - HTTP Auth Integration Tests (H3)
 // Audit fix: Prove that API key auth protects all mutation routes
 // Covers: 401 (missing key), 403 (wrong scope), and schema validation
 // ────────────────────────────────────────
@@ -26,7 +26,7 @@ let paymentsWriteKey: string;
 let adminOwnerAddress: string;
 
 beforeAll(async () => {
-  // Build app first — the DB is initialized during onReady hook
+  // Build app first - the DB is initialized during onReady hook
   app = buildApp();
   await app.ready();
 
@@ -91,7 +91,7 @@ describe("HTTP Auth: Public Endpoints", () => {
     const res = await app.inject({ method: "GET", url: "/api/status" });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    // H5: public status returns public-safe fields (mode, casper_mode, node_env are safe — no secrets)
+    // H5: public status returns public-safe fields (mode, casper_mode, node_env are safe - no secrets)
     // Must NOT expose secret values like api_key, secret, token
     const json = res.body;
     expect(json).not.toContain("api_key");
@@ -533,7 +533,7 @@ describe("HTTP Auth: Payment Claim Ownership (Blocker 3)", () => {
       headers: authHeader(adminKey),
     });
 
-    // Try to claim with other key — correct address string, wrong owner
+    // Try to claim with other key - correct address string, wrong owner
     const claimRes = await app.inject({
       method: "POST",
       url: `/api/payments/${paymentId}/claim`,
@@ -541,7 +541,7 @@ describe("HTTP Auth: Payment Claim Ownership (Blocker 3)", () => {
       payload: { recipient_id: recipientId, address: adminOwnerAddress },
     });
 
-    // Blocker 3: Address string match is not enough — owner must match
+    // Blocker 3: Address string match is not enough - owner must match
     expect(claimRes.statusCode).toBe(403);
     expect(claimRes.json().error).toBe("OWNER_MISMATCH");
   });

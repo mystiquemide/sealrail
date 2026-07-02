@@ -1,6 +1,6 @@
 // ────────────────────────────────────────
 // Sealrail Database Connection & Migration
-// SQLite via better-sqlite3 — synchronous, fast, zero-config
+// SQLite via better-sqlite3 - synchronous, fast, zero-config
 // ────────────────────────────────────────
 
 import Database from "better-sqlite3";
@@ -45,7 +45,7 @@ export function closeDb(): void {
 }
 
 /**
- * Reset database — for testing only.
+ * Reset database - for testing only.
  * Drops all tables and re-runs schema migration.
  */
 export function resetDb(): void {

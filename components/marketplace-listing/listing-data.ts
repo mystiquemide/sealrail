@@ -21,7 +21,7 @@ export function toListingDetail(listing: MarketplaceListing, verifier: VerifierT
     agent: listing.title,
     tagline: listing.summary || `Payment-backed ${listing.category} verification.`,
     price: `${listing.price_amount} ${listing.currency}`,
-    proofRequirement: listing.proof_requirement || verifier?.name || "—",
+    proofRequirement: listing.proof_requirement || verifier?.name || "-",
     agentOwner: listing.owner_address,
     verifier: verifier?.name ?? listing.verifier_id,
     mode: verifier?.mode_support?.[0] ? formatMode(verifier.mode_support[0]) : "TEE Verification Mode",

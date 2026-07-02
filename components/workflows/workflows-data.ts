@@ -19,7 +19,7 @@ export function toWorkflowListItem(w: WorkflowTemplate): WorkflowListItem {
   const split =
     w.payment_split_default.length > 0
       ? w.payment_split_default.map((r) => `${Math.round(r.share_bps / 100)}%`).join(" / ")
-      : "—";
+      : "-";
   return {
     id: w.id,
     name: w.name,

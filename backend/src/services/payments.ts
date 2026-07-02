@@ -245,7 +245,7 @@ export function calculatePaymentSplits(
     throw new Error("PAYMENT_NOT_FOUND");
   }
 
-  // Validate payment state — allow recalculation on locked payments too
+  // Validate payment state - allow recalculation on locked payments too
   if (payment.status !== "intent_created" && payment.status !== "locked") {
     throw new Error(
       `INVALID_STATE: Splits can only be calculated for payments in 'intent_created' state. Current: '${payment.status}'`

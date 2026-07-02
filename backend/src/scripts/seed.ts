@@ -166,7 +166,7 @@ function main(): void {
 
   // ── RWA compliance verifier + listing ──
   // A second sponsor-aligned service proves Sealrail is a marketplace/rail,
-  // not just one invoice demo. It is visible in marketplace/agents, while the
+  // not just one invoice workflow. It is visible in marketplace/agents, while the
   // /run one-click path intentionally remains on the battle-tested invoice agent.
   const complianceWasmHash = createHash("sha256")
     .update(
@@ -252,7 +252,7 @@ function main(): void {
     console.log(`compliance listing: created ${listing.id}`);
   }
 
-  console.log("\nSeed complete. Proof and payment records are never seeded —");
+  console.log("\nSeed complete. Proof and payment records are never seeded -");
   console.log("run a task (POST /api/tasks/:id/run) with an LLM configured to produce real ones.");
   console.log("Quickest way with the server running: python3 scripts/e2e-check.py");
   console.log("(runs one invoice through fund -> execute -> verify -> anchor -> unlock, populating /proofs)");

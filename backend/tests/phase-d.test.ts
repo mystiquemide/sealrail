@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase D Tests
+// Sealrail Backend - Phase D Tests
 // Casper anchoring adapter: dry-run, testnet, anchor integration
 // ────────────────────────────────────────
 
@@ -523,7 +523,7 @@ describe("Phase D4: Task Persistence with Anchor Hash", () => {
 // ═══════════════════════════════════════════
 
 describe("Phase D: Schema and Types", () => {
-  it("AnchorResult discriminated type — dry-run success variant", () => {
+  it("AnchorResult discriminated type - dry-run success variant", () => {
     const result = {
       success: true,
       anchorHash: "abc123def456",
@@ -536,7 +536,7 @@ describe("Phase D: Schema and Types", () => {
     expect(result.anchorHash).toBe("abc123def456");
   });
 
-  it("AnchorResult discriminated type — testnet success variant", () => {
+  it("AnchorResult discriminated type - testnet success variant", () => {
     const result = {
       success: true,
       anchorHash: "fedcba987654",
@@ -654,11 +654,11 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
     expect(proofsBefore[0].attestation_hash).toBe("attestation-hash-pending");
     expect(proofsBefore[0].status).toBe("pending");
 
-    // Verify — should advance task but leave proof as pending (not verified)
+    // Verify - should advance task but leave proof as pending (not verified)
     verifyTaskProof(task.id);
 
     const proofsAfter = db.prepare("SELECT * FROM proofs WHERE task_id = ?").all(task.id) as any[];
-    // Blocker 2: Proof status must still be "pending" — never falsely "verified"
+    // Blocker 2: Proof status must still be "pending" - never falsely "verified"
     expect(proofsAfter[0].status).toBe("pending");
     expect(proofsAfter[0].status).not.toBe("verified");
   });
@@ -673,11 +673,11 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
 
     const result = verifyTaskProof(task.id);
 
-    // Placeholder proofs must NOT produce proof_verified — return simulated status
+    // Placeholder proofs must NOT produce proof_verified - return simulated status
     expect(result.status).toBe("dry_run_proof_simulated");
     expect(result.message).toContain("Dry-run simulated");
 
-    // Task MUST stay at proof_pending — placeholder proofs never advance state
+    // Task MUST stay at proof_pending - placeholder proofs never advance state
     const updated = getTask(task.id);
     expect(updated!.status).toBe("proof_pending");
   });
@@ -796,7 +796,7 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
     updateTaskStatus(task.id, "proof_pending");
 
     const db = getDb();
-    // Insert one proof per placeholder pattern — ALL are placeholders
+    // Insert one proof per placeholder pattern - ALL are placeholders
     const patterns = [
       { attestation_hash: "attestation-hash-pending", wasm_hash: "wasm-hash-default", input_hash: "input-a", output_hash: "output-a" },
       { attestation_hash: "attestation-hash-default", wasm_hash: "wasm-hash-default", input_hash: "input-b", output_hash: "output-b" },
@@ -826,7 +826,7 @@ describe("Blocker 2: Placeholder Proof Verification Rejected", () => {
     // Advance task manually to proof_verified (bypass verify guard)
     updateTaskStatus(task.id, "proof_verified");
 
-    // Anchor must reject — all proofs are placeholders
+    // Anchor must reject - all proofs are placeholders
     await expect(anchorTaskProof(task.id)).rejects.toThrow(
       /NO_VERIFIED_PROOF|Placeholder/
     );

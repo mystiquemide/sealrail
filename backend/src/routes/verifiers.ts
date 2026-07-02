@@ -363,8 +363,8 @@ export function registerVerifierRoutes(app: FastifyInstance): void {
         return reply.status(200).send({
           result,
           message: result.valid
-            ? "Test passed — input validated against verifier schema."
-            : "Test failed — input does not match verifier schema.",
+            ? "Test passed - input validated against verifier schema."
+            : "Test failed - input does not match verifier schema.",
         });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

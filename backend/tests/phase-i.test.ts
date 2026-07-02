@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase I Tests
+// Sealrail Backend - Phase I Tests
 // Payment Split Engine
 // Covers I1-I4: split calculation, proof dependency resolution, per-recipient unlock
 // ────────────────────────────────────────
@@ -141,10 +141,10 @@ describe("Phase I: Payment Split Engine", () => {
   });
 
   // ═══════════════════════════════════════
-  // I1: Split Calculator — Validation
+  // I1: Split Calculator - Validation
   // ═══════════════════════════════════════
 
-  describe("I1: Split Calculator — Recipient Validation", () => {
+  describe("I1: Split Calculator - Recipient Validation", () => {
 
     describe("validateRecipients", () => {
       it("passes for valid recipients with correct total bps", () => {
@@ -594,7 +594,7 @@ describe("Phase I: Payment Split Engine", () => {
 
         const result = unlockAllSatisfiedRecipients(payment.id);
 
-        expect(result.paymentStatus).toBe("locked"); // still locked — partial
+        expect(result.paymentStatus).toBe("locked"); // still locked - partial
         expect(result.unlockedCount).toBe(2); // agent + platform (platform has proof_required=false)
         expect(result.stillLockedCount).toBe(1); // verifier still locked
         expect(result.message).toContain("Partial unlock");
@@ -618,7 +618,7 @@ describe("Phase I: Payment Split Engine", () => {
           currency: "CSPR",
         });
 
-        // No proofs created — but all recipients require proof
+        // No proofs created - but all recipients require proof
         calculatePaymentSplits(payment.id, [
           { address: "0xAgent", share_bps: 7000, role: "primary_agent", agent_id: "ag-none", proof_required: true },
           { address: "0xVerifier", share_bps: 3000, role: "verifier", verifier_id: "vf-none", proof_required: true },
@@ -728,7 +728,7 @@ describe("Phase I: Payment Split Engine", () => {
           currency: "CSPR",
         });
 
-        // No proof created — dependency not satisfied
+        // No proof created - dependency not satisfied
 
         calculatePaymentSplits(payment.id, [
           { address: "0xAgent", share_bps: 10000, role: "primary_agent", agent_id: agent.id, proof_required: true },
@@ -949,7 +949,7 @@ describe("Phase I: Payment Split Engine", () => {
       expect(fullPayment!.status).toBe("locked");
       expect(fullPayment!.recipients).toHaveLength(3);
 
-      // 2. Attempt unlock before proofs — should throw (no recipients with satisfied proofs)
+      // 2. Attempt unlock before proofs - should throw (no recipients with satisfied proofs)
       // All 3 recipients require proof, so none can unlock
       calculatePaymentSplits(payment.id, [
         { address: "0xPrimary", share_bps: 7000, role: "primary_agent", agent_id: agent.id, proof_required: true },

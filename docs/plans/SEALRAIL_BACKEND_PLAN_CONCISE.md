@@ -1,4 +1,4 @@
-# Sealrail Backend Plan — Concise Approval Version
+# Sealrail Backend Plan - Concise Approval Version
 
 Project: Sealrail on Casper
 Positioning: No Proof without a Payment.

@@ -57,7 +57,7 @@ body {
 }
 
 /* One-shot expanding ring when a proof rail step lands in a completed state.
-   The 3px #0e0e0e inner ring must persist — it masks the rail line. */
+   The 3px #0e0e0e inner ring must persist - it masks the rail line. */
 @keyframes srCompleteGlow {
   0% {
     box-shadow:

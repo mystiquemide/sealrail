@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Config Validation
+// Sealrail Backend - Config Validation
 // Production/testnet deployment readiness checks
 // Fails honestly for missing required values
 // Never leaks secrets in error messages
@@ -169,7 +169,7 @@ function validateCasperConfig(issues: ValidationIssue[]): void {
 
 function validateLlmConfig(issues: ValidationIssue[]): void {
   if (config.llmProvider === "none") {
-    // Explicitly disabled — not an error
+    // Explicitly disabled - not an error
     return;
   }
 
@@ -238,7 +238,7 @@ function validateDatabaseConfig(issues: ValidationIssue[]): void {
       key: "DATABASE_PATH",
       severity: "warning",
       message:
-        "DATABASE_PATH is ':memory:' — data will be lost on restart. " +
+        "DATABASE_PATH is ':memory:' - data will be lost on restart. " +
         "Use a file path for persistent storage.",
     });
   }
@@ -252,7 +252,7 @@ function validateDatabaseConfig(issues: ValidationIssue[]): void {
  * Checks all subsystems (Blocky, Casper, LLM, server, database) and returns
  * a structured result with errors (block deployment) and warnings (advisory).
  *
- * Never leaks secret values in error messages — only reports presence/absence.
+ * Never leaks secret values in error messages - only reports presence/absence.
  *
  * @returns ValidationResult with valid flag and issue list
  */

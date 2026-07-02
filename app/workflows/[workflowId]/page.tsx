@@ -209,7 +209,7 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
             <FinalProofBundle
               bundleText={bundleText}
               ready={finished}
-              copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy bundle"}
+              copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy bundle"}
               onCopy={copyBundle}
             />
           </>

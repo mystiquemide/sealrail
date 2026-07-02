@@ -1,4 +1,4 @@
-/* Sealrail /run page — ported from Sealrail Run.dc.html (Claude Design import) */
+/* Sealrail /run page - ported from Sealrail Run.dc.html (Claude Design import) */
 
 .page {
   min-height: 100vh;
@@ -6,7 +6,7 @@
   color: #f6f5f3;
 }
 
-/* srPulse and srCompleteGlow keyframes live in globals.css — inline animation
+/* srPulse and srCompleteGlow keyframes live in globals.css - inline animation
    styles can't reference CSS-module-scoped keyframe names. */
 
 @media (prefers-reduced-motion: reduce) {

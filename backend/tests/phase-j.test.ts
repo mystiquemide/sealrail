@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase J Tests
+// Sealrail Backend - Phase J Tests
 // Reputation scoring engine: score calculator, data gathering,
 // recalculation hooks, API routes, bounds, deterministic output
 // ────────────────────────────────────────
@@ -61,7 +61,7 @@ describe("Phase J: Reputation Scoring Engine", () => {
   });
 
   // ═══════════════════════════════════════
-  // J1: Score calculator — pure function
+  // J1: Score calculator - pure function
   // ═══════════════════════════════════════
 
   describe("J1: Score Calculator", () => {
@@ -177,7 +177,7 @@ describe("Phase J: Reputation Scoring Engine", () => {
         expect(score).toBe(67);
       });
 
-      it("is deterministic — same inputs produce same score", () => {
+      it("is deterministic - same inputs produce same score", () => {
         const inputs = {
           verifiedRuns: 7,
           paidTasks: 4,
@@ -380,7 +380,7 @@ describe("Phase J: Reputation Scoring Engine", () => {
   });
 
   // ═══════════════════════════════════════
-  // computeReputation — full integration
+  // computeReputation - full integration
   // ═══════════════════════════════════════
 
   describe("computeReputation", () => {
@@ -445,7 +445,7 @@ describe("Phase J: Reputation Scoring Engine", () => {
       expect(rep.paid_tasks).toBe(3);
       expect(rep.total_earned).toBe(300);
 
-      // Verify persistence — read back from DB
+      // Verify persistence - read back from DB
       const stored = db.prepare(
         "SELECT score, verified_runs, paid_tasks FROM agent_reputation WHERE agent_id = ?"
       ).get(agent.id) as { score: number; verified_runs: number; paid_tasks: number };
@@ -488,7 +488,7 @@ describe("Phase J: Reputation Scoring Engine", () => {
       expect(rep.blocked_tasks).toBe(5);
     });
 
-    it("is deterministic — same data produces same score", () => {
+    it("is deterministic - same data produces same score", () => {
       const agent = createAgent({
         ownerAddress: "0xAlice",
         name: "Deterministic Agent",

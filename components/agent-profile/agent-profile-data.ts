@@ -85,9 +85,9 @@ export function buildAgentProfile(
     },
     verifier: {
       name: verifier?.name ?? "No verifier attached",
-      inputSchema: verifier ? JSON.stringify(verifier.input_schema) : "—",
-      outputSchema: verifier ? JSON.stringify(verifier.output_schema) : "—",
-      wasmHash: verifier?.wasm_hash ?? "—",
+      inputSchema: verifier ? JSON.stringify(verifier.input_schema) : "-",
+      outputSchema: verifier ? JSON.stringify(verifier.output_schema) : "-",
+      wasmHash: verifier?.wasm_hash ?? "-",
     },
     proofHistory,
   };
@@ -97,7 +97,7 @@ export function buildProofHistoryItem(proof: Proof, taskDetail: TaskDetail | nul
   const pay = paymentLabelFor(proof, taskDetail);
   return {
     id: proof.id,
-    task: taskDetail?.task.title || proof.task_id || "—",
+    task: taskDetail?.task.title || proof.task_id || "-",
     verifier: verifierName,
     payment: pay.label,
     payColor: pay.color,

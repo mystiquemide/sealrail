@@ -475,7 +475,7 @@ export interface UploadVerifierParams {
  * it must be a valid SHA-256/SHA3 hex string.
  *
  * Note: WASM content is NOT stored in the database. Only the hash is stored.
- * This is a deliberate design choice for the current release — full WASM
+ * This is a deliberate design choice for the current release - full WASM
  * storage requires blob/file system integration.
  */
 export function uploadVerifier(params: UploadVerifierParams): VerifierTemplate {
@@ -568,7 +568,7 @@ export interface TestVerifierResult {
   wasm_hash: string;
   /** The timestamp of the test. */
   tested_at: string;
-  /** Mode of the test — always "tee_verification_mode". */
+  /** Mode of the test - always "tee_verification_mode". */
   mode: "tee_verification_mode";
   /** Deterministic verification token (SHA-256 of input_hash + output_hash + wasm_hash). */
   verification_token: string;
@@ -585,7 +585,7 @@ export interface TestVerifierResult {
  *
  * Note: In a hosted TEE deployment, this would route through the
  * bky-as attestation pipeline. The current path uses deterministic
- * local verification with full hash chaining — compatible with the
+ * local verification with full hash chaining - compatible with the
  * tee_verification_mode architecture.
  */
 export function testVerifier(
@@ -671,7 +671,7 @@ function validateInputAgainstSchema(
   schema: Record<string, unknown>,
 ): boolean {
   if (!schema || Object.keys(schema).length === 0) {
-    // Empty schema — any input is valid
+    // Empty schema - any input is valid
     return true;
   }
 

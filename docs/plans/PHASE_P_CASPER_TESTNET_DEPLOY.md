@@ -1,4 +1,4 @@
-# Phase P: Casper Testnet Deploy — Runbook & Status
+# Phase P: Casper Testnet Deploy - Runbook & Status
 
 > Sealrail Phase P: Casper testnet deployment and anchoring readiness.
 > Executed: 2026-07-01 | Agent: builder (Senku)
@@ -40,9 +40,9 @@ mkdir -p ~/.casper/keys
 casper-client keygen ~/.casper/keys/
 
 # This creates:
-#   ~/.casper/keys/secret_key.pem    — keep secret, never commit
-#   ~/.casper/keys/public_key.pem    — shareable
-#   ~/.casper/keys/public_key_hex    — your account hex
+#   ~/.casper/keys/secret_key.pem    - keep secret, never commit
+#   ~/.casper/keys/public_key.pem    - shareable
+#   ~/.casper/keys/public_key_hex    - your account hex
 
 # Get your account hash (for faucet):
 cat ~/.casper/keys/public_key_hex
@@ -169,7 +169,7 @@ curl -X POST http://localhost:3001/api/tasks \
   -H 'Content-Type: application/json' \
   -d '{"agent_id":"agent-1","input_data":"test"}'
 
-# Then verify + anchor — should produce a REAL Casper deploy hash
+# Then verify + anchor - should produce a REAL Casper deploy hash
 # visible on https://testnet.cspr.live
 ```
 

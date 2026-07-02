@@ -17,7 +17,7 @@ The backend is materially better than the C+ audit baseline. The required gates 
 
 Verdict: NEEDS FIXES before calling the backend A-grade. It is demo-improved, not trust-boundary sealed.
 
-## Verification Commands — Exact Outputs
+## Verification Commands - Exact Outputs
 
 ### 1. Git state
 
@@ -156,7 +156,7 @@ Observed output:
     "taskId": "495e3bb3-3e75-4136-a029-1b48f5be1cb9",
     "status": "proof_pending",
     "proofId": "cbd79fd3-535b-4e33-a33e-ff45b551df4d",
-    "message": "TEE verification initiated. Blocky CLI not available — proof is pending verification."
+    "message": "TEE verification initiated. Blocky CLI not available - proof is pending verification."
   },
   "before": {
     "status": "pending",
@@ -248,7 +248,7 @@ Interpretation: mainnet does not fail closed. It silently simulates success. Thi
 
 ## Remaining Blockers for Senku
 
-### Blocker 1 — Mainnet silently dry-runs instead of failing closed
+### Blocker 1 - Mainnet silently dry-runs instead of failing closed
 
 Severity: Critical.
 
@@ -275,7 +275,7 @@ Patch plan:
 3. In `anchorProof()`, replace the default dry-run fallback with an explicit error for unsupported modes.
 4. Add tests: `CASPER_MODE=mainnet` with no client/key must return `success:false`, `simulated:false`, empty hash, and an actionable error.
 
-### Blocker 2 — Placeholder proof still advances to `proof_verified` in dry-run
+### Blocker 2 - Placeholder proof still advances to `proof_verified` in dry-run
 
 Severity: Critical.
 
@@ -300,7 +300,7 @@ Patch plan:
 3. If dry-run must support demo progression, return `dry_run_verified` or `simulated_verified` explicitly and prevent it from being represented as real `proof_verified`.
 4. Add a regression test that creates a placeholder proof and asserts `verifyTaskProof()` throws `NO_REAL_PROOFS` or returns a non-verified state.
 
-### Blocker 3 — Payment claim requires address text, not address control
+### Blocker 3 - Payment claim requires address text, not address control
 
 Severity: High.
 

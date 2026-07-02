@@ -1,6 +1,6 @@
-# Sealrail Backend — Deployment Runbook
+# Sealrail Backend - Deployment Runbook
 
-> Status: Pre-deployment prep — hosted Blocky TEE access pending.
+> Status: Pre-deployment prep - hosted Blocky TEE access pending.
 > Last updated: 2026-07-01
 > Phase: N+ (Deploy prep while Blocky access pending)
 
@@ -24,30 +24,30 @@ This document covers deploying the Sealrail backend in three modes:
 
 ### testnet mode (additional)
 
-- **bky-as** CLI — Install from [blocky-as](https://github.com/blocky/blocky-as)
+- **bky-as** CLI - Install from [blocky-as](https://github.com/blocky/blocky-as)
   ```bash
   # Check installation
   bky-as version
   ```
-- **casper-client** — Install from [Casper docs](https://docs.casper.network/developers/prerequisites/)
+- **casper-client** - Install from [Casper docs](https://docs.casper.network/developers/prerequisites/)
   ```bash
   # Check installation
   casper-client --version
   ```
-- **Casper account key** — Generate a key pair:
+- **Casper account key** - Generate a key pair:
   ```bash
   casper-client keygen /path/to/keys
   # This creates: secret_key.pem, public_key.pem, public_key_hex
   ```
-- **Contract deployed** — Deploy via Phase P (Odra):
+- **Contract deployed** - Deploy via Phase P (Odra):
   ```bash
   cd contracts/verified-agent-payments
   cargo odra build
   cargo odra deploy --network casper-test
   # Record the contract hash from the output
   ```
-- **Blocky hosted access** (for real TEE verification) — Contact info@blocky.rocks.
-  Currently **PENDING** — no response received yet.
+- **Blocky hosted access** (for real TEE verification) - Contact info@blocky.rocks.
+  Currently **PENDING** - no response received yet.
 
 ## Quick Start (dry_run)
 
@@ -90,7 +90,7 @@ Config validation:
   [WARN] BLOCKY_AS_HOST: Hosted Blocky access is not configured...
 ```
 
-Errors (marked `[ERROR]`) block the readiness endpoint (returns 503). Warnings (`[WARN]`) are advisory — the server starts but specific features are unavailable.
+Errors (marked `[ERROR]`) block the readiness endpoint (returns 503). Warnings (`[WARN]`) are advisory - the server starts but specific features are unavailable.
 
 ## Health & Status Endpoints
 
@@ -120,7 +120,7 @@ Response includes:
 
 ## Blocky TEE Access Status
 
-**Current state: PENDING.** Hosted Blocky API key was requested from info@blocky.rocks — no response yet.
+**Current state: PENDING.** Hosted Blocky API key was requested from info@blocky.rocks - no response yet.
 
 Until hosted access is available:
 - **dry_run mode**: Works fully. TEE verification is simulated with deterministic hashes.
@@ -130,14 +130,14 @@ Until hosted access is available:
 What happens when hosted Blocky access arrives:
 1. Set `BLOCKY_AS_API_KEY` and `BLOCKY_AS_HOST` in `.env`
 2. Set `BLOCKY_MODE=tee_adapter` (or hosted_tee when supported)
-3. Restart the backend — config validation will show Blocky as ready
+3. Restart the backend - config validation will show Blocky as ready
 4. Real TEE attestation+verification flow activates for non-dry_run modes
 
 ## Phase N Guarantees
 
 The backend maintains these A+ guarantees from Phase N:
 
-1. **No fake LLM success**: LLM failures throw honestly (503/500) — no silent fallback.
+1. **No fake LLM success**: LLM failures throw honestly (503/500) - no silent fallback.
 2. **No pending proof fallback**: Eligible agent tasks that fail do NOT create placeholder proofs.
 3. **No payment unlock without verified proof**: Placeholder proofs (`isPlaceholderProof()`) can NEVER advance task/payment state.
 4. **Agent runtime available**: `GET /api/agents/runtime/health` reports runtime status and supported task types.
@@ -148,7 +148,7 @@ Verify guarantees are intact by running: `cd backend && npm test -- --no-file-pa
 
 ### Vercel (Next.js frontend)
 
-The frontend (`/` root of repo) deploys to Vercel. The backend runs separately (not on Vercel — Fastify + SQLite is stateful).
+The frontend (`/` root of repo) deploys to Vercel. The backend runs separately (not on Vercel - Fastify + SQLite is stateful).
 
 ### Railway / VPS (Backend)
 
@@ -173,14 +173,14 @@ railway variables set \
 ```bash
 cd backend
 npm run lint        # TypeScript type-check (tsc --noEmit)
-npm run build       # Same as lint (types only — no emit)
+npm run build       # Same as lint (types only - no emit)
 npm test -- --no-file-parallelism  # Full test suite
 ```
 
 ## Remaining Access Needed for Phase Q (Real TEE Hookup)
 
-- **Blocky hosted API key** — Pending from info@blocky.rocks
-- **Blocky hosted API endpoint** — Will be provided with the API key
+- **Blocky hosted API key** - Pending from info@blocky.rocks
+- **Blocky hosted API endpoint** - Will be provided with the API key
 
 Once these arrive, Phase Q can proceed: real TEE attestation with hosted Blocky enclave verification.
 
@@ -189,5 +189,5 @@ Once these arrive, Phase Q can proceed: real TEE attestation with hosted Blocky 
 After this deploy prep:
 1. **Phase Q**: Real TEE hookup when Blocky access arrives
 2. **Phase R**: Production deployment (Vercel + Railway/VPS)
-3. **Phase S**: Demo video (2-3 min)
-4. **Phase T**: README + DoraHacks submission
+3. **Phase S**: Product walkthrough video (2-3 min)
+4. **Phase T**: README and public launch assets

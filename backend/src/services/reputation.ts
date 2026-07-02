@@ -37,7 +37,7 @@ interface AgentReputationRow {
 
 /**
  * Compute the reputation score from raw counts using the plan §10.1 formula.
- * Pure function — deterministic, no side effects.
+ * Pure function - deterministic, no side effects.
  */
 export function computeScore(params: {
   verifiedRuns: number;
@@ -55,7 +55,7 @@ export function computeScore(params: {
 
 /**
  * Gather all reputation inputs from real database records for an agent.
- * No constants, no stubs — every value comes from the database.
+ * No constants, no stubs - every value comes from the database.
  */
 export function gatherReputationInputs(agentId: string): {
   verifiedRuns: number;
@@ -229,7 +229,7 @@ export function recalculateReputation(agentId: string): AgentReputation {
 /**
  * Get the reputation for an agent, always computed from live database records.
  * This ensures reputation always reflects the current state of proofs, tasks,
- * and payments — never stale cached values.
+ * and payments - never stale cached values.
  *
  * If the agent has no reputation row yet, one is computed and stored.
  * Returns stored defaults (score=50) for agents with no activity.

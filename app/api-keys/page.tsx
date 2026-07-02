@@ -146,7 +146,7 @@ export default function ApiKeysPage() {
             statusMessage={creating ? "Creating..." : undefined}
             generatedSecret={generatedSecret}
             copyLabel={
-              copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy secret"
+              copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy secret"
             }
             onNameChange={setNewKeyName}
             onToggleScope={toggleScope}

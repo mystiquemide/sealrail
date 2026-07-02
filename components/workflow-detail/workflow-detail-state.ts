@@ -54,7 +54,7 @@ export function computeSteps(
       return {
         n: String(i + 1).padStart(2, "0"),
         name: template ? (agentNames.get(template.agent_id) ?? template.name) : "Step",
-        verifier: template ? (verifierNames.get(template.verifier_id) ?? template.verifier_id) : "—",
+        verifier: template ? (verifierNames.get(template.verifier_id) ?? template.verifier_id) : "-",
         status: STATUS_LABEL[status],
         color,
         dotBg: status === "waiting" ? DOT_OFF : color,

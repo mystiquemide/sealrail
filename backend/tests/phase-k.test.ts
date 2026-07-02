@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase K Tests
+// Sealrail Backend - Phase K Tests
 // API key management: create, list, hash validation,
 // invalid key rejection, scope enforcement, update,
 // revoke, last_used_at, security edge cases
@@ -688,7 +688,7 @@ describe("Phase K: API Key Management", () => {
       const secondUse = getApiKeyById(result.key.id)!.last_used_at;
 
       // Both should be set (second may equal first if within same millisecond,
-      // but the behavior is correct — it IS updated)
+      // but the behavior is correct - it IS updated)
       expect(firstUse).toBeDefined();
       expect(secondUse).toBeDefined();
     });

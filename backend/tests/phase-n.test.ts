@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase N Tests
+// Sealrail Backend - Phase N Tests
 // Agent execution layer: LLM provider, invoice risk agent, runtime
 // ────────────────────────────────────────
 
@@ -489,7 +489,7 @@ describe("Phase N: Agent Execution Layer", () => {
         expect(proofRow).toBeDefined();
         // Not placeholder attestation
         expect(proofRow!.attestation_hash).not.toMatch(/^attestation-hash-(default|pending)$/);
-        // Not placeholder wasm — must be a proper SHA-256 hex hash (64 chars)
+        // Not placeholder wasm - must be a proper SHA-256 hex hash (64 chars)
         expect(proofRow!.wasm_hash).not.toBe("wasm-hash-default");
         expect(proofRow!.wasm_hash).toHaveLength(64);
         expect(proofRow!.wasm_hash).toMatch(/^[a-f0-9]{64}$/);
@@ -681,7 +681,7 @@ describe("Phase N: Agent Execution Layer", () => {
         badProvider.responseContent = "not json at all";
         __setLlmProvider(badProvider);
 
-        // Should throw — no silent fallback to pending proof
+        // Should throw - no silent fallback to pending proof
         await expect(
           runTaskWithAgentExecution(task.id)
         ).rejects.toThrow(/INVALID_RESPONSE/);
@@ -715,7 +715,7 @@ describe("Phase N: Agent Execution Layer", () => {
         failingProvider.errorCode = "PROVIDER_NOT_CONFIGURED";
         __setLlmProvider(failingProvider);
 
-        // Should throw — no silent fallback to pending proof
+        // Should throw - no silent fallback to pending proof
         await expect(
           runTaskWithAgentExecution(task.id)
         ).rejects.toThrow(LlmProviderError);
@@ -727,7 +727,7 @@ describe("Phase N: Agent Execution Layer", () => {
   // N4: Payment Safety with Agent Proofs
   // ═══════════════════════════════════════
 
-  describe("N4: Payment Safety — Agent-Executed Proofs", () => {
+  describe("N4: Payment Safety - Agent-Executed Proofs", () => {
     it("agent-executed proofs satisfy unlock payment gate", async () => {
       const agent = createAgent({
         ownerAddress: "owner-addr-20",
@@ -777,7 +777,7 @@ describe("Phase N: Agent Execution Layer", () => {
       const verifyResult = verifyTaskProof(task.id);
       expect(verifyResult.status).toBe("proof_verified");
 
-      // 3. Anchor (dry_run mode — produces deterministic hash)
+      // 3. Anchor (dry_run mode - produces deterministic hash)
       const { anchorTaskProof } = await import("../src/services/tasks.js");
       const anchorResult = await anchorTaskProof(task.id);
       expect(anchorResult.anchorHash).toBeDefined();
@@ -1073,7 +1073,7 @@ describe("Phase N: Agent Execution Layer", () => {
           headers: { authorization: `Bearer ${rawSecret}` },
         });
 
-        // Honest failure — no 200 with pending proof
+        // Honest failure - no 200 with pending proof
         expect(res.statusCode).toBe(503);
         const body = JSON.parse(res.body);
         expect(body.error).toBe("PROVIDER_NOT_CONFIGURED");
@@ -1113,7 +1113,7 @@ describe("Phase N: Agent Execution Layer", () => {
           headers: { authorization: `Bearer ${rawSecret}` },
         });
 
-        // Rate-limited errors are thrown honestly — no fallback
+        // Rate-limited errors are thrown honestly - no fallback
         expect(res.statusCode).toBeGreaterThanOrEqual(500);
         expect(res.statusCode).toBeLessThan(600);
         const body = JSON.parse(res.body);
@@ -1152,7 +1152,7 @@ describe("Phase N: Agent Execution Layer", () => {
           headers: { authorization: `Bearer ${rawSecret}` },
         });
 
-        // Invalid LLM output must throw — no pending proof
+        // Invalid LLM output must throw - no pending proof
         expect(res.statusCode).toBe(500);
         const body = JSON.parse(res.body);
         expect(body.error).toBe("RUN_FAILED");

@@ -30,7 +30,7 @@ export function toListing(listing: MarketplaceListing, verifierMode?: string): L
   return {
     id: listing.id,
     agent: listing.title,
-    verifier: listing.proof_requirement || "—",
+    verifier: listing.proof_requirement || "-",
     price: `${listing.price_amount} ${listing.currency}`,
     reputation: `${listing.reputation_score} / 100`,
     category: categoryLabel(listing.category),

@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase C Tests
+// Sealrail Backend - Phase C Tests
 // TEE verification adapter: Blocky CLI, retry, health, endpoint
 // 22 tests covering happy path, error paths, retry, and classification
 // ────────────────────────────────────────
@@ -134,7 +134,7 @@ describe("Phase C: Blocky TEE Verification Adapter", () => {
 
   describe("CLI Availability", () => {
     it("isCliAvailable returns true when bky-as is on PATH (real execSync)", () => {
-      // isCliAvailable uses real execSync — bky-as IS on this system
+      // isCliAvailable uses real execSync - bky-as IS on this system
       const result = isCliAvailable();
       expect(typeof result).toBe("boolean");
     });
@@ -169,7 +169,7 @@ describe("Phase C: Blocky TEE Verification Adapter", () => {
   // Section 2: Happy Path
   // ═══════════════════════════════════════
 
-  describe("Happy Path — Full Verification", () => {
+  describe("Happy Path - Full Verification", () => {
     it("verifies invoice risk with valid attestation and verification", async () => {
       const input = sampleInput();
 
@@ -455,7 +455,7 @@ describe("Phase C: Blocky TEE Verification Adapter", () => {
   // ═══════════════════════════════════════
 
   describe("Schema and Types", () => {
-    it("VerificationResult discriminated union — success variant", () => {
+    it("VerificationResult discriminated union - success variant", () => {
       const success: VerificationResult = {
         status: "verified",
         claims: {
@@ -485,7 +485,7 @@ describe("Phase C: Blocky TEE Verification Adapter", () => {
       }
     });
 
-    it("VerificationResult discriminated union — failure variant", () => {
+    it("VerificationResult discriminated union - failure variant", () => {
       const failure: VerificationResult = {
         status: "failed",
         errorCode: "CLI_NOT_FOUND",

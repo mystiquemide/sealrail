@@ -1,4 +1,4 @@
-// Rate limiting — RATE_LIMIT_MAX must cap per-IP requests with 429s.
+// Rate limiting - RATE_LIMIT_MAX must cap per-IP requests with 429s.
 // Env is set before the app module loads because config freezes at import time.
 import { afterAll, describe, expect, it } from "vitest";
 

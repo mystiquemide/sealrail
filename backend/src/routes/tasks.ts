@@ -1,6 +1,6 @@
 // ────────────────────────────────────────
 // Sealrail Task Routes
-// Phase D: POST /api/tasks/:taskId/anchor — Casper anchor endpoint
+// Phase D: POST /api/tasks/:taskId/anchor - Casper anchor endpoint
 // Phase E: POST /api/tasks, GET /api/tasks/:taskId, run, verify, unlock-payment
 // Audit fix C1+H2: API key auth on all mutation routes
 // ────────────────────────────────────────

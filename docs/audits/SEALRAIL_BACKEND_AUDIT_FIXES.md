@@ -20,7 +20,7 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 | File | Change |
 |------|--------|
 | `backend/src/index.ts` | Extracted `buildApp()` factory; sanitized public status; added admin status route; server start logic |
-| `backend/src/middleware/auth.ts` | (unchanged — already had correct middleware) |
+| `backend/src/middleware/auth.ts` | (unchanged - already had correct middleware) |
 | `backend/src/types.ts` | Added `API_SCOPES` constants and `ApiScope` type |
 | `backend/src/routes/agents.ts` | Added auth preHandlers; owner from authenticated key; sanitized health |
 | `backend/src/routes/marketplace.ts` | Added auth preHandlers; owner from authenticated key; sanitized health |
@@ -30,9 +30,9 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 | `backend/src/routes/payments.ts` | Added auth preHandlers; claim now requires address (H4); sanitized errors |
 | `backend/src/routes/workflows.ts` | Added auth preHandlers; owner from authenticated key; sanitized health |
 | `backend/src/routes/proof.ts` | Added auth preHandler on verification endpoint |
-| `backend/src/services/casper.ts` | C2: testnet fails closed — no simulated success; added `simulated` field |
+| `backend/src/services/casper.ts` | C2: testnet fails closed - no simulated success; added `simulated` field |
 | `backend/src/services/tasks.ts` | C3: `runTaskVerification` calls Blocky verify; `verifyTaskProof` checks real attestation; `anchorTaskProof` enforces proof existence in non-dry-run |
-| `backend/src/config.ts` | Unchanged (dotenv load order left as-is — see L1 note) |
+| `backend/src/config.ts` | Unchanged (dotenv load order left as-is - see L1 note) |
 | `backend/package.json` | Added `lint` script (`tsc --noEmit`) |
 | `eslint.config.mjs` | Ignored `backend/**` (backend has own lint gate) |
 | `backend/tests/http-auth.test.ts` | NEW: 26 HTTP integration tests proving auth enforcement |
@@ -70,9 +70,9 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 
 | Finding | Status |
 |---------|--------|
-| L1: Config load order | Noted — `config.ts` reads from `process.env`; `.env` loaded before `buildApp()`. No runtime bug observed. |
+| L1: Config load order | Noted - `config.ts` reads from `process.env`; `.env` loaded before `buildApp()`. No runtime bug observed. |
 | L2: Unused variables | Addressed by `tsc --noEmit` failing on any. Cleaned production routes. |
-| L3: Dual-state JSON/rows | Noted — structural change beyond audit scope. |
+| L3: Dual-state JSON/rows | Noted - structural change beyond audit scope. |
 
 ## Verification Gates
 
@@ -86,7 +86,7 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 
 ## Residual Risks
 
-1. **Config load order (L1)**: `config.ts` reads `process.env` at module init before `.env` is loaded in `index.ts`. In practice, the `dynamic import("dotenv")` at the top of `index.ts` runs before `buildApp()` which imports route modules which import `config`. No fix applied — left for a follow-up.
+1. **Config load order (L1)**: `config.ts` reads `process.env` at module init before `.env` is loaded in `index.ts`. In practice, the `dynamic import("dotenv")` at the top of `index.ts` runs before `buildApp()` which imports route modules which import `config`. No fix applied - left for a follow-up.
 
 2. **Dual-state JSON/rows (L3)**: Payment recipients duplicated in both `payments.recipients` JSON and `payment_recipients` rows. The service syncs them on write but divergence risk remains. Structural change deferred.
 
@@ -101,9 +101,9 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
   - **Blocker 1**: `CASPER_MODE=mainnet` now fails closed (returns success:false, simulated:false, empty hash, actionable error)
   - **Blocker 2 (second pass)**: `verifyTaskProof` never marks placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) as "verified" in DB; dry_run demo flow task still advances but proofs stay "pending" and message notes simulation
   - **Blocker 3**: Payment claim now validates `request.apiKey.owner_address === recipient.address`; returns 403 OWNER_MISMATCH on mismatch
-- ~~Levi re-audit (second pass)~~ → Re-audit done (B+, 2026-07-01). Blocker 2 not fully resolved — placeholder proofs still advanced task state in dry_run.
+- ~~Levi re-audit (second pass)~~ → Re-audit done (B+, 2026-07-01). Blocker 2 not fully resolved - placeholder proofs still advanced task state in dry_run.
 - **Third pass fixes** applied for remaining Blocker 2 regression:
-  - Placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) **can never advance task to `proof_verified`**, `anchored`, or `payable` — even in dry_run mode
+  - Placeholder proofs (attestation-hash-pending/default, wasm-hash-default, input-*/output-*) **can never advance task to `proof_verified`**, `anchored`, or `payable` - even in dry_run mode
   - `verifyTaskProof` returns `dry_run_proof_simulated` status for placeholder-only tasks instead of `proof_verified`; task stays at `proof_pending`
   - `anchorTaskProof` returns `dry_run_simulated` mode for placeholders but does NOT transition task to `anchored`; normal anchor path rejects placeholders with NO_VERIFIED_PROOF
   - `unlockTaskPayment` rejects placeholder/simulated proofs; requires at least one non-placeholder verified/anchored proof
@@ -129,9 +129,9 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 |------|--------|
 | `backend/src/services/casper.ts` | Added `"mainnet"` to AnchorResult.mode; mainnet branch in anchorProof returns fail-closed error instead of dry-run fallback |
 | `backend/src/services/tasks.ts` | verifyTaskProof: expanded placeholder detection (wasm-hash-default, input-*/output-* patterns); placeholder proofs NEVER marked "verified" in DB; dry_run allows task progression but notes simulation; reordered checks so PLACEHOLDER_PROOFS_REJECTED fires before NO_REAL_PROOFS |
-| `backend/src/routes/payments.ts` | Claim handler: added owner_address check — request.apiKey.owner_address must equal recipient.address; returns 403 OWNER_MISMATCH |
+| `backend/src/routes/payments.ts` | Claim handler: added owner_address check - request.apiKey.owner_address must equal recipient.address; returns 403 OWNER_MISMATCH |
 | `backend/tests/phase-d.test.ts` | Added 8 new tests: 4 mainnet fail-closed (B1), 4 placeholder proof rejection (B2) |
-| `backend/tests/http-auth.test.ts` | Added 3 new tests: payment claim ownership (B3) — wrong key owner, correct owner, address match without ownership |
+| `backend/tests/http-auth.test.ts` | Added 3 new tests: payment claim ownership (B3) - wrong key owner, correct owner, address match without ownership |
 
 ## Third Pass Fix Verification (2026-07-01)
 
@@ -155,7 +155,7 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 ## A+ Polish Fix Verification (2026-07-01)
 
 Final re-audit graded A, not A+, because dry-run simulated anchoring still updated
-the placeholder proof row to `status='anchored'` with a `casper_anchor_hash` — even though
+the placeholder proof row to `status='anchored'` with a `casper_anchor_hash` - even though
 the task stayed at `proof_pending`, payment did not unlock, and the API returned
 `mode: "dry_run_simulated"`. This was semantically sloppy.
 

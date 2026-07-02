@@ -36,6 +36,6 @@ Point the frontend at the backend with `NEXT_PUBLIC_API_URL=http://localhost:300
 
 ## First contribution?
 
-Look for issues labeled `good first issue`, or improve the docs — unclear docs are always a real bug.
+Look for issues labeled `good first issue`, or improve the docs - unclear docs are always a real bug.
 
 This project follows the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). Be kind.

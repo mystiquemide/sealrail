@@ -2,7 +2,7 @@
 // Sealrail Blocky Service
 // Wraps TEE verification with retry logic,
 // error classification, and health check.
-// Phase C — Blocky adaptor interface
+// Phase C - Blocky adaptor interface
 // ────────────────────────────────────────
 
 import {
@@ -103,11 +103,11 @@ export async function verify(
     lastError = result;
 
     if (!isRetryable(code)) {
-      // Non-retryable — return immediately
+      // Non-retryable - return immediately
       return result;
     }
 
-    // Last attempt — don't sleep, return the error
+    // Last attempt - don't sleep, return the error
     if (attempt >= retryConfig.maxAttempts) {
       break;
     }

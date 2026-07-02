@@ -197,7 +197,7 @@ export default function RegisterAgentPage() {
                       />
                     ) : null}
                     <p className={styles.fieldNote}>
-                      Execution type isn&apos;t part of the current agent record yet — captured here for the roadmap,
+                      Execution type isn&apos;t part of the current agent record yet - captured here for the roadmap,
                       not persisted server-side.
                     </p>
                   </div>

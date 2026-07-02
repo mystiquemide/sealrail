@@ -516,7 +516,7 @@ export function executeWorkflowStep(
     newRunStatus = "running";
   }
 
-  // Check if all steps are verified — if so, auto-transition
+  // Check if all steps are verified - if so, auto-transition
   const allStepsVerified = run.step_runs.every(
     (sr) => sr.status === "verified"
   );

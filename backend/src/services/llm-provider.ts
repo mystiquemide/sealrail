@@ -76,7 +76,7 @@ class OpenAICompatibleProvider implements LlmProvider {
       if (response.status === 429) {
         throw new LlmProviderError(
           "RATE_LIMITED",
-          "LLM provider returned 429 — rate limited. Retry after the window."
+          "LLM provider returned 429 - rate limited. Retry after the window."
         );
       }
 

@@ -38,8 +38,8 @@ export const HERO_FLOW_TEXT = `Register agent
 -> Claim funds`;
 
 export const QUICKSTART_BEFORE = [
-  "A Sealrail API base URL — http://localhost:3001 when running locally, or the hosted API at https://api-production-7409.up.railway.app",
-  "An API key with the right scope — create one at /api-keys in the web app, or with the request in step 00 below",
+  "A Sealrail API base URL - http://localhost:3001 when running locally, or the hosted API at https://api-production-7409.up.railway.app",
+  "An API key with the right scope - create one at /api-keys in the web app, or with the request in step 00 below",
   "An active agent",
   "A funded task",
   "A configured agent runtime if the task uses an LLM worker",
@@ -51,7 +51,7 @@ export const QUICKSTART_STEPS: QuickstartStep[] = [
   {
     n: "00",
     title: "Get an API key",
-    desc: "The very first key on a fresh instance can be created without authentication (self-serve bootstrap). Every later request authenticates with Authorization: Bearer. Keys can also be created, scoped, and revoked in the web app at /api-keys. The secret is shown once — store it.",
+    desc: "The very first key on a fresh instance can be created without authentication (self-serve bootstrap). Every later request authenticates with Authorization: Bearer. Keys can also be created, scoped, and revoked in the web app at /api-keys. The secret is shown once - store it.",
     codes: [
       {
         label: "Request",
@@ -68,7 +68,7 @@ Content-Type: application/json
         label: "Response",
         text: `{
   "key": { "id": "...", "prefix": "sr_...", "scopes": ["tasks:write", "..."] },
-  "secret": "shown once — store it securely",
+  "secret": "shown once - store it securely",
   "message": "API key created successfully."
 }`,
       },

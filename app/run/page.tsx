@@ -138,8 +138,8 @@ export default function RunPage() {
           flags?: string[];
         };
         setOutput({
-          riskScore: result.risk_score !== undefined ? String(result.risk_score) : "—",
-          decision: result.decision ?? "—",
+          riskScore: result.risk_score !== undefined ? String(result.risk_score) : "-",
+          decision: result.decision ?? "-",
           reason: result.reasoning ?? "No reasoning returned.",
           flags: result.flags ?? [],
           outputHash: out.output_hash,
@@ -389,8 +389,8 @@ export default function RunPage() {
             outVisible={outVisible}
             badge={failedStep === 2 ? "Agent failed" : failedStep === 3 ? "Proof failed" : hasProof ? "Proof verified" : outVisible ? "Unverified" : "No output"}
             color={failedStep ? RED : hasProof ? GREEN : AMBER}
-            riskScore={output?.riskScore ?? "—"}
-            decision={output?.decision ?? "—"}
+            riskScore={output?.riskScore ?? "-"}
+            decision={output?.decision ?? "-"}
             reason={output?.reason ?? "Run the agent to produce a decision."}
             flags={output?.flags ?? []}
             noFlags={!output || output.flags.length === 0}
@@ -409,7 +409,7 @@ export default function RunPage() {
             paymentState={paymentState}
             paymentStateColor={stage >= 6 ? GREEN : failedStep ? RED : stage >= 1 ? AMBER : GRAY}
             hasProof={hasProof}
-            copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy proof bundle"}
+            copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy proof bundle"}
             onCopy={copyBundle}
             detailHref={proofId ? `/proofs/${proofId}` : taskId ? `/proofs/${taskId}` : "#"}
           />

@@ -49,7 +49,7 @@ const updateKeySchema = {
 export function registerApiKeyRoutes(app: FastifyInstance): void {
   // ── GET /api/api-keys ────────────────────
   // List all active API keys for the authenticated owner.
-  // Owner derived from API key — no longer trusted from query param.
+  // Owner derived from API key - no longer trusted from query param.
   app.get(
     "/api/api-keys",
     {
@@ -108,7 +108,7 @@ export function registerApiKeyRoutes(app: FastifyInstance): void {
           key: result.key,
           secret: result.rawSecret,
           message:
-            "API key created successfully. Store this secret securely — it will not be shown again.",
+            "API key created successfully. Store this secret securely - it will not be shown again.",
         });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);

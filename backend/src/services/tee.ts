@@ -1,6 +1,6 @@
 // ────────────────────────────────────────
 // Sealrail TEE Verification Adapter
-// Blocky AS CLI client — attest + verify flow
+// Blocky AS CLI client - attest + verify flow
 // Phase C: Real CLI path with typed results
 // ────────────────────────────────────────
 
@@ -282,7 +282,7 @@ function validateClaims(
   }
 
   if (claims.function !== "verifyInvoiceRisk") {
-    // Not a hard error but worth noting — the function should match
+    // Not a hard error but worth noting - the function should match
   }
 
   // Attempt to parse the output field and validate task_id
@@ -292,7 +292,7 @@ function validateClaims(
       return "TASK_ID_MISMATCH";
     }
   } catch {
-    // Output might not be invoice risk JSON — not necessarily a failure
+    // Output might not be invoice risk JSON - not necessarily a failure
   }
 
   return null;

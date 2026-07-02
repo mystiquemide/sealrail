@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase G Tests
+// Sealrail Backend - Phase G Tests
 // Marketplace backend: listing CRUD, listing-to-task creation, filters
 // Covers G1-G3: services, routes, owner enforcement
 // ────────────────────────────────────────
@@ -67,10 +67,10 @@ describe("Phase G: Marketplace Backend", () => {
   });
 
   // ═══════════════════════════════════════
-  // G1: Listing Service — CRUD
+  // G1: Listing Service - CRUD
   // ═══════════════════════════════════════
 
-  describe("G1: Listing Service — CRUD", () => {
+  describe("G1: Listing Service - CRUD", () => {
 
     describe("createListing", () => {
       it("creates a listing for an existing agent when owner matches", () => {

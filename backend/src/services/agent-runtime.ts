@@ -1,6 +1,6 @@
 // ────────────────────────────────────────
 // Sealrail Agent Runtime Service
-// Phase N: Real agent execution layer — dispatch, run, output binding
+// Phase N: Real agent execution layer - dispatch, run, output binding
 // ────────────────────────────────────────
 
 import { randomUUID, createHash } from "crypto";
@@ -160,7 +160,7 @@ export interface AgentRunResult {
 /**
  * Execute a task's assigned agent.
  *
- * This is the real agent execution path — it:
+ * This is the real agent execution path - it:
  * 1. Validates the task is in a runnable state
  * 2. Looks up the assigned agent
  * 3. Dispatches to the correct agent runtime based on task type
@@ -294,7 +294,7 @@ export async function executeAgent(taskId: string): Promise<AgentRunResult> {
   try {
     recalculateReputation(agent.id);
   } catch {
-    // Silently skip — reputation should not break agent execution
+    // Silently skip - reputation should not break agent execution
   }
 
   return {
@@ -316,7 +316,7 @@ export async function executeAgent(taskId: string): Promise<AgentRunResult> {
  * agent execution when the task is eligible (active agent + invoice_risk
  * + configured LLM). If the agent is eligible but execution fails for any
  * reason (provider config, rate limit, invalid JSON, timeout, etc.), the
- * failure is thrown honestly — no pending proof is created.
+ * failure is thrown honestly - no pending proof is created.
  *
  * When agent execution is not applicable (no agent, agent inactive,
  * unsupported task type), it falls back to Blocky TEE verification if
@@ -369,7 +369,7 @@ export async function runTaskWithAgentExecution(taskId: string): Promise<{
       );
     }
 
-    // Execute agent — any failure (provider, rate-limit, invalid JSON,
+    // Execute agent - any failure (provider, rate-limit, invalid JSON,
     // timeout, etc.) is thrown honestly. No silent fallback to pending proof.
     const result = await executeAgent(taskId);
     return {
@@ -444,7 +444,7 @@ export async function runTaskWithAgentExecution(taskId: string): Promise<{
         }
       }
     } catch {
-      // TEE not available — nothing to do, throw below
+      // TEE not available - nothing to do, throw below
     }
   }
 

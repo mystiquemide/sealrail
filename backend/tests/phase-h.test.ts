@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail Backend — Phase H Tests
+// Sealrail Backend - Phase H Tests
 // Multi-agent orchestration engine:
 // Workflow template CRUD, run engine, ordered step execution,
 // finalize bundle, error paths, invalid states
@@ -579,7 +579,7 @@ describe("Phase H: Multi-Agent Workflow Orchestration", () => {
       // Finalize
       finalizeWorkflowRun(run.id);
 
-      // Try to execute another step (should fail — run is proofs_verified)
+      // Try to execute another step (should fail - run is proofs_verified)
       // Actually there are only 2 steps, so no step left to execute
       // But the run status should block further execution if we tried
       const refreshed = getWorkflowRun(run.id)!;
@@ -734,7 +734,7 @@ describe("Phase H: Multi-Agent Workflow Orchestration", () => {
       });
 
       const run = createWorkflowRun(workflow.id, "0xBuyer");
-      // No steps executed — run is still "created"
+      // No steps executed - run is still "created"
       // Wait, finalize requires "running" or "proofs_verified"
       expect(() => finalizeWorkflowRun(run.id)).toThrow("INVALID_RUN_STATE");
     });
@@ -758,10 +758,10 @@ describe("Phase H: Multi-Agent Workflow Orchestration", () => {
       const result = finalizeWorkflowRun(run.id);
       expect(result.run.status).toBe("proofs_verified");
 
-      // Second finalize should fail — run is proofs_verified which is allowed to refinalize.
+      // Second finalize should fail - run is proofs_verified which is allowed to refinalize.
       // Actually: finalizeWorkflowRun allows "running" or "proofs_verified"
       // But the step runs are already verified, so refinalize would create a new final proof
-      // This is actually allowed by design — but we should verify it doesn't crash
+      // This is actually allowed by design - but we should verify it doesn't crash
       const result2 = finalizeWorkflowRun(run.id);
       expect(result2.run.status).toBe("proofs_verified");
       expect(result2.finalProof.id).not.toBe(result.finalProof.id); // new proof

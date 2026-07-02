@@ -50,14 +50,14 @@ export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
   const failed = proof?.status === "failed";
 
   return {
-    amount: payment ? `${payment.total_amount} ${payment.currency}` : "—",
+    amount: payment ? `${payment.total_amount} ${payment.currency}` : "-",
     payState,
     payColor,
     result: verified ? "Verified" : (result?.decision as string) ?? (task.status === "failed" ? "Failed" : "Pending"),
     decision: (result?.reasoning as string) ?? (verified ? "Proof passed verification and payment may unlock." : "No decision recorded yet."),
     timestamp: task.updated_at,
     agentId: task.agent_id,
-    verifierId: proof?.verifier_id ?? "—",
+    verifierId: proof?.verifier_id ?? "-",
     wasmHash: proof?.wasm_hash ?? "pending",
     wasmColor: proof ? NEU : GRAY,
     attHash: proof?.attestation_hash ?? "pending",
@@ -68,7 +68,7 @@ export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
     anchorStatus: proof?.casper_anchor_hash ? "Anchored" : task.status === "failed" ? "None" : "Pending",
     anchorColor: proof?.casper_anchor_hash ? GREEN : task.status === "failed" ? RED : AMBER,
     explorerLink: proof?.casper_anchor_hash?.startsWith("dry-run-")
-      ? "dry-run anchor — switch CASPER_MODE=testnet for explorer link"
+      ? "dry-run anchor - switch CASPER_MODE=testnet for explorer link"
       : proof?.casper_anchor_hash
         ? `https://testnet.cspr.live/deploy/${proof.casper_anchor_hash}`
         : "not available",

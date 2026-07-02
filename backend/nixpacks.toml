@@ -1,4 +1,4 @@
-# Sealrail Backend — Nixpacks Build Config
+# Sealrail Backend - Nixpacks Build Config
 # Railway auto-detects this file. It controls the build/start phases
 # and avoids exposing runtime secrets as Docker build ARG/ENV.
 
@@ -17,7 +17,7 @@ cmds = ["npm run build"]
 cmds = ["npm prune --omit=dev"]
 
 [start]
-# Run the seed script first (idempotent — won't duplicate data),
+# Run the seed script first (idempotent - won't duplicate data),
 # then start the compiled server.
 cmd = "node dist/scripts/seed.js && node dist/index.js"
 

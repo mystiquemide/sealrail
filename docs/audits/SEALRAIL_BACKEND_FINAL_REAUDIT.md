@@ -83,7 +83,7 @@ Observed output excerpt:
 {
   "run": {
     "status": "proof_pending",
-    "message": "TEE verification initiated. Blocky CLI not available — proof is pending verification."
+    "message": "TEE verification initiated. Blocky CLI not available - proof is pending verification."
   },
   "beforeProofs": [
     {

@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 
 export function Hero() {
   return (
-    <section id="top" className={styles.heroSection} aria-label="Sealrail — No Proof without a Payment">
+    <section id="top" className={styles.heroSection} aria-label="Sealrail - No Proof without a Payment">
       <Image
         src="/hero-sealkeeper.jpg"
         alt="The Sealkeeper, a quiet courier carrying a sealed ledger tag along two payment rails"

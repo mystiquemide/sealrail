@@ -29,7 +29,7 @@ const KEY_PREFIX = "sr_";
 /**
  * Generate a cryptographically secure API key secret.
  * Returns the raw secret (64 hex chars) and the public prefix.
- * The raw secret is only returned once — on creation.
+ * The raw secret is only returned once - on creation.
  */
 export function generateApiKeySecret(): { rawSecret: string; prefix: string } {
   const rawSecret = randomBytes(32).toString("hex");
@@ -116,7 +116,7 @@ export interface CreateKeyResult {
 
 /**
  * Create a new API key.
- * Returns the full raw secret once — it is never stored in plaintext.
+ * Returns the full raw secret once - it is never stored in plaintext.
  */
 export function createApiKey(params: CreateKeyParams): CreateKeyResult {
   const db = getDb();
@@ -126,7 +126,7 @@ export function createApiKey(params: CreateKeyParams): CreateKeyResult {
   const hashedSecret = hashSecret(rawSecret);
   const scopes = params.scopes ?? [];
 
-  // Validate scopes — must be non-empty strings
+  // Validate scopes - must be non-empty strings
   if (scopes.length > 0) {
     for (const scope of scopes) {
       if (typeof scope !== "string" || scope.trim().length === 0) {
@@ -165,7 +165,7 @@ export function createApiKey(params: CreateKeyParams): CreateKeyResult {
 }
 
 /**
- * Get a single API key by ID (internal use — includes hashed_secret for verification).
+ * Get a single API key by ID (internal use - includes hashed_secret for verification).
  */
 export function getApiKeyById(id: string): ApiKey | null {
   const db = getDb();
@@ -267,7 +267,7 @@ export function updateApiKey(
   }
 
   if (updates.length === 0) {
-    // No changes requested — return existing without secret
+    // No changes requested - return existing without secret
     return apiKeyWithoutSecret(existing);
   }
 
@@ -284,7 +284,7 @@ export function updateApiKey(
 }
 
 /**
- * Revoke an API key (soft delete — sets revoked_at).
+ * Revoke an API key (soft delete - sets revoked_at).
  * Only the owner can revoke.
  */
 export function revokeApiKey(keyId: string, ownerAddress: string): Omit<ApiKey, "hashed_secret"> {
