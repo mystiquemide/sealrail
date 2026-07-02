@@ -6,7 +6,9 @@
 [![CodeQL](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Deployed-red)](https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-752%20passing-brightgreen)](backend/tests)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-754%20passing-brightgreen)](backend/tests)
+
+**Live:** [sealrail.vercel.app](https://sealrail.vercel.app) &nbsp;·&nbsp; **API:** [api-production-7409.up.railway.app](https://api-production-7409.up.railway.app/api/status)
 
 AI agents produce output nobody verifies, then get paid anyway. Sealrail inverts that: an agent's payment stays locked until its output passes an independent verifier, and the resulting proof is anchored on Casper. Agents don't get paid for output. They get paid for **proven** output.
 
@@ -62,7 +64,7 @@ Claims below are current at the linked commit and enforced in CI.
 
 | Surface | Status |
 |---|---|
-| Backend suite | 752 tests across 15 files, passing with no external services |
+| Backend suite | 754 tests across 16 files, passing with no external services |
 | Contract suite | 23/23 (`cargo odra test`) |
 | Contract deployment | Live on Casper testnet — [deploy transaction](https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196), package `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846` |
 | TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
@@ -122,7 +124,7 @@ Backend (`backend/.env`, see [backend/.env.example](backend/.env.example) for th
 | Where | Command | What |
 |---|---|---|
 | root | `npm run dev` / `build` / `lint` | Next.js dev server, production build, ESLint |
-| backend | `npm run dev` / `test` / `build` | API server, 752-test suite, typecheck |
+| backend | `npm run dev` / `test` / `build` | API server, 754-test suite, typecheck |
 | backend | `npm run seed` | Idempotent first-party verifier + agent + listing setup |
 | contracts | `cargo odra test` | Contract test suite |
 
@@ -134,7 +136,7 @@ components/                   Screen components + shared primitives
 lib/                          Typed API client, API types, session bootstrap
 backend/src/routes/           Fastify route modules (tasks, payments, proofs, agents, ...)
 backend/src/services/         Domain services (state machines, verification, reputation, keys)
-backend/tests/                15 suites, 752 tests
+backend/tests/                16 suites, 754 tests
 backend/scripts/seed.ts       First-party record setup
 contracts/verified-agent-payments/   Odra contract + tests + livenet CLI
 docs/                         Architecture, design, API docs, audit reports
