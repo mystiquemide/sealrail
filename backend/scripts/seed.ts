@@ -61,7 +61,7 @@ function main(): void {
     .update(
       JSON.stringify({
         name: VERIFIER_NAME,
-        task_type: "invoice_risk_check",
+        task_type: "invoice_risk",
         input_schema: INPUT_SCHEMA,
         output_schema: OUTPUT_SCHEMA,
       }),
@@ -83,7 +83,7 @@ function main(): void {
       name: VERIFIER_NAME,
       description:
         "Checks structured invoice-risk output against the registered schema. The WASM hash binds this template to its canonical schema descriptor.",
-      taskType: "invoice_risk_check",
+      taskType: "invoice_risk",
       inputSchema: INPUT_SCHEMA,
       outputSchema: OUTPUT_SCHEMA,
       wasmHash,
@@ -116,7 +116,7 @@ function main(): void {
       basePrice: 4,
       currency: "CSPR",
       verifierIds: [verifierId],
-      supportedTaskTypes: ["invoice_risk_check"],
+      supportedTaskTypes: ["invoice_risk"],
     });
     agentId = agent.id;
     console.log(`agent: created ${agentId}`);
@@ -139,7 +139,7 @@ function main(): void {
         "Submit an invoice and receive a verified risk assessment. Payment unlocks only after the proof verifies.",
       priceAmount: 4,
       currency: "CSPR",
-      proofRequirement: "verified",
+      proofRequirement: "proof_verified",
       verifierId,
     });
     console.log(`listing: created ${listing.id}`);

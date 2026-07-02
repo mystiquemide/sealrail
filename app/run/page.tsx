@@ -94,7 +94,7 @@ export default function RunPage() {
         total_amount: Number(fields.amount) || 0,
         currency: "USD",
         title: fields.invoiceId,
-        task_type: agent.supported_task_types[0] ?? "invoice_risk_check",
+        task_type: agent.supported_task_types[0] ?? "invoice_risk",
         input: {
           invoice_id: fields.invoiceId,
           vendor: fields.vendor,

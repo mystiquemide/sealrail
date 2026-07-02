@@ -23,7 +23,13 @@ import { requireApiKey } from "./middleware/auth.js";
 import { validateDeploymentConfig, getValidationSummary } from "./services/config-validation.js";
 import { getPublicStatus } from "./services/status.js";
 
-// Load dotenv before anything reads config
+// NOTE: `config` is frozen when config.js is first imported, which happens
+// during the static imports above — before this line runs. Env loading for
+// the server therefore happens in the npm scripts via --env-file-if-exists,
+// which Node applies before any module executes. The dotenv call below runs
+// too late to affect `config`; it remains only as a fallback for the few
+// call-time process.env reads (SEALRAIL_SKIP_LISTEN, BKY_AS_AVAILABLE, tee
+// child-process env) when the entry point is invoked directly without flags.
 try {
   const dotenv = await import("dotenv");
   dotenv.default.config();

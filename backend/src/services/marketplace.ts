@@ -132,6 +132,16 @@ export function createListing(params: {
     );
   }
 
+  // 3b. Validate proof requirement — it becomes the payment unlock_rule for
+  // every task created from this listing, so reject bad values here (400)
+  // instead of failing with a CHECK-constraint 500 at task-creation time.
+  const validProofRequirements = ["proof_verified", "workflow_verified"];
+  if (params.proofRequirement !== undefined && !validProofRequirements.includes(params.proofRequirement)) {
+    throw new Error(
+      `INVALID_PROOF_REQUIREMENT: '${params.proofRequirement}' must be one of: ${validProofRequirements.join(", ")}`
+    );
+  }
+
   // 4. Validate price
   if (params.priceAmount < 0) {
     throw new Error("INVALID_PRICE: price_amount must be non-negative");
@@ -403,12 +413,19 @@ export function createTaskFromListing(
     );
   }
 
+  // The agent runtime dispatches on the task_type the agent declares (e.g.
+  // "invoice_risk"), not on the listing's marketplace category ("invoice").
+  // Prefer the agent's first supported task type so listing-created tasks are
+  // executable; fall back to the category for agents that declare none.
+  const listingAgent = getAgent(listing.agent_id);
+  const taskType = listingAgent?.supported_task_types?.[0] ?? listing.category;
+
   // Use the canonical Phase E entry point: createTaskWithPayment
   const result = createTaskWithPayment({
     buyerAddress: params.buyerAddress,
     agentId: listing.agent_id,
     title: listing.title,
-    taskType: listing.category,
+    taskType,
     input: params.input ?? {},
     totalAmount: listing.price_amount,
     currency: listing.currency,
