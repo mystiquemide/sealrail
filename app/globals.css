@@ -32,6 +32,11 @@ body {
   font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+/* Anchor jumps must clear the sticky page headers instead of landing under them */
+[id] {
+  scroll-margin-top: 84px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
