@@ -372,6 +372,17 @@ export function getProofDetail(proofId: string): Record<string, unknown> | null 
     // Payment context
     payment_state: payment?.status ?? null,
     payment_id: payment?.id ?? null,
+    x402_receipt: {
+      protocol: "x402-compatible",
+      network: config.casperMode === "dry_run" ? "casper-dry-run" : `casper-${config.casperMode}`,
+      status_code: 402,
+      payment_required: true,
+      proof_required: true,
+      unlock_condition: "verified_proof_anchor",
+      payment_state: payment?.status ?? null,
+      amount: payment ? `${payment.total_amount} ${payment.currency}` : null,
+      casper_anchor_hash: proof.casper_anchor_hash,
+    },
     created_at: proof.created_at,
   };
 }

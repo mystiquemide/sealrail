@@ -35,7 +35,7 @@ function latestProof(proofs: Proof[]): Proof | undefined {
 export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
   const { task, payment } = detail;
   const proof = latestProof(detail.proofs);
-  const result = task.input?.result as Record<string, unknown> | undefined;
+  const result = (task.input?.result ?? task.input?.output ?? task.input) as Record<string, unknown> | undefined;
 
   const payState = payment
     ? payment.status === "paid"
@@ -53,8 +53,8 @@ export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
     amount: payment ? `${payment.total_amount} ${payment.currency}` : "—",
     payState,
     payColor,
-    result: (result?.decision as string) ?? (task.status === "failed" ? "Failed" : "Pending"),
-    decision: (result?.reasoning as string) ?? "No decision recorded yet.",
+    result: verified ? "Verified" : (result?.decision as string) ?? (task.status === "failed" ? "Failed" : "Pending"),
+    decision: (result?.reasoning as string) ?? (verified ? "Proof passed verification and payment may unlock." : "No decision recorded yet."),
     timestamp: task.updated_at,
     agentId: task.agent_id,
     verifierId: proof?.verifier_id ?? "—",
@@ -67,7 +67,11 @@ export function buildProofDetailRecord(detail: TaskDetail): ProofDetailRecord {
     proofKey: proof?.casper_anchor_hash ?? "pending",
     anchorStatus: proof?.casper_anchor_hash ? "Anchored" : task.status === "failed" ? "None" : "Pending",
     anchorColor: proof?.casper_anchor_hash ? GREEN : task.status === "failed" ? RED : AMBER,
-    explorerLink: proof?.casper_anchor_hash ? "available after live anchor" : "not available",
+    explorerLink: proof?.casper_anchor_hash?.startsWith("dry-run-")
+      ? "dry-run anchor — switch CASPER_MODE=testnet for explorer link"
+      : proof?.casper_anchor_hash
+        ? `https://testnet.cspr.live/deploy/${proof.casper_anchor_hash}`
+        : "not available",
     statusSentence:
       task.status === "paid" || task.status === "payable"
         ? "Proof verified. Payment unlocked."
@@ -89,5 +93,14 @@ export function buildProofBundle(taskTitle: string, detail: TaskDetail, r: Proof
     attestation_hash: r.attHash,
     casper_anchor: r.proofKey,
     payment_state: r.payState,
+    x402_receipt: {
+      protocol: "x402-compatible",
+      network: r.proofKey.startsWith("dry-run-") ? "casper-dry-run" : "casper-testnet",
+      status_code: 402,
+      payment_required: true,
+      proof_required: true,
+      unlock_condition: "verified_proof_anchor",
+      payment_state: r.payState.toLowerCase(),
+    },
   };
 }

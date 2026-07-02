@@ -134,7 +134,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                       Task created — {created.title}
                     </p>
                     <div className={styles.formFields} style={{ marginTop: 12 }}>
-                      <Link href={`/proofs/${created.title}`} className={styles.createTaskButton}>
+                      <Link href={`/proofs/${created.taskId}`} className={styles.createTaskButton}>
                         View proof status
                       </Link>
                     </div>
@@ -143,8 +143,9 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                   <>
                     <div className={styles.formFields}>
                       <div>
-                        <label className={styles.formLabel}>Invoice ID</label>
+                        <label htmlFor="invoice-id" className={styles.formLabel}>Invoice ID</label>
                         <input
+                          id="invoice-id"
                           value={invoiceId}
                           onChange={(e) => setInvoiceId(e.target.value)}
                           placeholder="INV-1030"
@@ -152,8 +153,9 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                         />
                       </div>
                       <div>
-                        <label className={styles.formLabel}>Amount</label>
+                        <label htmlFor="invoice-amount" className={styles.formLabel}>Amount</label>
                         <input
+                          id="invoice-amount"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
                           placeholder="12400"
@@ -161,16 +163,17 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                         />
                       </div>
                       <div>
-                        <label className={styles.formLabel}>Vendor</label>
-                        <input value={vendor} onChange={(e) => setVendor(e.target.value)} className={styles.formInput} />
+                        <label htmlFor="invoice-vendor" className={styles.formLabel}>Vendor</label>
+                        <input id="invoice-vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} className={styles.formInput} />
                       </div>
                       <div>
-                        <label className={styles.formLabel}>Buyer</label>
-                        <input value={buyer} onChange={(e) => setBuyer(e.target.value)} className={styles.formInput} />
+                        <label htmlFor="invoice-buyer" className={styles.formLabel}>Buyer</label>
+                        <input id="invoice-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} className={styles.formInput} />
                       </div>
                       <div>
-                        <label className={styles.formLabel}>Due date</label>
+                        <label htmlFor="invoice-due-date" className={styles.formLabel}>Due date</label>
                         <input
+                          id="invoice-due-date"
                           value={dueDate}
                           onChange={(e) => setDueDate(e.target.value)}
                           placeholder="2026-07-30"

@@ -127,6 +127,39 @@
   color: #f6f5f3;
 }
 
+/* ---------- sponsor/judge alignment cards ---------- */
+.sponsorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sponsorCard {
+  background: #0e0e0e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.sponsorText {
+  margin: 8px 0 0;
+  color: #a8a8a6;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.inlineMono {
+  font-family: var(--font-mono);
+  color: #f6f5f3;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 820px) {
+  .sponsorGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- workspace ---------- */
 
 .workspaceWrap {

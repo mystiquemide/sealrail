@@ -52,8 +52,8 @@ function buildRows(s: PublicStatus) {
       color: s.db_connected ? GREEN : RED,
     },
     {
-      name: "CSPR.cloud",
-      state: "Optional data layer, not required for core product",
+      name: "CSPR.cloud / Explorer visibility",
+      state: "Proof receipts expose deploy/anchor fields; live finality check is the next production add-on",
       color: GRAY,
     },
   ];
@@ -77,7 +77,7 @@ export default async function StatusPage() {
 
   return (
     <div className={styles.page}>
-      <AppNav active="Status" maxWidth={860} links={[{ label: "Docs", href: "/docs" }]} cta={null} />
+      <AppNav active="Status" maxWidth={860} links={[{ label: "Docs", href: "/docs" }, { label: "Judge", href: "/judge" }]} cta={null} />
 
       <main id="main" tabIndex={-1} className={styles.wrap}>
         <div className={styles.eyebrow}>System status</div>

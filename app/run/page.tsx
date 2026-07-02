@@ -62,6 +62,9 @@ export default function RunPage() {
   const [failedStep, setFailedStep] = useState<FailedStep>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [proofId, setProofId] = useState<string | null>(null);
+  const [deployHash, setDeployHash] = useState<string | null>(null);
+  const [casperMode, setCasperMode] = useState<string>("pending");
   const [output, setOutput] = useState<OutputState | null>(null);
   const [wasmHash, setWasmHash] = useState("pending");
   const [attHash, setAttHash] = useState("pending");
@@ -125,7 +128,8 @@ export default function RunPage() {
       setBusyStep(2);
       setErrorMessage(null);
       try {
-        await runTask(tid);
+        const runRes = await runTask(tid);
+        setProofId(runRes.proof_id);
         const { output: out } = await getTaskOutput(tid);
         const result = out.result as {
           risk_score?: number;
@@ -163,6 +167,9 @@ export default function RunPage() {
         await verifyTask(tid);
         const anchorRes = await anchorTask(tid);
         setAnchHash(anchorRes.anchor_hash);
+        setProofId(anchorRes.proof_id);
+        setDeployHash(anchorRes.deploy_hash || null);
+        setCasperMode(anchorRes.casper_mode);
 
         const detail = await getTaskDetail(tid);
         const latestProof = detail.proofs[detail.proofs.length - 1];
@@ -222,6 +229,9 @@ export default function RunPage() {
     setBusyStep(null);
     setFailedStep(null);
     setTaskId(null);
+    setProofId(null);
+    setDeployHash(null);
+    setCasperMode("pending");
     setOutput(null);
     setWasmHash("pending");
     setAttHash("pending");
@@ -243,7 +253,18 @@ export default function RunPage() {
       wasm_hash: wasmHash,
       attestation_hash: attHash,
       casper_anchor: anchHash,
+      casper_deploy_hash: deployHash,
+      casper_mode: casperMode,
       payment_state: paymentState,
+      x402_receipt: {
+        protocol: "x402-compatible",
+        network: casperMode === "pending" ? "casper" : `casper-${casperMode}`,
+        status_code: 402,
+        payment_required: true,
+        proof_required: true,
+        unlock_condition: "verified_proof_anchor",
+        payment_state: paymentState.toLowerCase(),
+      },
     };
     if (copyTimer.current) clearTimeout(copyTimer.current);
     try {
@@ -253,7 +274,7 @@ export default function RunPage() {
       setCopyStatus("failed");
     }
     copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1800);
-  }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, paymentState]);
+  }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, deployHash, casperMode, paymentState]);
 
   const steps = computeSteps(stage, busyStep, failedStep, anchHash !== "pending" ? anchHash : undefined);
   const variants = computeButtonVariants(stage, busyStep, failedStep);
@@ -334,6 +355,23 @@ export default function RunPage() {
         </div>
       </div>
 
+      <div className={styles.workspaceWrap} style={{ paddingBottom: 0 }}>
+        <div className={styles.sponsorGrid}>
+          <div className={styles.sponsorCard}>
+            <div className={styles.panelLabel}>Casper Innovation Track</div>
+            <p className={styles.sponsorText}>Agentic AI + RWA payment infrastructure: invoice work is verified, anchored, then paid.</p>
+          </div>
+          <div className={styles.sponsorCard}>
+            <div className={styles.panelLabel}>x402-compatible receipt</div>
+            <p className={styles.sponsorText}>The proof bundle includes a 402-style payment receipt: payment required, proof required, unlock only after verified anchor.</p>
+          </div>
+          <div className={styles.sponsorCard}>
+            <div className={styles.panelLabel}>Casper anchor visibility</div>
+            <p className={styles.sponsorText}>Mode: <span className={styles.inlineMono}>{casperMode}</span> · deploy: <span className={styles.inlineMono}>{deployHash ?? "pending"}</span></p>
+          </div>
+        </div>
+      </div>
+
       {errorMessage ? (
         <div className={styles.workspaceWrap} style={{ paddingBottom: 0 }}>
           <div style={{ color: RED, fontSize: 13, padding: "12px 0" }}>{errorMessage}</div>
@@ -373,7 +411,7 @@ export default function RunPage() {
             hasProof={hasProof}
             copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy proof bundle"}
             onCopy={copyBundle}
-            detailHref={taskId ? `/proofs/${fields.invoiceId}` : "#"}
+            detailHref={proofId ? `/proofs/${proofId}` : taskId ? `/proofs/${taskId}` : "#"}
           />
         </div>
       </div>

@@ -26,6 +26,9 @@ const SEED_OWNER = "01seedf1r5tparty0perator" + createHash("sha256").update("sea
 const VERIFIER_NAME = "verifyInvoiceRisk";
 const AGENT_NAME = "Invoice Risk Agent";
 const LISTING_TITLE = "Invoice risk verification";
+const COMPLIANCE_VERIFIER_NAME = "verifyRwaCompliance";
+const COMPLIANCE_AGENT_NAME = "RWA Compliance Agent";
+const COMPLIANCE_LISTING_TITLE = "RWA compliance pre-check";
 
 const INPUT_SCHEMA = {
   invoice_id: "string",
@@ -42,6 +45,22 @@ const OUTPUT_SCHEMA = {
   decision: "string",
   reasoning: "string",
   flags: "string[]",
+};
+
+const COMPLIANCE_INPUT_SCHEMA = {
+  asset_id: "string",
+  issuer: "string",
+  jurisdiction: "string",
+  document_hashes: "string[]",
+  counterparty: "string",
+  amount_usd: "number",
+};
+
+const COMPLIANCE_OUTPUT_SCHEMA = {
+  compliance_score: "number",
+  decision: "string",
+  reasoning: "string",
+  missing_items: "string[]",
 };
 
 function slugOf(name: string): string {
@@ -143,6 +162,94 @@ function main(): void {
       verifierId,
     });
     console.log(`listing: created ${listing.id}`);
+  }
+
+  // ── RWA compliance verifier + listing ──
+  // A second sponsor-aligned service proves Sealrail is a marketplace/rail,
+  // not just one invoice demo. It is visible in marketplace/agents, while the
+  // /run one-click path intentionally remains on the battle-tested invoice agent.
+  const complianceWasmHash = createHash("sha256")
+    .update(
+      JSON.stringify({
+        name: COMPLIANCE_VERIFIER_NAME,
+        task_type: "rwa_compliance",
+        input_schema: COMPLIANCE_INPUT_SCHEMA,
+        output_schema: COMPLIANCE_OUTPUT_SCHEMA,
+      }),
+    )
+    .digest("hex");
+
+  let complianceVerifierId: string;
+  const existingComplianceVerifier = db
+    .prepare("SELECT id FROM verifier_templates WHERE slug = ?")
+    .get(slugOf(COMPLIANCE_VERIFIER_NAME)) as { id: string } | undefined;
+
+  if (existingComplianceVerifier) {
+    complianceVerifierId = existingComplianceVerifier.id;
+    console.log(`compliance verifier: exists (${complianceVerifierId}), skipping`);
+  } else {
+    const verifier = createVerifier({
+      ownerAddress: SEED_OWNER,
+      name: COMPLIANCE_VERIFIER_NAME,
+      description:
+        "Checks RWA compliance output against a schema for issuer, jurisdiction, document hashes, and missing-item decisions.",
+      taskType: "rwa_compliance",
+      inputSchema: COMPLIANCE_INPUT_SCHEMA,
+      outputSchema: COMPLIANCE_OUTPUT_SCHEMA,
+      wasmHash: complianceWasmHash,
+      modeSupport: ["tee_verification_mode"],
+      status: "active",
+    });
+    complianceVerifierId = verifier.id;
+    console.log(`compliance verifier: created ${complianceVerifierId}`);
+  }
+
+  let complianceAgentId: string;
+  const existingComplianceAgent = db
+    .prepare("SELECT id FROM agents WHERE name = ? AND owner_address = ?")
+    .get(COMPLIANCE_AGENT_NAME, SEED_OWNER) as { id: string } | undefined;
+
+  if (existingComplianceAgent) {
+    complianceAgentId = existingComplianceAgent.id;
+    console.log(`compliance agent: exists (${complianceAgentId}), skipping`);
+  } else {
+    const agent = createAgent({
+      ownerAddress: SEED_OWNER,
+      name: COMPLIANCE_AGENT_NAME,
+      category: "compliance",
+      description:
+        "RWA compliance worker for pre-checking issuer, counterparty, jurisdiction, and document hash completeness before payment release.",
+      shortPitch: "Pre-checks RWA compliance evidence before payment unlock.",
+      pricingModel: "per_run",
+      basePrice: 6,
+      currency: "CSPR",
+      verifierIds: [complianceVerifierId],
+      supportedTaskTypes: ["rwa_compliance"],
+    });
+    complianceAgentId = agent.id;
+    console.log(`compliance agent: created ${complianceAgentId}`);
+  }
+
+  const existingComplianceListing = db
+    .prepare("SELECT id FROM marketplace_listings WHERE agent_id = ?")
+    .get(complianceAgentId) as { id: string } | undefined;
+
+  if (existingComplianceListing) {
+    console.log(`compliance listing: exists (${existingComplianceListing.id}), skipping`);
+  } else {
+    const listing = createListing({
+      agentId: complianceAgentId,
+      ownerAddress: SEED_OWNER,
+      title: COMPLIANCE_LISTING_TITLE,
+      category: "compliance",
+      summary:
+        "Submit RWA evidence and receive a proof-gated compliance pre-check. Designed for invoice/RWA financing and agent payment workflows.",
+      priceAmount: 6,
+      currency: "CSPR",
+      proofRequirement: "proof_verified",
+      verifierId: complianceVerifierId,
+    });
+    console.log(`compliance listing: created ${listing.id}`);
   }
 
   console.log("\nSeed complete. Proof and payment records are never seeded —");
