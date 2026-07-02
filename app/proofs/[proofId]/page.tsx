@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import { buildProofBundle, buildProofDetailRecord, type ProofDetailRecord } from "@/components/proof-detail/proof-detail-data";
-import { getAgent, getTaskDetail, listTasks } from "@/lib/api";
+import { getAgent, getProofDetail, getTaskDetail, listTasks } from "@/lib/api";
 import type { TaskDetail } from "@/lib/api-types";
 import styles from "@/components/proof-detail/ProofDetail.module.css";
 
@@ -25,13 +25,26 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
     let cancelled = false;
     async function load() {
       try {
-        const { tasks } = await listTasks();
-        const match = tasks.find((t) => t.title === proofId || t.id === proofId);
-        if (!match) {
+        let taskId: string | null = null;
+
+        // Canonical route: /proofs/:proofId. Resolve the proof first, then load
+        // the linked task so judges see the verified/unlocked state from /run.
+        try {
+          const proof = await getProofDetail(proofId);
+          taskId = proof.task_id;
+        } catch {
+          // Backward-compatible route: old links used task ids or invoice titles.
+          const { tasks } = await listTasks();
+          const match = tasks.find((t) => t.title === proofId || t.id === proofId || t.proof_ids.includes(proofId));
+          taskId = match?.id ?? null;
+        }
+
+        if (!taskId) {
           if (!cancelled) setDetail(null);
           return;
         }
-        const full = await getTaskDetail(match.id);
+
+        const full = await getTaskDetail(taskId);
         if (cancelled) return;
         setDetail(full);
         setRecord(buildProofDetailRecord(full));

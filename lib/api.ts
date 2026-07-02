@@ -141,8 +141,15 @@ export const createTaskFromListing = (listingId: string, body: { buyer_address: 
 
 export const listTasks = (filters?: { status?: TaskStatus }) =>
   request<{ tasks: Task[]; count: number }>("/api/tasks", { query: filters });
-
 export const getTaskDetail = (taskId: string) => request<TaskDetail>(`/api/tasks/${taskId}`);
+export const getProofDetail = (proofId: string) =>
+  request<{
+    proof_id: string;
+    task_id: string | null;
+    invoice_id: string | null;
+    payment_state: string | null;
+    x402_receipt?: Record<string, unknown>;
+  }>(`/api/proofs/${proofId}`);
 
 export const createTask = (body: {
   agent_id: string;
