@@ -46,6 +46,9 @@
 .link {
   white-space: nowrap;
   transition: color 0.2s;
+  /* Expand the tap target to ~44px without shifting layout */
+  padding: 13px 4px;
+  margin: -13px -4px;
 }
 .link:hover {
   color: #f6f5f3;

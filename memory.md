@@ -563,6 +563,22 @@ Blocky AS CLI installed (bky-as, bky-c). Local verification path working. Hosted
 
 Deploy prep hardening complete: status endpoints expose Blocky CLI availability and hosted config readiness without exposing secrets. Config validation warns about missing hosted access in dry_run mode, errors in testnet mode.
 
+## UX microcopy fix pass + pre-submission audits (2026-07-02)
+
+- UX writing audit of all 19 screens, fixes committed as `b83bc12` and pushed: env-var leak (`NEXT_PUBLIC_API_URL`) removed from 9 error states (shared copy in `lib/copy.ts`), false "Copied" confirmations fixed across 4 clipboard handlers (now async with a "Couldn't copy" failure state), silent API-key revoke failure now shows inline error, fake-disabled CTAs on /marketplace and /owner converted to real `btnGhost` links, dead ProofsTable error/Retry branch wired to real fetch state with working retry, `&quot;` render bug on /run fixed, CreateApiKeyModal got a separate `statusMessage` slot so "Creating..." no longer occupies the error region. Lint + build clean.
+- Elite hackathon audit: docs/audits/SEALRAIL_ELITE_HACKATHON_AUDIT.md. Verdict: product strong (739/751 tests verified live on WSL Node 24), packaging near zero — no deploy, no video, no submission page, boilerplate README, private repo, no LICENSE.
+- Repo audit: docs/audits/SEALRAIL_REPO_AUDIT.md. Grade B+. New findings: `POST /api/api-keys` unauthenticated (routes/api-keys.ts:85-89), test suite environment-dependent (11 phase-c bky-as cascades + 1 brittle URL assertion in phase-deploy-prep.test.ts:420 that fails wherever bky-as is absent), no CI.
+- Mide's decisions: key bootstrap stays frictionless for the judge demo, LLM provider for deployment still undecided (blocks Phase R + video), memory.md/.docx pruning deferred, testnet anchoring via one showcase anchor (not per-run).
+
+## Audit fix + launch polish pass (2026-07-02, post-audit)
+
+- Backend tests now fully portable: `isCliAvailable()` made injectable (`__setCliAvailable` in tee.ts) so phase-c's mocked exec paths run without bky-as; phase-deploy-prep URL assertion narrowed to secret patterns with the bky-as docs link allowlisted; `fileParallelism: false` baked into backend/vitest.config.ts (parallel workers caused spurious cross-file failures). Result: 752/752 via plain `npm test` on a machine with no bky-as. 752 = 751 + new attribution test.
+- `POST /api/api-keys`: added `optionalApiKey` preHandler (authenticated callers now attribute to their key's owner, body owner_address ignored — test added in http-auth.test.ts) + `ALLOW_BOOTSTRAP_KEYS` config (default true per Mide's frictionless decision, `false` locks down).
+- Frontend a11y: sr-only h1 on landing hero (page had zero h1), all footer links wired to real routes/anchors ("Casper Buildathon" label replaced with "Casper Network" → casper.network; contract → testnet.cspr.live transaction), htmlFor/id label associations + aria-required across register-agent, register-verifier, and API-key-modal forms, role="alert" on validation regions, nav tap targets expanded to ~44px via padding+negative-margin (no layout shift).
+- `backend/scripts/seed.ts` (`npm run seed`): idempotent, creates real verifier+agent+listing via services (honest — no proofs/payments ever seeded). Fixes the /run, /agents, /marketplace empty-state dead ends. Agent slug has random suffix so idempotency matches on name+SEED_OWNER.
+- Launch polish: README fully rewritten (badges, two Mermaid diagrams, verification status table with contract explorer link, quickstart, env vars, repo layout — zero hackathon language per github-launch-polish skill), MIT LICENSE, CONTRIBUTING, SECURITY, CHANGELOG (v0.1.0), CODE_OF_CONDUCT, .editorconfig, .nvmrc (22), issue/PR templates, CI workflow (frontend lint+build, backend tsc+test on ubuntu), CodeQL, Dependabot (npm root+backend, cargo, actions). Root package renamed sealrail-scaffold→sealrail, license fields added, root .env.example replaced (was stale scaffold content with wrong port).
+- Repo visibility: still private — flipping public is gated on Mide's explicit go.
+
 ## Casper status
 
 - Rust nightly, wasm32 target, cargo-odra, casper-client installed.

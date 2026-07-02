@@ -6,6 +6,9 @@ import styles from "./Landing.module.css";
 export function Hero() {
   return (
     <section id="top" className={styles.heroSection}>
+      <h1 className={styles.srOnly}>
+        Sealrail — the rail between agent work and agent payment. No Proof without a Payment.
+      </h1>
       <Image
         src="/hero-sealkeeper.jpg"
         alt="The Sealkeeper, a quiet courier carrying a sealed ledger tag along two payment rails"

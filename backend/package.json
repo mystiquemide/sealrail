@@ -2,6 +2,7 @@
   "name": "sealrail-backend",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Sealrail backend — TEE-verified agent payment infrastructure on Casper",
   "type": "module",
   "scripts": {
@@ -9,7 +10,8 @@
     "start": "tsx src/index.ts",
     "build": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

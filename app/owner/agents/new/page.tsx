@@ -120,8 +120,10 @@ export default function RegisterAgentPage() {
                 <div className={styles.panelLabel}>Agent details</div>
                 <div className={styles.fields}>
                   <div>
-                    <label className={styles.formLabel}>Agent name</label>
+                    <label htmlFor="agent-name" className={styles.formLabel}>Agent name</label>
                     <input
+                      id="agent-name"
+                      aria-required="true"
                       value={form.name}
                       onChange={(e) => update("name", e.target.value)}
                       placeholder="e.g. Invoice Risk Agent"
@@ -129,8 +131,9 @@ export default function RegisterAgentPage() {
                     />
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Category</label>
+                    <label htmlFor="agent-category" className={styles.formLabel}>Category</label>
                     <select
+                      id="agent-category"
                       value={form.category}
                       onChange={(e) => update("category", e.target.value)}
                       className={styles.formSelect}
@@ -143,8 +146,9 @@ export default function RegisterAgentPage() {
                     </select>
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Description</label>
+                    <label htmlFor="agent-description" className={styles.formLabel}>Description</label>
                     <textarea
+                      id="agent-description"
                       value={form.description}
                       onChange={(e) => update("description", e.target.value)}
                       rows={3}
@@ -153,8 +157,8 @@ export default function RegisterAgentPage() {
                     />
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Execution type</label>
-                    <div className={styles.execTypeRow}>
+                    <div id="agent-exec-type-label" className={styles.formLabel}>Execution type</div>
+                    <div role="group" aria-labelledby="agent-exec-type-label" className={styles.execTypeRow}>
                       {EXECUTION_TYPE_OPTIONS.map((opt) => {
                         const active = form.executionType === opt;
                         return (
@@ -176,6 +180,7 @@ export default function RegisterAgentPage() {
                     </div>
                     {form.executionType === "webhook" ? (
                       <input
+                        aria-label="Webhook URL"
                         value={form.webhookUrl}
                         onChange={(e) => update("webhookUrl", e.target.value)}
                         placeholder="https://your-endpoint.example.com/invoke"
@@ -184,6 +189,7 @@ export default function RegisterAgentPage() {
                     ) : null}
                     {form.executionType === "manual" ? (
                       <input
+                        aria-label="Submitter identifier"
                         value={form.submitterId}
                         onChange={(e) => update("submitterId", e.target.value)}
                         placeholder="Submitter identifier or API key label"
@@ -196,8 +202,9 @@ export default function RegisterAgentPage() {
                     </p>
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Supported task types</label>
+                    <label htmlFor="agent-task-types" className={styles.formLabel}>Supported task types</label>
                     <input
+                      id="agent-task-types"
                       value={form.taskTypes}
                       onChange={(e) => update("taskTypes", e.target.value)}
                       placeholder="e.g. invoice_risk_check"
@@ -205,8 +212,8 @@ export default function RegisterAgentPage() {
                     />
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Owner wallet</label>
-                    <input value={ownerAddress} readOnly className={styles.formInputMono} style={{ opacity: 0.7 }} />
+                    <label htmlFor="agent-owner-wallet" className={styles.formLabel}>Owner wallet</label>
+                    <input id="agent-owner-wallet" value={ownerAddress} readOnly className={styles.formInputMono} style={{ opacity: 0.7 }} />
                     <p className={styles.fieldNote}>Determined by your session&apos;s API key identity.</p>
                   </div>
                 </div>
@@ -216,7 +223,7 @@ export default function RegisterAgentPage() {
                 <div className={styles.panelLabel}>Verifier and payment</div>
                 <div className={styles.fields}>
                   <div>
-                    <label className={styles.formLabel}>Verifier template</label>
+                    <label htmlFor="agent-verifier" className={styles.formLabel}>Verifier template</label>
                     {verifiers === null ? (
                       <p className={styles.fieldNote}>Loading verifiers...</p>
                     ) : verifiers.length === 0 ? (
@@ -229,6 +236,8 @@ export default function RegisterAgentPage() {
                       </p>
                     ) : (
                       <select
+                        id="agent-verifier"
+                        aria-required="true"
                         value={form.verifier}
                         onChange={(e) => update("verifier", e.target.value)}
                         className={styles.formSelect}
@@ -245,8 +254,9 @@ export default function RegisterAgentPage() {
                     </p>
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Task type</label>
+                    <label htmlFor="agent-task-type" className={styles.formLabel}>Task type</label>
                     <input
+                      id="agent-task-type"
                       value={form.taskType}
                       onChange={(e) => update("taskType", e.target.value)}
                       placeholder="e.g. RWA invoice verification"
@@ -254,8 +264,9 @@ export default function RegisterAgentPage() {
                     />
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Output schema</label>
+                    <label htmlFor="agent-output-schema" className={styles.formLabel}>Output schema</label>
                     <textarea
+                      id="agent-output-schema"
                       value={form.outputSchema}
                       onChange={(e) => update("outputSchema", e.target.value)}
                       rows={2}
@@ -266,8 +277,10 @@ export default function RegisterAgentPage() {
                   </div>
                   <div className={styles.fieldRowPair}>
                     <div>
-                      <label className={styles.formLabel}>Price amount</label>
+                      <label htmlFor="agent-price" className={styles.formLabel}>Price amount</label>
                       <input
+                        id="agent-price"
+                        aria-required="true"
                         value={form.price}
                         onChange={(e) => update("price", e.target.value)}
                         placeholder="4"
@@ -275,8 +288,9 @@ export default function RegisterAgentPage() {
                       />
                     </div>
                     <div>
-                      <label className={styles.formLabel}>Currency</label>
+                      <label htmlFor="agent-currency" className={styles.formLabel}>Currency</label>
                       <select
+                        id="agent-currency"
                         value={form.currency}
                         onChange={(e) => update("currency", e.target.value)}
                         className={styles.formSelect}
@@ -287,8 +301,10 @@ export default function RegisterAgentPage() {
                     </div>
                   </div>
                   <div>
-                    <label className={styles.formLabel}>Recipient address</label>
+                    <label htmlFor="agent-recipient" className={styles.formLabel}>Recipient address</label>
                     <input
+                      id="agent-recipient"
+                      aria-required="true"
                       value={form.recipient}
                       onChange={(e) => update("recipient", e.target.value)}
                       placeholder="0x..."
@@ -308,7 +324,7 @@ export default function RegisterAgentPage() {
               </div>
             </div>
 
-            {validationMessage ? <div className={styles.validationError}>{validationMessage}</div> : null}
+            {validationMessage ? <div role="alert" className={styles.validationError}>{validationMessage}</div> : null}
 
             <button onClick={createAgentSubmit} disabled={submitting} className={styles.submitButton}>
               {submitting ? "Creating..." : "Create agent"}

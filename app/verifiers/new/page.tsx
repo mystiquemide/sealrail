@@ -96,8 +96,10 @@ export default function RegisterVerifierPage() {
               <div className={styles.panelLabel}>Verifier details</div>
               <div className={styles.fields}>
                 <div>
-                  <label className={styles.formLabel}>Name</label>
+                  <label htmlFor="verifier-name" className={styles.formLabel}>Name</label>
                   <input
+                    id="verifier-name"
+                    aria-required="true"
                     value={form.name}
                     onChange={(e) => update("name", e.target.value)}
                     placeholder="e.g. verifyResearchCitation"
@@ -105,8 +107,10 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>Task type</label>
+                  <label htmlFor="verifier-task-type" className={styles.formLabel}>Task type</label>
                   <input
+                    id="verifier-task-type"
+                    aria-required="true"
                     value={form.taskType}
                     onChange={(e) => update("taskType", e.target.value)}
                     placeholder="e.g. research verification"
@@ -114,8 +118,9 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>Description</label>
+                  <label htmlFor="verifier-description" className={styles.formLabel}>Description</label>
                   <textarea
+                    id="verifier-description"
                     value={form.description}
                     onChange={(e) => update("description", e.target.value)}
                     rows={3}
@@ -124,8 +129,10 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>Owner wallet</label>
+                  <label htmlFor="verifier-owner-wallet" className={styles.formLabel}>Owner wallet</label>
                   <input
+                    id="verifier-owner-wallet"
+                    aria-required="true"
                     value={form.ownerWallet}
                     onChange={(e) => update("ownerWallet", e.target.value)}
                     placeholder="0x..."
@@ -143,8 +150,9 @@ export default function RegisterVerifierPage() {
               <div className={styles.panelLabel}>Schema and artifact</div>
               <div className={styles.fields}>
                 <div>
-                  <label className={styles.formLabel}>Input schema</label>
+                  <label htmlFor="verifier-input-schema" className={styles.formLabel}>Input schema</label>
                   <input
+                    id="verifier-input-schema"
                     value={form.inputSchema}
                     onChange={(e) => update("inputSchema", e.target.value)}
                     placeholder="e.g. citation_claim.json"
@@ -152,8 +160,9 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>Output schema</label>
+                  <label htmlFor="verifier-output-schema" className={styles.formLabel}>Output schema</label>
                   <input
+                    id="verifier-output-schema"
                     value={form.outputSchema}
                     onChange={(e) => update("outputSchema", e.target.value)}
                     placeholder="e.g. citation_result.json"
@@ -161,8 +170,10 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>WASM hash</label>
+                  <label htmlFor="verifier-wasm-hash" className={styles.formLabel}>WASM hash</label>
                   <input
+                    id="verifier-wasm-hash"
+                    aria-required="true"
                     value={form.wasmHash}
                     onChange={(e) => update("wasmHash", e.target.value)}
                     placeholder="e.g. 4a2c...91ef"
@@ -170,8 +181,8 @@ export default function RegisterVerifierPage() {
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>Mode support</label>
-                  <select value={form.mode} onChange={(e) => update("mode", e.target.value)} className={styles.formSelect}>
+                  <label htmlFor="verifier-mode" className={styles.formLabel}>Mode support</label>
+                  <select id="verifier-mode" value={form.mode} onChange={(e) => update("mode", e.target.value)} className={styles.formSelect}>
                     <option value="TEE Verification Mode">TEE Verification Mode</option>
                     <option value="TEE Verification">TEE Verification</option>
                   </select>
@@ -182,7 +193,7 @@ export default function RegisterVerifierPage() {
                 {submitting ? "Publishing..." : "Publish template"}
               </button>
 
-              {validationMessage ? <div className={styles.validationError}>{validationMessage}</div> : null}
+              {validationMessage ? <div role="alert" className={styles.validationError}>{validationMessage}</div> : null}
             </div>
           </div>
         ) : (

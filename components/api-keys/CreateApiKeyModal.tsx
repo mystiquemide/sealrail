@@ -37,8 +37,10 @@ export function CreateApiKeyModal({
           <>
             <div className={styles.modalLabel}>Create key</div>
             <div className={styles.formField}>
-              <label className={styles.formLabel}>Name</label>
+              <label htmlFor="api-key-name" className={styles.formLabel}>Name</label>
               <input
+                id="api-key-name"
+                aria-required="true"
                 value={newKeyName}
                 onChange={(e) => onNameChange(e.target.value)}
                 placeholder="e.g. Backend runner"
@@ -64,7 +66,7 @@ export function CreateApiKeyModal({
 
             {statusMessage ? <div className={styles.modalStatusMessage}>{statusMessage}</div> : null}
             {!statusMessage && validationMessage ? (
-              <div className={styles.modalValidationError}>{validationMessage}</div>
+              <div role="alert" className={styles.modalValidationError}>{validationMessage}</div>
             ) : null}
 
             <div className={styles.modalActions}>

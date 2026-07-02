@@ -1,7 +1,9 @@
 {
-  "name": "sealrail-scaffold",
+  "name": "sealrail",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "description": "Sealrail web app — the payment rail for AI-agent work",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

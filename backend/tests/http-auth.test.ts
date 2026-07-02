@@ -120,6 +120,23 @@ describe("HTTP Auth: Public Endpoints", () => {
     expect(res.statusCode).toBe(201);
     expect(res.json().secret).toBeDefined();
   });
+
+  it("POST /api/api-keys with auth attributes the key to the caller's owner, not the body", async () => {
+    const { rawSecret } = createApiKey({
+      ownerAddress: "01realowner",
+      name: "Attribution Test Key",
+      scopes: ["api_keys:admin"],
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/api-keys",
+      headers: { authorization: `Bearer ${rawSecret}` },
+      payload: { name: "Child Key", owner_address: "01spoofedowner" },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().key.owner_address).toBe("01realowner");
+  });
 });
 
 // ══════════════════════════════════════════

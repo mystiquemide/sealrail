@@ -413,12 +413,18 @@ describe("Config Validation", () => {
     expect(typeof isTestnetReady()).toBe("boolean");
   });
 
-  it("no issues contain raw key values or URLs", () => {
+  it("no issues contain raw key values or credential-bearing URLs", () => {
     const result = validateDeploymentConfig();
     const allMessages = result.issues.map((i) => i.message).join("\n");
-    expect(allMessages).not.toContain("http://");
-    expect(allMessages).not.toContain("https://");
+    // Known-safe documentation links (e.g. the bky-as install guide) are allowed;
+    // strip them before asserting no other URLs leak through.
+    const withoutDocsLinks = allMessages.replace(/https:\/\/github\.com\/blocky\/[\w./-]*/g, "");
+    expect(withoutDocsLinks).not.toContain("http://");
+    expect(withoutDocsLinks).not.toContain("https://");
+    // Never raw secret material
     expect(allMessages).not.toContain("sk-");
+    expect(allMessages).not.toMatch(/[a-f0-9]{40,}/i);
+    expect(allMessages).not.toMatch(/:\/\/[^\s/]+:[^\s/]+@/);
   });
 });
 

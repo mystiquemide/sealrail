@@ -2,7 +2,8 @@
 // Sealrail API Key Management Routes
 // Phase K3: REST API for API key CRUD
 // Audit fix C1+H2: list/update/revoke protected by API key auth (api_keys:admin scope)
-// POST (create) remains unauthenticated for bootstrapping
+// POST (create) uses optionalApiKey: authenticated callers attribute to their key's
+// owner; unauthenticated bootstrap is allowed unless ALLOW_BOOTSTRAP_KEYS=false
 // ────────────────────────────────────────
 
 import type { FastifyInstance } from "fastify";
@@ -13,8 +14,9 @@ import {
   revokeApiKey,
   getApiKeyServiceHealth,
 } from "../services/api-keys.js";
-import { requireApiKey, requireApiKeyWithScope } from "../middleware/auth.js";
+import { optionalApiKey, requireApiKey, requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
+import { config } from "../config.js";
 
 // ── Request schemas ──────────────────────
 
@@ -82,10 +84,17 @@ export function registerApiKeyRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/api-keys",
-    { schema: { body: createKeySchema } },
+    { schema: { body: createKeySchema }, preHandler: [optionalApiKey] },
     async (request, reply) => {
       const body = request.body;
-      // Use authenticated owner if key is present, otherwise body (bootstrap path)
+      // Authenticated callers are attributed to their key's owner. Unauthenticated
+      // creation (self-serve onboarding) is allowed unless ALLOW_BOOTSTRAP_KEYS=false.
+      if (!request.apiKey && !config.allowBootstrapKeys) {
+        return reply.status(401).send({
+          error: "UNAUTHORIZED",
+          message: "API key required. Unauthenticated key creation is disabled on this deployment.",
+        });
+      }
       const ownerAddress = request.apiKey?.owner_address ?? body.owner_address ?? "bootstrap";
 
       try {

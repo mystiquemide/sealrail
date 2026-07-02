@@ -4,7 +4,7 @@
 // 22 tests covering happy path, error paths, retry, and classification
 // ────────────────────────────────────────
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 
 // ── Types ────────────────────────────────
 import type {
@@ -23,6 +23,7 @@ import {
   getCliVersion,
   checkTeeHealth,
   __setExecAsync,
+  __setCliAvailable,
 } from "../src/services/tee.js";
 
 import {
@@ -118,6 +119,13 @@ describe("Phase C: Blocky TEE Verification Adapter", () => {
     // Reset the injectable exec to a fresh mock
     mockExec = vi.fn();
     __setExecAsync(mockExec as any);
+    // Pin the CLI check so the mocked exec paths run on machines without bky-as
+    __setCliAvailable(() => true);
+  });
+
+  afterAll(() => {
+    __setExecAsync();
+    __setCliAvailable();
   });
 
   // ═══════════════════════════════════════

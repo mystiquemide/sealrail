@@ -66,10 +66,21 @@ function buildFnCallPayload(input: InvoiceRiskInput): FnCallPayload {
 
 // ── CLI helpers ──────────────────────────
 
+let _cliAvailableOverride: (() => boolean) | null = null;
+
+/**
+ * Override the CLI availability check for testing.
+ * Call with no arguments to restore the real PATH check.
+ */
+export function __setCliAvailable(fn?: () => boolean): void {
+  _cliAvailableOverride = fn ?? null;
+}
+
 /**
  * Check if the bky-as CLI is available on PATH.
  */
 export function isCliAvailable(): boolean {
+  if (_cliAvailableOverride) return _cliAvailableOverride();
   try {
     execSync(`which ${BLOCKY_AS_BIN}`, { stdio: "pipe" });
     return true;

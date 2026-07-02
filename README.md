@@ -1,36 +1,159 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sealrail
 
-## Getting Started
+**The payment rail for AI-agent work. No Proof without a Payment.**
 
-First, run the development server:
+[![CI](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Deployed-red)](https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-752%20passing-brightgreen)](backend/tests)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+AI agents produce output nobody verifies, then get paid anyway. Sealrail inverts that: an agent's payment stays locked until its output passes an independent verifier, and the resulting proof is anchored on Casper. Agents don't get paid for output. They get paid for **proven** output.
+
+![The Sealkeeper carrying a sealed ledger tag along the payment rail](public/hero-sealkeeper.jpg)
+
+## How it works
+
+Every task follows one rule, enforced by the backend state machine and covered by tests: no payment unlocks without a verified proof. Placeholder or simulated proofs can never advance a task, and that guarantee is itself under test.
+
+```mermaid
+flowchart LR
+  Buyer([Buyer]) -->|fund task| API[Sealrail API]
+  API -->|dispatch| Agent[Agent runtime<br/>LLM worker]
+  Agent -->|hash-bound output| Verifier[Verifier<br/>schema + WASM hash]
+  Verifier -->|verified proof| Casper[(Casper<br/>ProofRegistry)]
+  Casper -->|anchored| Payment[Payment unlock]
+  Verifier -.->|failed proof| Blocked[Payment stays blocked]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```mermaid
+sequenceDiagram
+  participant B as Buyer
+  participant S as Sealrail API
+  participant A as Agent (LLM)
+  participant V as Verifier
+  participant C as Casper
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+  B->>S: POST /api/tasks (funds payment intent)
+  S->>A: POST /api/tasks/:id/run
+  A-->>S: structured output, input/output hashes
+  S->>V: verify against schema + WASM hash
+  V-->>S: proof verified (or failed)
+  S->>C: anchor proof hash
+  C-->>S: anchor transaction
+  B->>S: POST /api/tasks/:id/unlock-payment
+  S-->>B: payment payable (only if proof verified)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What's in the box
 
-## Learn More
+- **Proof-gated payments** — tasks fund a payment that unlocks only after proof verification, with per-recipient splits and claim ownership checks
+- **First-party agent runtime** — an Invoice Risk Agent that sends structured prompts to a configurable LLM and returns hash-bound, schema-validated output (risk score, decision, reasoning, flags)
+- **Verifier registry** — templates bound to a WASM artifact hash, with input/output schemas and a test endpoint
+- **Marketplace** — list agents, create paid tasks against live listings
+- **Workflows** — multi-step runs with ordered execution and progressive payment splits
+- **Reputation** — scores computed from real proof and payment history, never hand-set
+- **Casper contract** — Odra-based ProofRegistry deployed to testnet: agent registry, proof anchoring, payment state transitions
+- **19-screen web app** — the full loop in a browser, with honest empty, loading, and error states throughout
 
-To learn more about Next.js, take a look at the following resources:
+## Verification status
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Claims below are current at the linked commit and enforced in CI.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Surface | Status |
+|---|---|
+| Backend suite | 752 tests across 15 files, passing with no external services |
+| Contract suite | 23/23 (`cargo odra test`) |
+| Contract deployment | Live on Casper testnet — [deploy transaction](https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196), package `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846` |
+| TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
+| Trust boundary | Casper anchoring runs in `dry_run` by default; set `CASPER_MODE=testnet` to anchor against the live contract. TEE attestation uses the Blocky adapter; hosted enclave access is configuration-gated and never silently simulated. |
 
-## Deploy on Vercel
+## Tech stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Layer | Choice |
+|---|---|
+| Frontend | Next.js 16 (App Router), React 19, Tailwind 4, CSS Modules |
+| Backend | Node 20+, TypeScript 5 (strict), Fastify 5, better-sqlite3 |
+| Contract | Rust, Odra 2.8, Casper testnet |
+| Verification | Blocky AS adapter (TEE attestation path), schema + WASM hash binding |
+| Tests | Vitest (backend), cargo-odra (contract) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Quick start
+
+Requires Node 20+. On Windows, run the backend under WSL (better-sqlite3 needs a prebuilt binary or a C toolchain).
+
+```bash
+# 1. Backend
+cd backend
+npm install
+cp .env.example .env      # defaults work locally
+npm run seed              # registers the first-party verifier, agent, and listing
+npm run dev               # http://localhost:3001
+
+# 2. Frontend (repo root, separate terminal)
+npm install
+echo NEXT_PUBLIC_API_URL=http://localhost:3001 > .env.local
+npm run dev               # http://localhost:3000
+```
+
+Then open http://localhost:3000/run. Task creation, verification, anchoring, and payment unlock all run against the local API. Agent execution calls a real LLM: set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint works). Without a provider configured, runs fail honestly with a 503 rather than fabricating output.
+
+## Environment variables
+
+Frontend (`.env.local`):
+
+| Var | Purpose |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend base URL (`http://localhost:3001` locally) |
+
+Backend (`backend/.env`, see [backend/.env.example](backend/.env.example) for the full annotated list):
+
+| Var | Purpose |
+|---|---|
+| `LLM_API_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI-compatible provider for agent execution |
+| `CASPER_MODE` | `dry_run` (default), `testnet`, or `mainnet` — testnet/mainnet fail closed if misconfigured |
+| `CASPER_CONTRACT_HASH` | Deployed ProofRegistry contract hash |
+| `BLOCKY_MODE`, `BLOCKY_AS_API_KEY`, `BLOCKY_AS_HOST` | TEE attestation adapter configuration |
+| `ALLOW_BOOTSTRAP_KEYS` | `true` (default) permits self-serve API key creation; `false` requires an authenticated key |
+| `FRONTEND_ORIGIN` | CORS allowlist for the web app |
+
+## Scripts
+
+| Where | Command | What |
+|---|---|---|
+| root | `npm run dev` / `build` / `lint` | Next.js dev server, production build, ESLint |
+| backend | `npm run dev` / `test` / `build` | API server, 752-test suite, typecheck |
+| backend | `npm run seed` | Idempotent first-party verifier + agent + listing setup |
+| contracts | `cargo odra test` | Contract test suite |
+
+## Repository layout
+
+```
+app/                          19 Next.js routes (run, proofs, marketplace, agents, owner, workflows, ...)
+components/                   Screen components + shared primitives
+lib/                          Typed API client, API types, session bootstrap
+backend/src/routes/           Fastify route modules (tasks, payments, proofs, agents, ...)
+backend/src/services/         Domain services (state machines, verification, reputation, keys)
+backend/tests/                15 suites, 752 tests
+backend/scripts/seed.ts       First-party record setup
+contracts/verified-agent-payments/   Odra contract + tests + livenet CLI
+docs/                         Architecture, design, API docs, audit reports
+```
+
+## Deployment
+
+The backend deployment runbook lives at [backend/DEPLOYMENT.md](backend/DEPLOYMENT.md): prerequisites, config validation behavior, health/status/readiness endpoints, and target guidance. The frontend deploys to any Next.js host (Vercel auto-detects it); set `NEXT_PUBLIC_API_URL` to the deployed API.
+
+Startup validates configuration and reports readiness at `GET /api/status` and `GET /api/admin/readiness` — misconfigured testnet/mainnet deployments refuse to pretend they're anchoring.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The one hard rule: nothing may fake verification. Placeholder proofs never advance state, and the tests that enforce that are not negotiable.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for reporting. API key secrets are scrypt-hashed with per-key salts, shown once, and never persisted in plain text.
+
+## License
+
+[MIT](LICENSE)
