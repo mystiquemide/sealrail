@@ -708,7 +708,7 @@ Self-audit saved to docs/audits/SEALRAIL_SELF_AUDIT_2026-07-02.md (42-point live
 
 Gotchas learned: Git Bash mangles /mnt/... args to wsl — prefix MSYS_NO_PATHCONV=1; dev-server first-hit compiles need retries in HTTP check scripts; Chrome extension for browser automation not connected on this machine.
 
-Still open: repo remains PRIVATE (flip pending user's go: gh repo edit --visibility public); CASPER_MODE still dry_run (showcase testnet anchor = Phase 2.2); Dependabot PRs (checkout v7, setup-node v6) unreviewed; dev servers left running in WSL (tsx watch :3001, next dev :3000).
+Still open (repo went PUBLIC 2026-07-02, user-approved): CASPER_MODE still dry_run (showcase testnet anchor = Phase 2.2); Dependabot PRs (checkout v7, setup-node v6) unreviewed; dev servers left running in WSL (tsx watch :3001, next dev :3000).
 
 ## Session log — 2026-07-02 (Re-Audit #3 response)
 

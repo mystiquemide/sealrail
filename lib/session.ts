@@ -60,9 +60,9 @@ async function isSessionValid(session: StoredSession): Promise<boolean> {
 }
 
 /**
- * Bootstraps a full-scope demo API key on first use (POST /api/api-keys accepts
+ * Bootstraps a full-scope API key on first use (POST /api/api-keys accepts
  * no auth for the very first key). Real multi-user auth is out of scope for this
- * hackathon build — every browser session acts as the same demo owner identity.
+ * release — every browser session acts as the same default owner identity.
  *
  * Validates the cached secret against the backend before trusting it — if the
  * backend's database was reset (e.g. a fresh local dev DB), a stale cached
