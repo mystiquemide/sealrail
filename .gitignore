@@ -44,3 +44,6 @@ __pycache__/
 memory.md
 *.docx
 docs/audits/SEALRAIL_ELITE_HACKATHON_AUDIT.md
+
+# Vercel
+.vercel
