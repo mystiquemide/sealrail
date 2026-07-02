@@ -224,8 +224,10 @@ export function getDeploymentReadiness(): DeploymentReadiness {
 
   // Blocky blockers
   if (blocky.teeHookupBlocked) {
-    if (config.casperMode !== "dry_run") {
-      blockers.push("Real TEE verification is unavailable in non-dry_run mode. Hosted Blocky access is not configured.");
+    if (config.casperMode === "mainnet") {
+      blockers.push("Real TEE verification is unavailable in mainnet mode. Hosted Blocky access is not configured.");
+    } else if (config.casperMode === "testnet") {
+      warnings.push("Real hosted TEE verification is unavailable. Testnet Casper anchoring is active; TEE verification uses the local Blocky adapter. Hosted Blocky API key pending from info@blocky.rocks.");
     } else {
       warnings.push("Real TEE verification is unavailable. Hosted Blocky API key pending from info@blocky.rocks. Dry-run TEE path uses local CLI only.");
     }

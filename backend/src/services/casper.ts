@@ -126,60 +126,166 @@ export async function createDryRunAnchor(
 
 // ── Testnet anchor via casper-client ─────
 
-/**
- * Build a minimal Casper deploy that stores the anchor hash on-chain.
- * Fails closed: returns error if client is missing, account key missing, or deploy fails.
- */
-async function submitCasperDeploy(
-  input: AnchorProofInput
-): Promise<{ deployHash: string }> {
-  const anchorHash = computeDryRunAnchorHash(input);
+const GAS_PAYMENT = "2500000000"; // 2.5 CSPR for gas
 
-  const paymentAmount = "100000000"; // 0.1 CSPR for gas
-  const chainName = config.casperChainName;
-  const nodeAddress = config.casperRpcUrl;
-
-  // C2: Require account key - fail if missing (no simulated hashes)
+function secretKeyArg(): string {
   if (!config.casperAccountKeyPath) {
     throw new Error(
       "CASPER_ACCOUNT_KEY_MISSING: No Casper account key configured. " +
       "Set CASPER_ACCOUNT_KEY_PATH env var or switch to CASPER_MODE=dry_run."
     );
   }
+  return config.casperAccountKeyPath;
+}
 
+function contractPackageHash(): string {
+  if (!config.casperContractHash) {
+    throw new Error(
+      "CASPER_CONTRACT_HASH_MISSING: No contract hash configured. " +
+      "Set CASPER_CONTRACT_HASH env var or switch to CASPER_MODE=dry_run."
+    );
+  }
+  // Strip `hash-` prefix if present; casper-client expects raw hex.
+  return config.casperContractHash.replace(/^hash-/, "");
+}
+
+function contractSessionArgs(entryPoint: string): string[] {
+  return [
+    "--session-package-hash", contractPackageHash(),
+    "--session-entry-point", entryPoint,
+  ];
+}
+
+function baseArgs(): string[] {
+  return [
+    "--chain-name", config.casperChainName,
+    "--node-address", config.casperRpcUrl,
+    "--secret-key", secretKeyArg(),
+  ];
+}
+
+async function runCasperDeploy(sessionArgs: string[]): Promise<string> {
   const args = [
     "put-deploy",
-    "--chain-name", chainName,
-    "--node-address", nodeAddress,
-    "--secret-key", config.casperAccountKeyPath,
-    "--payment-amount", paymentAmount,
-    "--session-arg", `anchor_hash:string='${anchorHash}'`,
+    ...baseArgs(),
+    "--payment-amount", GAS_PAYMENT,
+    ...sessionArgs,
   ];
 
-  const { stdout, stderr } = await _execAsync(
+  const { stdout } = await _execAsync(
     "bash",
     ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
-    { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }
+    { timeout: 60000, maxBuffer: 10 * 1024 * 1024 }
   );
 
   const output = stdout.toString();
-  // casper-client outputs the deploy hash in JSON format
+
   try {
     const parsed = JSON.parse(output);
     if (parsed?.result?.deploy_hash) {
-      return { deployHash: parsed.result.deploy_hash };
+      return parsed.result.deploy_hash;
     }
   } catch {
-    // Output might not be JSON; try to extract deploy hash from text
-    const match = output.match(/deploy_hash[:\s=]+"?([a-f0-9]{64})"?/i);
-    if (match) {
-      return { deployHash: match[1] };
-    }
+    // fall through
   }
 
+  const match = output.match(/deploy_hash[:\s=]+"?([a-f0-9]{64})"?/i);
+  if (match) return match[1];
+
   throw new Error(
-    `CASPER_DEPLOY_PARSE_FAILED: casper-client succeeded but could not extract deploy hash. Output: ${output.slice(0, 500)}`
+    `CASPER_DEPLOY_PARSE_FAILED: Could not extract deploy hash. Output: ${output.slice(0, 500)}`
   );
+}
+
+/**
+ * Register an agent on the Casper contract.
+ * Idempotent: if agent already exists the contract reverts; caller can ignore that error.
+ */
+async function registerAgentOnChain(agentId: string, taskType: string): Promise<string> {
+  const name = agentId;
+  const verifierFn = taskType === "invoice_risk" ? "verifyInvoiceRisk" : "verifyRwaCompliance";
+  const wasmHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+  return runCasperDeploy([
+    ...contractSessionArgs("register_agent"),
+    "--session-arg", `agent_id:string='${agentId}'`,
+    "--session-arg", `name:string='${name}'`,
+    "--session-arg", `verifier_function:string='${verifierFn}'`,
+    "--session-arg", `wasm_code_hash:string='${wasmHash}'`,
+  ]);
+}
+
+/**
+ * Create a payment record on the Casper contract for a task.
+ * Idempotent: if payment already exists the contract reverts; caller can ignore that error.
+ */
+async function createPaymentOnChain(taskId: string, agentId: string): Promise<string> {
+  const paymentMotes = "1000000000"; // 1 CSPR
+
+  return runCasperDeploy([
+    ...contractSessionArgs("create_payment"),
+    "--session-arg", `task_id:string='${taskId}'`,
+    "--session-arg", `agent_id:string='${agentId}'`,
+    "--session-arg", `payment_amount:u512='${paymentMotes}'`,
+  ]);
+}
+
+/**
+ * Anchor proof hashes on the Casper contract.
+ * This is the canonical anchoring deploy that produces the deploy hash
+ * referenced as the Casper anchor in the proof receipt.
+ */
+async function anchorProofOnChain(
+  taskId: string,
+  inputHash: string,
+  outputHash: string,
+  attestationHash: string,
+): Promise<string> {
+  return runCasperDeploy([
+    ...contractSessionArgs("anchor_proof"),
+    "--session-arg", `task_id:string='${taskId}'`,
+    "--session-arg", `input_hash:string='${inputHash}'`,
+    "--session-arg", `output_hash:string='${outputHash}'`,
+    "--session-arg", `attestation_hash:string='${attestationHash}'`,
+  ]);
+}
+
+/**
+ * Build a minimal Casper deploy that stores the anchor hash on-chain
+ * by calling the deployed ProofRegistry contract.
+ * Steps: register agent → create payment → anchor proof.
+ * Earlier steps are best-effort (already-exists errors are swallowed);
+ * only the anchor_proof deploy hash is returned as the canonical anchor.
+ * Fails closed: returns error if client, key, or contract hash is missing.
+ */
+async function submitCasperDeploy(
+  input: AnchorProofInput
+): Promise<{ deployHash: string }> {
+  const anchorHash = computeDryRunAnchorHash(input);
+
+  // Step 1: Register agent on-chain (best-effort, may already exist)
+  try {
+    await registerAgentOnChain(input.agentId, "invoice_risk");
+  } catch {
+    // Agent may already be registered; continue
+  }
+
+  // Step 2: Create payment on-chain (best-effort, may already exist)
+  try {
+    await createPaymentOnChain(input.taskId, input.agentId);
+  } catch {
+    // Payment may already exist; continue
+  }
+
+  // Step 3: Anchor proof (this is the canonical deploy)
+  return {
+    deployHash: await anchorProofOnChain(
+      input.taskId,
+      input.hashOfInput,
+      input.hashOfOutput,
+      anchorHash,
+    ),
+  };
 }
 
 /**

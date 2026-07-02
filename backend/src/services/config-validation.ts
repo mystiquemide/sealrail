@@ -64,10 +64,11 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
       if (!hasHostedHost) missing.push("BLOCKY_AS_HOST");
       issues.push({
         key: "BLOCKY_AS_HOST",
-        severity: "error",
+        severity: "warning",
         message:
-          `Hosted Blocky access is required for ${mode} mode. ` +
-          `Missing: ${missing.join(", ")}. Contact info@blocky.rocks for an API key.`,
+          `Hosted Blocky access is not configured. ${mode} mode will use the local Blocky adapter for TEE verification. ` +
+          `Missing: ${missing.join(", ")}. Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for hosted TEE when available. ` +
+          `Contact info@blocky.rocks for an API key.`,
       });
     }
   } else {
