@@ -81,7 +81,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         {detail === undefined ? (
           <>
             <Link href="/proofs" className={styles.backLink}>
@@ -249,7 +249,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

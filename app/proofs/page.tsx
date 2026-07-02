@@ -67,6 +67,7 @@ export default function ProofsPage() {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
+      <main id="main" tabIndex={-1}>
       <div className={styles.headerWrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
@@ -91,6 +92,7 @@ export default function ProofsPage() {
       <div className={styles.tableWrap}>
         <ProofsTable view={view} rows={rows} onClearFilters={clearFilters} onRetry={retryLoad} />
       </div>
+      </main>
     </div>
   );
 }

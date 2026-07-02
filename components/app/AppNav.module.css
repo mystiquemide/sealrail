@@ -46,9 +46,16 @@
 .link {
   white-space: nowrap;
   transition: color 0.2s;
-  /* Expand the tap target to ~44px without shifting layout */
-  padding: 13px 4px;
-  margin: -13px -4px;
+  /* Expand the tap target to 44px+ without shifting layout */
+  padding: 15px 6px;
+  margin: -15px -6px;
+}
+
+/* At mobile widths the inline links collapse into the hamburger menu */
+@media (max-width: 760px) {
+  .links {
+    display: none;
+  }
 }
 .link:hover {
   color: #f6f5f3;

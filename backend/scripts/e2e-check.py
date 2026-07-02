@@ -40,13 +40,14 @@ res = call("POST", "/api/api-keys", {
 key = res["secret"]
 print(f"key: {key[:10]}...")
 
-# 2. Seeded listing
+# 2. Seeded listing — prefer the invoice-risk listing; dev DBs may hold junk rows
 listings = call("GET", "/api/marketplace")["listings"]
 if not listings:
     print("FAIL: no marketplace listings — run `npm run seed` first")
     sys.exit(1)
-listing_id = listings[0]["id"]
-print(f"listing: {listing_id} ({listings[0]['title']})")
+listing = next((l for l in listings if "invoice" in l["title"].lower()), listings[0])
+listing_id = listing["id"]
+print(f"listing: {listing_id} ({listing['title']})")
 
 # 3. Paid task from the listing
 res = call("POST", f"/api/marketplace/{listing_id}/tasks", {

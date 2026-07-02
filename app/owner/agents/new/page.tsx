@@ -102,7 +102,7 @@ export default function RegisterAgentPage() {
         cta={null}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <Link href="/owner" className={styles.backLink}>
           <span className={styles.backArrow}>{"<-"}</span>
           Back to owner dashboard
@@ -376,7 +376,7 @@ export default function RegisterAgentPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

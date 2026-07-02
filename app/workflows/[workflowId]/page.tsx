@@ -134,9 +134,9 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
     return (
       <div className={styles.page}>
         <AppNav maxWidth={1080} links={[{ label: "Workflows", href: "/workflows" }]} cta={null} />
-        <div className={styles.wrap}>
+        <main id="main" tabIndex={-1} className={styles.wrap}>
           <p className={styles.subtitle}>Loading...</p>
-        </div>
+        </main>
       </div>
     );
   }
@@ -167,7 +167,7 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
         cta={null}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <Link href="/workflows" className={styles.backLink}>
           <span className={styles.backArrow}>{"<-"}</span>
           Back to workflows
@@ -214,7 +214,7 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
             />
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

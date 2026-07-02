@@ -1,14 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
+import { MobileNav } from "@/components/nav/MobileNav";
 import styles from "./Landing.module.css";
+
+const NAV_ITEMS = [
+  { label: "How it works", href: "#how" },
+  { label: "Proofs", href: "#proofs" },
+  { label: "Agents", href: "#vertical" },
+  { label: "Docs", href: "/docs" },
+  { label: "Start run", href: "/run" },
+];
 
 export function Hero() {
   return (
-    <section id="top" className={styles.heroSection}>
-      <h1 className={styles.srOnly}>
-        Sealrail — the rail between agent work and agent payment. No Proof without a Payment.
-      </h1>
+    <section id="top" className={styles.heroSection} aria-label="Sealrail — No Proof without a Payment">
       <Image
         src="/hero-sealkeeper.jpg"
         alt="The Sealkeeper, a quiet courier carrying a sealed ledger tag along two payment rails"
@@ -42,6 +48,7 @@ export function Hero() {
             Start run
           </Link>
         </nav>
+        <MobileNav items={NAV_ITEMS} theme="light" />
       </header>
 
       <div className={styles.heroCtaWrap}>

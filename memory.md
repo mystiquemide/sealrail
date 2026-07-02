@@ -690,3 +690,22 @@ The existing frontend screens should wire to the new agent runtime as follows:
 | /status | GET /api/agents/runtime/health | Show LLM provider status (configured/missing), supported task types, agent runtime health |
 
 All 685 tests pass (631 existing + 54). TypeScript build clean (tsc --noEmit).
+
+## Session log — 2026-07-02 (Re-Audit #2 fixes, self-audit, frontend test suite)
+
+Hermes re-audit #2 graded the product B (80/100) with 1 critical + 3 medium + 5 opportunities. All actionable items fixed this session:
+
+- CRIT-1 (LLM not configured) was STALE — backend/.env exists since 6215ab9; verified live llm_configured:true and a full lifecycle run (risk_score=45, decision=review, proof_verified, anchored dry-run, unlockable). The auditor's DB was missing seeded records; e2e-check.py now prefers the invoice-risk listing over junk rows, npm run seed restores records.
+- MED-1: visible 54px headline in ProductFamily is now the page h1; hidden hero h1 removed (heroSection carries aria-label). srOnly CSS class deleted (unused).
+- MED-2: new shared components/nav/MobileNav.tsx (client, light/dark themes) wired into landing Hero nav, AppNav, DocsNav; links collapse into 44px hamburger at <=760px with 46px menu rows; desktop nav link tap targets raised to 44px+ (padding 15px 6px / negative margin).
+- MED-3: footer bottom bar deduped (Privacy/Terms/TEE note once each, in columns), copyright line added; <main id="main" tabIndex={-1}> added to all 19 screens (per-page, nav stays outside main where structure allows); skip-to-content link in root layout + .skip-link CSS in globals.
+- OPP-2: TaskForm rebuilt around FIELD_SPECS — htmlFor/id label association (was missing!), aria-describedby hints, visible helper text, .formHint CSS.
+- OPP-3: app/opengraph-image.tsx (1200x630 ImageResponse) + app/apple-icon.tsx (180x180); metadataBase from NEXT_PUBLIC_SITE_URL (documented in .env.example); openGraph + twitter card metadata in layout.
+- OPP-4: root Vitest suite (vitest ^2.1.0 devDep, vitest.config.ts with @ alias): 35 tests — run-state, proofs-data, workflow-detail-state, TaskForm SSR (renderToStaticMarkup; note React 19 emits readOnly="" camelCase in static markup). CI frontend job now lint + test + build.
+- OPP-5: "Run full flow" button on /run chains create->run->verify+anchor->unlock; handlers refactored to return taskId/success and take optional override id so the chain doesn't race setState; button callbacks wrapped so DOM MouseEvent can't leak into the optional param.
+
+Self-audit saved to docs/audits/SEALRAIL_SELF_AUDIT_2026-07-02.md (42-point live HTTP check script, 39 server-verifiable passes + 3 client-only covered by SSR tests). Self-grade A- (90) until: (1) one real testnet showcase anchor surfaced in UI, (2) recorded walkthrough.
+
+Gotchas learned: Git Bash mangles /mnt/... args to wsl — prefix MSYS_NO_PATHCONV=1; dev-server first-hit compiles need retries in HTTP check scripts; Chrome extension for browser automation not connected on this machine.
+
+Still open: repo remains PRIVATE (flip pending user's go: gh repo edit --visibility public); CASPER_MODE still dry_run (showcase testnet anchor = Phase 2.2); Dependabot PRs (checkout v7, setup-node v6) unreviewed; dev servers left running in WSL (tsx watch :3001, next dev :3000).

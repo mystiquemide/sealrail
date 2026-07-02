@@ -18,7 +18,7 @@ export function LegalTextPage({ active, navLinks, title, description, sections, 
     <div className={styles.page}>
       <DocsNav active={active} links={navLinks} maxWidth={760} />
 
-      <div className={styles.wrap} style={{ maxWidth: 760 }}>
+      <main id="main" tabIndex={-1} className={styles.wrap} style={{ maxWidth: 760 }}>
         <div className={styles.eyebrow}>Legal</div>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.description}>{description}</p>
@@ -45,7 +45,7 @@ export function LegalTextPage({ active, navLinks, title, description, sections, 
             ))}
           </span>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

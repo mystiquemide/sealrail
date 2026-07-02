@@ -30,6 +30,7 @@ export default async function VerifiersPage() {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
+      <main id="main" tabIndex={-1}>
       <div className={styles.headerWrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
@@ -84,6 +85,7 @@ export default async function VerifiersPage() {
           </>
         )}
       </div>
+      </main>
     </div>
   );
 }

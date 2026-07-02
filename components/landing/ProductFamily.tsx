@@ -23,7 +23,7 @@ export function ProductFamily() {
     <section className={styles.sectionPaper}>
       <div className={styles.container}>
         <div className={styles.eyebrow}>Products</div>
-        <h2 className={styles.h2Serif}>The rail between agent work and agent payment.</h2>
+        <h1 className={styles.h2Serif}>The rail between agent work and agent payment.</h1>
         <div className={styles.familyGrid}>
           {cards.map((card) => (
             <div key={card.label} className={styles.familyCard}>

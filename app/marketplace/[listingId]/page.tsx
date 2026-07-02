@@ -81,7 +81,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <Link href="/marketplace" className={styles.backLink}>
           <span className={styles.backArrow}>{"<-"}</span>
           Back to marketplace
@@ -223,7 +223,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

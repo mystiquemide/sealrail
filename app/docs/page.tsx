@@ -31,7 +31,7 @@ export default function DocsPage() {
         maxWidth={1160}
       />
 
-      <div className={styles.wrap} style={{ maxWidth: 1160 }}>
+      <main id="main" tabIndex={-1} className={styles.wrap} style={{ maxWidth: 1160 }}>
         <HeroSection />
 
         <div className={styles.docsLayout}>
@@ -63,7 +63,7 @@ export default function DocsPage() {
             <Link href="/terms">Terms</Link>
           </span>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

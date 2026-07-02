@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
+import { MobileNav } from "@/components/nav/MobileNav";
 import styles from "./AppNav.module.css";
 
 export type AppNavLink = { label: string; href: string };
@@ -42,6 +43,7 @@ export function AppNav({ active, links = DEFAULT_LINKS, cta = DEFAULT_CTA, maxWi
             </Link>
           ) : null}
         </nav>
+        <MobileNav items={cta ? [...links, cta] : links} theme="dark" />
       </div>
     </header>
   );

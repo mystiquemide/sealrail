@@ -12,14 +12,16 @@ import styles from "@/components/landing/Landing.module.css";
 export default function Home() {
   return (
     <div className={styles.page}>
-      <Hero />
-      <ProductFamily />
-      <ProofFlow />
-      <ScaleStrip />
-      <FirstVertical />
-      <ProofExplorerPreview />
-      <TeeVerification />
-      <FinalCta />
+      <main id="main" tabIndex={-1}>
+        <Hero />
+        <ProductFamily />
+        <ProofFlow />
+        <ScaleStrip />
+        <FirstVertical />
+        <ProofExplorerPreview />
+        <TeeVerification />
+        <FinalCta />
+      </main>
       <Footer />
     </div>
   );

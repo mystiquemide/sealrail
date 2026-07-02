@@ -118,7 +118,7 @@ export default function ApiKeysPage() {
         cta={null}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
             <div className={styles.eyebrow}>API keys</div>
@@ -155,7 +155,7 @@ export default function ApiKeysPage() {
             onClose={closeModal}
           />
         ) : null}
-      </div>
+      </main>
     </div>
   );
 }

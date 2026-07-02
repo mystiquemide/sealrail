@@ -79,7 +79,7 @@ export default function RegisterVerifierPage() {
     <div className={styles.page}>
       <AppNav maxWidth={900} links={[{ label: "Verifiers", href: "/verifiers" }]} cta={null} />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <Link href="/verifiers" className={styles.backLink}>
           <span className={styles.backArrow}>{"<-"}</span>
           Back to verifiers
@@ -250,7 +250,7 @@ export default function RegisterVerifierPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

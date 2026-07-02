@@ -223,6 +223,13 @@
   border-color: rgba(255, 255, 255, 0.42) !important;
 }
 
+.formHint {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #6e6e6c;
+  margin: 6px 0 0;
+}
+
 /* ---------- stage buttons ---------- */
 
 .stageButtons {

@@ -61,7 +61,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <Link href="/agents" className={styles.backLink}>
           <span className={styles.backArrow}>{"<-"}</span>
           Back to agents
@@ -212,7 +212,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

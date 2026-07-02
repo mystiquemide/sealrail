@@ -79,7 +79,7 @@ export default async function StatusPage() {
     <div className={styles.page}>
       <AppNav active="Status" maxWidth={860} links={[{ label: "Docs", href: "/docs" }]} cta={null} />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <div className={styles.eyebrow}>System status</div>
         <h1 className={styles.title}>Health checks for the proof and payment rail.</h1>
 
@@ -99,7 +99,7 @@ export default async function StatusPage() {
           Status reflects the components required for a task to move from funded to proof-verified to paid.
           {status ? ` Uptime: ${Math.floor(status.uptime_seconds)}s.` : ""}
         </p>
-      </div>
+      </main>
     </div>
   );
 }

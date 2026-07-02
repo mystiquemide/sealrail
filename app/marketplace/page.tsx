@@ -56,6 +56,7 @@ export default function MarketplacePage() {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
+      <main id="main" tabIndex={-1}>
       <div className={styles.headerWrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
@@ -98,6 +99,7 @@ export default function MarketplacePage() {
       ) : (
         <MarketplaceListingTable listings={listings} emptyReason={emptyReason} onClearFilters={clearFilters} />
       )}
+      </main>
     </div>
   );
 }

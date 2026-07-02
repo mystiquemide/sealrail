@@ -76,12 +76,8 @@ export function Footer() {
           </div>
         </div>
         <div className={styles.footerBottom}>
+          <span>&copy; 2026 Sealrail. Released under the MIT License.</span>
           <span>Sealrail on Casper</span>
-          <span className={styles.footerBottomLinks}>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-            <a href="#tee">TEE verification note</a>
-          </span>
         </div>
       </div>
     </footer>

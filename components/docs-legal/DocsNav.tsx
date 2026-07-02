@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
+import { MobileNav } from "@/components/nav/MobileNav";
 import styles from "./DocsNav.module.css";
 
 type DocsNavLink = { label: string; href: string };
@@ -33,6 +34,7 @@ export function DocsNav({ active, links, cta, maxWidth = 860 }: DocsNavProps) {
             </Link>
           ) : null}
         </nav>
+        <MobileNav items={cta ? [...links, cta] : links} theme="light" />
       </div>
     </header>
   );

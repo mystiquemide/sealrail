@@ -35,6 +35,7 @@ export default async function AgentsPage() {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
+      <main id="main" tabIndex={-1}>
       <div className={styles.headerWrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
@@ -65,6 +66,7 @@ export default async function AgentsPage() {
           rows.map((agent) => <AgentRow key={agent.id} agent={agent} />)
         )}
       </div>
+      </main>
     </div>
   );
 }

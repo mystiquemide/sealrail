@@ -68,7 +68,7 @@ export default function OwnerPage() {
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />
 
-      <div className={styles.wrap}>
+      <main id="main" tabIndex={-1} className={styles.wrap}>
         <div className={styles.headerRow}>
           <div className={styles.headerCopy}>
             <div className={styles.eyebrow}>Owner dashboard</div>
@@ -180,7 +180,7 @@ export default function OwnerPage() {
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
