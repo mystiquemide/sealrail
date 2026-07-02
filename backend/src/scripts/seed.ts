@@ -15,10 +15,10 @@
 // ────────────────────────────────────────
 
 import { createHash } from "crypto";
-import { getDb } from "../src/db.js";
-import { createVerifier } from "../src/services/verifiers.js";
-import { createAgent } from "../src/services/agents.js";
-import { createListing } from "../src/services/marketplace.js";
+import { getDb } from "../db.js";
+import { createVerifier } from "../services/verifiers.js";
+import { createAgent } from "../services/agents.js";
+import { createListing } from "../services/marketplace.js";
 
 // A fixed, clearly-labeled operator identity for first-party seeded records.
 const SEED_OWNER = "01seedf1r5tparty0perator" + createHash("sha256").update("sealrail-first-party").digest("hex").slice(0, 40);

@@ -1,0 +1,28 @@
+# Sealrail Backend — Nixpacks Build Config
+# Railway auto-detects this file. It controls the build/start phases
+# and avoids exposing runtime secrets as Docker build ARG/ENV.
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+# Drop dev dependencies after build so the production image is lean
+# and vitest/tsx/typescript are NOT in the runtime container.
+[phases.postBuild]
+cmds = ["npm prune --omit=dev"]
+
+[start]
+# Run the seed script first (idempotent — won't duplicate data),
+# then start the compiled server.
+cmd = "node dist/scripts/seed.js && node dist/index.js"
+
+# Do NOT expose secrets during the build phase.
+# Railway injects runtime env vars at container start, not at build time.
+# This avoids the "SecretsUsedInArgOrEnv" Docker warning.
+[build]
+secrets = []

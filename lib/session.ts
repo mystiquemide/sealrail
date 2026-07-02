@@ -46,7 +46,7 @@ export function getSession(): StoredSession | null {
   return readStored();
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api-production-7409.up.railway.app";
 
 async function isSessionValid(session: StoredSession): Promise<boolean> {
   try {

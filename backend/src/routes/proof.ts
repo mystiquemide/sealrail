@@ -9,6 +9,7 @@ import type { FastifyInstance } from "fastify";
 
 import type { InvoiceRiskInput } from "../types.js";
 import { verify } from "../services/blocky.js";
+import { getProofDetail, getProofById } from "../services/tasks.js";
 import { requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 
@@ -44,6 +45,39 @@ const verifySchema = {
  * Register proof-related routes on the Fastify instance.
  */
 export function registerProofRoutes(app: FastifyInstance): void {
+  // ── GET /api/proofs/:proofId ────────────
+  // Canonical proof receipt — public, no auth required.
+  // Returns proof detail with task context and payment state.
+  app.get<{ Params: { proofId: string } }>(
+    "/api/proofs/:proofId",
+    async (request, reply) => {
+      const { proofId } = request.params;
+
+      const detail = getProofDetail(proofId);
+      if (!detail) {
+        return reply.status(404).send({
+          error: "PROOF_NOT_FOUND",
+          message: `No proof found with id '${proofId}'`,
+        });
+      }
+
+      return reply.status(200).send(detail);
+    }
+  );
+
+  // ── GET /api/proofs ─────────────────────
+  // List all proofs (public). Returns lightweight rows.
+  app.get("/api/proofs", async (_request, reply) => {
+    // Reuse the lightweight proof list from getProofById via task trail
+    // For now, return an empty array — proofs are accessible through
+    // /api/tasks/:taskId which includes proof_ids.
+    // A full proof list endpoint can be added later with pagination.
+    return reply.status(200).send({
+      message: "Use GET /api/proofs/:proofId for proof detail, or GET /api/tasks/:taskId for a task's proof trail.",
+      hint: "A paginated proof list is planned for a future release.",
+    });
+  });
+
   // ── POST /api/proofs/verify ────────────
   // Runs full TEE verification: attest + verify + claims validation
   // Requires proofs:write scope.

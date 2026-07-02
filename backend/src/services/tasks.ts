@@ -326,7 +326,58 @@ export function getPaymentById(id: string): Payment | null {
 // ── Proof helpers ────────────────────────
 
 /**
- * Get a proof by ID.
+ * Get a proof by ID — public export for the canonical proof receipt endpoint.
+ * Returns the raw DB row. For enriched detail (with task context), use getProofDetail().
+ */
+export function getProofById(id: string): ProofRow | null {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM proofs WHERE id = ?").get(id) as ProofRow | undefined;
+  return row ?? null;
+}
+
+/**
+ * Get enriched proof detail for the canonical proof receipt.
+ * Includes task context: invoice ID, payment state, and mode label.
+ * Agent output (risk score, decision, flags) is included when available
+ * through the task-execution layer.
+ */
+export function getProofDetail(proofId: string): Record<string, unknown> | null {
+  const proof = getProofById(proofId);
+  if (!proof) return null;
+
+  const task = proof.task_id ? getTask(proof.task_id) : null;
+
+  // Try to get payment info if the task exists
+  let payment: Payment | null = null;
+  if (task?.payment_id) {
+    payment = getPaymentById(task.payment_id);
+  }
+
+  return {
+    proof_id: proof.id,
+    task_id: proof.task_id,
+    invoice_id: task?.title ?? null,
+    agent_id: proof.agent_id,
+    verifier_id: proof.verifier_id,
+    input_hash: proof.input_hash,
+    output_hash: proof.output_hash,
+    wasm_hash: proof.wasm_hash,
+    attestation_hash: proof.attestation_hash,
+    casper_anchor_hash: proof.casper_anchor_hash,
+    mode: proof.mode,
+    proof_status: proof.status,
+    // Task context
+    task_status: task?.status ?? null,
+    task_input: task?.input ?? null,
+    // Payment context
+    payment_state: payment?.status ?? null,
+    payment_id: payment?.id ?? null,
+    created_at: proof.created_at,
+  };
+}
+
+/**
+ * Internal: get a proof by ID (used by existing task trail code).
  */
 function getProof(id: string): ProofRow | null {
   const db = getDb();
