@@ -172,13 +172,26 @@ async function runCasperDeploy(sessionArgs: string[]): Promise<string> {
     ...sessionArgs,
   ];
 
-  const { stdout } = await _execAsync(
-    "bash",
-    ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
-    { timeout: 60000, maxBuffer: 10 * 1024 * 1024 }
-  );
-
-  const output = stdout.toString();
+  let output: string;
+  try {
+    const { stdout } = await _execAsync(
+      "bash",
+      ["-c", `${CASPER_CLIENT_BIN} ${args.join(" ")} 2>&1`],
+      { timeout: 60000, maxBuffer: 10 * 1024 * 1024 }
+    );
+    output = stdout.toString();
+  } catch (err: unknown) {
+    // execFile throws on non-zero exit; capture stdout/stderr from the error object
+    const execErr = err as NodeJS.ErrnoException & { stdout?: string; stderr?: string; code?: number };
+    const detail = [
+      execErr.stdout?.toString() || "",
+      execErr.stderr?.toString() || "",
+    ].filter(Boolean).join("\n");
+    const codeInfo = execErr.code !== undefined ? ` (exit ${execErr.code})` : "";
+    throw new Error(
+      `CASPER_CLI_FAILED${codeInfo}: casper-client exited with an error.\nCommand: casper-client ${args.join(" ")}\nOutput: ${detail.slice(0, 1000)}`
+    );
+  }
 
   try {
     const parsed = JSON.parse(output);
