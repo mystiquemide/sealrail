@@ -67,7 +67,7 @@ export default function RunPage() {
   const [attHash, setAttHash] = useState("pending");
   const [anchHash, setAnchHash] = useState("pending");
   const [paymentState, setPaymentState] = useState("Not started");
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -194,10 +194,10 @@ export default function RunPage() {
     setAnchHash("pending");
     setPaymentState("Not started");
     setErrorMessage(null);
-    setCopied(false);
+    setCopyStatus("idle");
   }
 
-  const copyBundle = useCallback(() => {
+  const copyBundle = useCallback(async () => {
     if (!taskId || !output) return;
     const bundle = {
       task: fields.invoiceId,
@@ -211,13 +211,14 @@ export default function RunPage() {
       casper_anchor: anchHash,
       payment_state: paymentState,
     };
+    if (copyTimer.current) clearTimeout(copyTimer.current);
     try {
-      navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      setCopyStatus("copied");
     } catch {
-      // clipboard unavailable, ignore
+      setCopyStatus("failed");
     }
-    setCopied(true);
-    copyTimer.current = setTimeout(() => setCopied(false), 1800);
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1800);
   }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, paymentState]);
 
   const steps = computeSteps(stage, busyStep, failedStep, anchHash !== "pending" ? anchHash : undefined);
@@ -251,7 +252,7 @@ export default function RunPage() {
         <div className={styles.headerWrap}>
           <EmptyState
             title="No invoice-risk agent registered yet"
-            body="Register an agent in the &quot;invoice&quot; category to run a payment-backed proof task."
+            body='Register an agent in the "invoice" category to run a payment-backed proof task.'
             actionLabel="Register an agent"
             actionHref="/owner/agents/new"
           />
@@ -324,7 +325,7 @@ export default function RunPage() {
             paymentState={paymentState}
             paymentStateColor={stage >= 6 ? GREEN : failedStep ? RED : stage >= 1 ? AMBER : GRAY}
             hasProof={hasProof}
-            copyLabel={copied ? "Copied" : "Copy proof bundle"}
+            copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy proof bundle"}
             onCopy={copyBundle}
             detailHref={taskId ? `/proofs/${fields.invoiceId}` : "#"}
           />

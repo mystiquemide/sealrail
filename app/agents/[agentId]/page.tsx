@@ -8,6 +8,7 @@ import {
 } from "@/components/agent-profile/agent-profile-data";
 import { ApiClientError } from "@/lib/api";
 import { getAgent, getAgentProofs, getAgentReputation, getTaskDetail, getVerifier } from "@/lib/api";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/agent-profile/AgentProfile.module.css";
 
 type AgentProfilePageProps = {
@@ -70,7 +71,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
           <EmptyState
             error
             title="Couldn't load this agent"
-            body="The backend at NEXT_PUBLIC_API_URL could not be reached. Check that the Sealrail backend is running."
+            body={BACKEND_UNREACHABLE_BODY}
           />
         ) : notFound || !profile ? (
           <div style={{ marginTop: 40 }}>

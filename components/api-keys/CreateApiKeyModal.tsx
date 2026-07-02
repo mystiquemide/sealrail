@@ -6,6 +6,7 @@ type CreateApiKeyModalProps = {
   newKeyName: string;
   selectedScopes: string[];
   validationMessage: string;
+  statusMessage?: string;
   generatedSecret: string;
   copyLabel: string;
   onNameChange: (value: string) => void;
@@ -20,6 +21,7 @@ export function CreateApiKeyModal({
   newKeyName,
   selectedScopes,
   validationMessage,
+  statusMessage,
   generatedSecret,
   copyLabel,
   onNameChange,
@@ -60,10 +62,13 @@ export function CreateApiKeyModal({
               </div>
             </div>
 
-            {validationMessage ? <div className={styles.modalValidationError}>{validationMessage}</div> : null}
+            {statusMessage ? <div className={styles.modalStatusMessage}>{statusMessage}</div> : null}
+            {!statusMessage && validationMessage ? (
+              <div className={styles.modalValidationError}>{validationMessage}</div>
+            ) : null}
 
             <div className={styles.modalActions}>
-              <button onClick={onCreate} className={styles.modalPrimaryButton}>
+              <button onClick={onCreate} disabled={Boolean(statusMessage)} className={styles.modalPrimaryButton}>
                 Create key
               </button>
               <button onClick={onClose} className={styles.modalSecondaryButton}>

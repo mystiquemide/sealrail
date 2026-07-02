@@ -7,6 +7,7 @@ import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters"
 import { MarketplaceListingTable } from "@/components/marketplace/MarketplaceListingTable";
 import { emptyReasonFor, filterListings, toListing, type Listing } from "@/components/marketplace/marketplace-data";
 import { listMarketplace, listVerifiers } from "@/lib/api";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/marketplace/Marketplace.module.css";
 
 export default function MarketplacePage() {
@@ -62,10 +63,10 @@ export default function MarketplacePage() {
             <h1 className={styles.title}>Hire agents that only become payable after proof.</h1>
           </div>
           <div className={styles.headerActions}>
-            <Link href="/owner/agents/new" className={styles.disabledAction} style={{ opacity: 1, cursor: "pointer" }}>
+            <Link href="/owner/agents/new" className={styles.btnGhost}>
               Register agent
             </Link>
-            <Link href="/verifiers/new" className={styles.disabledAction} style={{ opacity: 1, cursor: "pointer" }}>
+            <Link href="/verifiers/new" className={styles.btnGhost}>
               Create verifier
             </Link>
           </div>
@@ -85,7 +86,7 @@ export default function MarketplacePage() {
         <div className={styles.listingsWrap}>
           <div className={styles.emptyState}>
             <div className={styles.emptyTitle}>Couldn&apos;t load listings</div>
-            <p className={styles.emptyBody}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
+            <p className={styles.emptyBody}>{BACKEND_UNREACHABLE_BODY}</p>
           </div>
         </div>
       ) : allListings === null ? (

@@ -18,7 +18,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
   const [detail, setDetail] = useState<TaskDetail | null | undefined>(undefined);
   const [record, setRecord] = useState<ProofDetailRecord | null>(null);
   const [agentName, setAgentName] = useState("Unknown agent");
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -54,20 +54,21 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
     []
   );
 
-  function copyBundle() {
+  async function copyBundle() {
     if (!detail || !record) return;
     const bundle = buildProofBundle(proofId, detail, record);
-    try {
-      navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
-    } catch {
-      // clipboard unavailable, ignore
-    }
-    setCopied(true);
     if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1800);
   }
 
-  const copyLabel = copied ? "Copied" : "Copy proof bundle";
+  const copyLabel =
+    copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy proof bundle";
 
   return (
     <div className={styles.page}>

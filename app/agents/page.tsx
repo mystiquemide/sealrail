@@ -4,6 +4,7 @@ import { AgentRow } from "@/components/agents/AgentRow";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toAgentListItem } from "@/components/agents/agents-data";
 import { listAgents, listVerifiers } from "@/lib/api";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/agents/Agents.module.css";
 
 export default async function AgentsPage() {
@@ -51,7 +52,7 @@ export default async function AgentsPage() {
           <EmptyState
             error
             title="Couldn't load agents"
-            body="The backend at NEXT_PUBLIC_API_URL could not be reached. Check that the Sealrail backend is running."
+            body={BACKEND_UNREACHABLE_BODY}
           />
         ) : rows.length === 0 ? (
           <EmptyState

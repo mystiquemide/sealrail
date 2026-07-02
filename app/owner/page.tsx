@@ -13,6 +13,7 @@ import {
 } from "@/components/owner/owner-data";
 import { getAgentReputation, listAgents, listPayments, listTasks } from "@/lib/api";
 import { ensureSession } from "@/lib/session";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/owner/OwnerDashboard.module.css";
 
 export default function OwnerPage() {
@@ -77,7 +78,7 @@ export default function OwnerPage() {
             <Link href="/owner/agents/new" className={styles.btnPrimary}>
               Register agent
             </Link>
-            <Link href="/verifiers/new" className={styles.disabledAction} style={{ opacity: 1, cursor: "pointer" }}>
+            <Link href="/verifiers/new" className={styles.btnGhost}>
               Register verifier
             </Link>
           </div>
@@ -87,7 +88,7 @@ export default function OwnerPage() {
           <EmptyState
             error
             title="Couldn't load your dashboard"
-            body="The backend at NEXT_PUBLIC_API_URL could not be reached."
+            body={BACKEND_UNREACHABLE_BODY}
           />
         ) : (
           <>

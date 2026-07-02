@@ -6,6 +6,7 @@ import { AppNav } from "@/components/app/AppNav";
 import { toListingDetail, type ListingDetail } from "@/components/marketplace-listing/listing-data";
 import { ApiClientError, createTaskFromListing, getMarketplaceListing, getVerifier } from "@/lib/api";
 import { DEMO_BUYER_ADDRESS } from "@/lib/session";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/marketplace-listing/ListingDetail.module.css";
 
 type ListingPageProps = {
@@ -89,7 +90,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
         {error ? (
           <div style={{ marginTop: 40 }}>
             <div className={styles.title}>Couldn&apos;t load this listing</div>
-            <p className={styles.subtitle}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
+            <p className={styles.subtitle}>{BACKEND_UNREACHABLE_BODY}</p>
           </div>
         ) : listing === undefined ? (
           <div style={{ marginTop: 40 }}>

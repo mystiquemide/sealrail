@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import { StepRuns } from "@/components/workflow-detail/StepRuns";
@@ -40,8 +40,9 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
   const [busy, setBusy] = useState(false);
   const [busyStepId, setBusyStepId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [stepProofHashes, setStepProofHashes] = useState<string[]>([]);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +104,7 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
     }
   }, [busy, run, workflowId]);
 
-  const copyBundle = useCallback(() => {
+  const copyBundle = useCallback(async () => {
     if (!run || run.status !== "payable" && run.status !== "paid" && run.status !== "anchored") return;
     const bundle = {
       workflow: workflowId,
@@ -112,14 +113,22 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
       final_proof_id: run.final_proof_id,
       status: run.status,
     };
+    if (copyTimer.current) clearTimeout(copyTimer.current);
     try {
-      navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
+      setCopyStatus("copied");
     } catch {
-      // clipboard unavailable, ignore
+      setCopyStatus("failed");
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1800);
   }, [run, workflowId, stepProofHashes]);
+
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+    },
+    []
+  );
 
   if (template === undefined) {
     return (
@@ -200,7 +209,7 @@ export default function WorkflowDetailPage({ params }: WorkflowDetailPageProps) 
             <FinalProofBundle
               bundleText={bundleText}
               ready={finished}
-              copyLabel={copied ? "Copied" : "Copy bundle"}
+              copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy bundle"}
               onCopy={copyBundle}
             />
           </>

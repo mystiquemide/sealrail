@@ -63,6 +63,23 @@
   cursor: not-allowed;
 }
 
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 12px 20px;
+  background: transparent;
+  color: #f6f5f3;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+.btnGhost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 /* ---------- filters ---------- */
 
 .filtersWrap {

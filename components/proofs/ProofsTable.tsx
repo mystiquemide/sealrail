@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ProofRow } from "./proofs-data";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "./Proofs.module.css";
 
 type ProofsTableProps = {
@@ -81,7 +82,7 @@ export function ProofsTable({ view, rows, onClearFilters, onRetry }: ProofsTable
           <span className={styles.errorDot} />
           Error loading proofs
         </div>
-        <p className={styles.stateBody}>The proof registry could not be reached. Try again.</p>
+        <p className={styles.stateBody}>{BACKEND_UNREACHABLE_BODY}</p>
         <button onClick={onRetry} className={styles.stateButtonPrimary}>
           Retry
         </button>

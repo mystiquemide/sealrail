@@ -7,6 +7,7 @@ import { CreateApiKeyModal } from "@/components/api-keys/CreateApiKeyModal";
 import { EmptyState } from "@/components/app/EmptyState";
 import { ApiClientError, createApiKey, listApiKeys, revokeApiKey } from "@/lib/api";
 import { ensureSession } from "@/lib/session";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import type { ApiKey } from "@/lib/api-types";
 import styles from "@/components/api-keys/ApiKeys.module.css";
 
@@ -19,8 +20,9 @@ export default function ApiKeysPage() {
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["tasks:write"]);
   const [generatedSecret, setGeneratedSecret] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [creating, setCreating] = useState(false);
+  const [revokeErrorId, setRevokeErrorId] = useState<string | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -83,23 +85,24 @@ export default function ApiKeysPage() {
     }
   }
 
-  function copySecret() {
-    try {
-      navigator.clipboard.writeText(generatedSecret);
-    } catch {
-      // clipboard unavailable, ignore
-    }
-    setCopied(true);
+  async function copySecret() {
     if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopied(false), 1600);
+    try {
+      await navigator.clipboard.writeText(generatedSecret);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1600);
   }
 
   async function handleRevoke(id: string) {
+    setRevokeErrorId(null);
     try {
       await revokeApiKey(id);
       loadKeys();
     } catch {
-      // Revoke failures surface implicitly: row stays non-revoked and stays clickable to retry.
+      setRevokeErrorId(id);
     }
   }
 
@@ -127,11 +130,11 @@ export default function ApiKeysPage() {
         </div>
 
         {error ? (
-          <EmptyState error title="Couldn't load API keys" body="The backend at NEXT_PUBLIC_API_URL could not be reached." />
+          <EmptyState error title="Couldn't load API keys" body={BACKEND_UNREACHABLE_BODY} />
         ) : keys === null ? (
           <p style={{ color: "#8c8c8a", fontSize: 13 }}>Loading...</p>
         ) : (
-          <ApiKeyTable keys={keys} onRevoke={handleRevoke} />
+          <ApiKeyTable keys={keys} onRevoke={handleRevoke} revokeErrorId={revokeErrorId} />
         )}
 
         {modalOpen ? (
@@ -139,9 +142,12 @@ export default function ApiKeysPage() {
             stage={stage}
             newKeyName={newKeyName}
             selectedScopes={selectedScopes}
-            validationMessage={creating ? "Creating..." : validationMessage}
+            validationMessage={validationMessage}
+            statusMessage={creating ? "Creating..." : undefined}
             generatedSecret={generatedSecret}
-            copyLabel={copied ? "Copied" : "Copy secret"}
+            copyLabel={
+              copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy — select manually" : "Copy secret"
+            }
             onNameChange={setNewKeyName}
             onToggleScope={toggleScope}
             onCreate={handleCreateKey}

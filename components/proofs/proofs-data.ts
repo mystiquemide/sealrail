@@ -63,7 +63,14 @@ export function filterProofRows(rows: ProofRow[], search: string, statusFilter: 
   });
 }
 
-export function computeProofsView(hasAnyRecords: boolean, filtered: ProofRow[]) {
+export function computeProofsView(status: "loading" | "error" | "loaded", hasAnyRecords: boolean, filtered: ProofRow[]) {
+  if (status === "loading") {
+    return { showTable: false, showLoading: true, showEmpty: false, showNoResults: false, showError: false };
+  }
+  if (status === "error") {
+    return { showTable: false, showLoading: false, showEmpty: false, showNoResults: false, showError: true };
+  }
+
   const isEmpty = !hasAnyRecords;
   const isNoResults = hasAnyRecords && filtered.length === 0;
 

@@ -3,6 +3,7 @@ import { AppNav } from "@/components/app/AppNav";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toVerifierRow } from "@/components/verifiers/verifiers-data";
 import { listVerifiers } from "@/lib/api";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/verifiers/Verifiers.module.css";
 
 export default async function VerifiersPage() {
@@ -46,7 +47,7 @@ export default async function VerifiersPage() {
           <EmptyState
             error
             title="Couldn't load verifiers"
-            body="The backend at NEXT_PUBLIC_API_URL could not be reached."
+            body={BACKEND_UNREACHABLE_BODY}
           />
         ) : rows.length === 0 ? (
           <EmptyState

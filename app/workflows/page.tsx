@@ -3,6 +3,7 @@ import { AppNav } from "@/components/app/AppNav";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toWorkflowListItem } from "@/components/workflows/workflows-data";
 import { listWorkflows } from "@/lib/api";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import styles from "@/components/workflows/Workflows.module.css";
 
 export default async function WorkflowsPage() {
@@ -46,7 +47,7 @@ export default async function WorkflowsPage() {
           <EmptyState
             error
             title="Couldn't load workflows"
-            body="The backend at NEXT_PUBLIC_API_URL could not be reached."
+            body={BACKEND_UNREACHABLE_BODY}
           />
         ) : rows.length === 0 ? (
           <EmptyState

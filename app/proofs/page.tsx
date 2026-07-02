@@ -16,10 +16,12 @@ export default function ProofsPage() {
 
   const [allRows, setAllRows] = useState<ProofRow[] | null>(null);
   const [error, setError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      setError(false);
       try {
         const [{ tasks }, { agents }] = await Promise.all([listTasks(), listAgents()]);
         const agentNames = new Map(agents.map((a) => [a.id, a.name]));
@@ -37,10 +39,11 @@ export default function ProofsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadToken]);
 
   const rows = allRows ? filterProofRows(allRows, search, statusFilter, modeFilter) : [];
-  const view = computeProofsView(Boolean(allRows && allRows.length > 0), rows);
+  const status: "loading" | "error" | "loaded" = error ? "error" : allRows === null ? "loading" : "loaded";
+  const view = computeProofsView(status, Boolean(allRows && allRows.length > 0), rows);
 
   function clearFilters() {
     setSearch("");
@@ -49,7 +52,8 @@ export default function ProofsPage() {
   }
 
   function retryLoad() {
-    // No-op: errors here come from a genuinely unreachable backend, not a demo toggle.
+    setAllRows(null);
+    setReloadToken((t) => t + 1);
   }
 
   return (
@@ -85,18 +89,7 @@ export default function ProofsPage() {
       />
 
       <div className={styles.tableWrap}>
-        {error ? (
-          <div className={styles.stateBlock} style={{ borderTop: "1px solid rgba(255,255,255,0.14)" }}>
-            <div className={styles.stateTitle}>Couldn&apos;t load proofs</div>
-            <p className={styles.stateBody}>The backend at NEXT_PUBLIC_API_URL could not be reached.</p>
-          </div>
-        ) : allRows === null ? (
-          <div className={styles.stateBlock} style={{ borderTop: "1px solid rgba(255,255,255,0.14)" }}>
-            <div className={styles.stateTitle}>Loading proofs...</div>
-          </div>
-        ) : (
-          <ProofsTable view={view} rows={rows} onClearFilters={clearFilters} onRetry={retryLoad} />
-        )}
+        <ProofsTable view={view} rows={rows} onClearFilters={clearFilters} onRetry={retryLoad} />
       </div>
     </div>
   );
