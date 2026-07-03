@@ -194,6 +194,7 @@
   font-family: var(--font-mono);
   font-size: 13px;
   color: #9a9a98;
+  overflow-wrap: anywhere;
 }
 
 .action {
@@ -300,4 +301,38 @@
   font-weight: 500;
   font-size: 13.5px;
   cursor: pointer;
+}
+
+
+@media (max-width: 720px) {
+  .filterBar,
+  .filterGroup,
+  .filterSelect,
+  .searchWrap {
+    width: 100%;
+  }
+
+  .filterGroup {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tableHead {
+    display: none;
+  }
+
+  .gridCols {
+    grid-template-columns: 1fr;
+  }
+
+  .row,
+  .skeletonRow {
+    gap: 10px;
+    padding: 18px 0;
+  }
+
+  .action {
+    justify-self: start;
+    white-space: normal;
+  }
 }

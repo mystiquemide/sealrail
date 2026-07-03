@@ -304,3 +304,51 @@
   height: 6px;
   border-radius: 50%;
 }
+
+
+.statValueMono,
+.infoRowValue,
+.infoRowValueMono,
+.historyId,
+.historyTask,
+.historyVerifier {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .btnPrimary,
+  .btnGhost {
+    justify-content: center;
+    flex: 1 1 150px;
+  }
+
+  .panel {
+    min-width: 0;
+    padding: 22px 20px;
+  }
+
+  .infoRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .historyHead {
+    display: none;
+  }
+
+  .historyGridCols {
+    grid-template-columns: 1fr;
+  }
+
+  .historyRow {
+    gap: 10px;
+    padding: 18px 0;
+  }
+}

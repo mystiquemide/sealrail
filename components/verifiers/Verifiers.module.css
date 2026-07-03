@@ -107,6 +107,7 @@
   font-family: var(--font-mono);
   font-size: 13px;
   color: #9a9a98;
+  overflow-wrap: anywhere;
 }
 
 .stateTag {
@@ -133,4 +134,24 @@
   color: #6e6e6c;
   margin: 22px 4px 0;
   max-width: 620px;
+}
+
+
+@media (max-width: 720px) {
+  .tableHead {
+    display: none;
+  }
+
+  .gridCols {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    gap: 10px;
+    padding: 18px 0;
+  }
+
+  .stateTag {
+    justify-self: start;
+  }
 }

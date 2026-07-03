@@ -192,11 +192,13 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   color: #b4b4b2;
+  overflow-wrap: anywhere;
 }
 
 .listingValue {
   font-size: 13.5px;
   color: #e4e4e2;
+  overflow-wrap: anywhere;
 }
 
 .listingAction {
@@ -251,4 +253,35 @@
   font-weight: 500;
   font-size: 13.5px;
   cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .filtersBar,
+  .filterGroup,
+  .filterSelect {
+    width: 100%;
+  }
+
+  .filterGroup {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .listingHead {
+    display: none;
+  }
+
+  .listingGridCols {
+    grid-template-columns: 1fr;
+  }
+
+  .listingRow {
+    gap: 10px;
+    padding: 18px 0;
+  }
+
+  .listingAction {
+    justify-self: start;
+    white-space: normal;
+  }
 }

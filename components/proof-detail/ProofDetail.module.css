@@ -249,3 +249,39 @@
 .smallCopyButton:hover {
   color: #f6f5f3;
 }
+
+
+.taskLabel,
+.infoRowValue,
+.infoRowValueMono,
+.infoRowValueMonoSmall,
+.infoRowValueMuted {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .copyButton,
+  .btnGhost {
+    justify-content: center;
+    flex: 1 1 150px;
+  }
+
+  .panel,
+  .cardBlock {
+    min-width: 0;
+    padding: 22px 20px;
+  }
+
+  .cardHeaderRow,
+  .infoRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}

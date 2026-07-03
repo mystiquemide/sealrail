@@ -110,6 +110,7 @@
 .lastUsed {
   font-size: 12.5px;
   color: #8c8c8a;
+  overflow-wrap: anywhere;
 }
 
 .revokeButton {
@@ -326,4 +327,28 @@
   font-size: 13px;
   color: #e4e4e2;
   word-break: break-all;
+}
+
+
+@media (max-width: 720px) {
+  .tableHead {
+    display: none;
+  }
+
+  .gridCols {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    gap: 10px;
+    padding: 18px 0;
+  }
+
+  .revokeButton {
+    justify-self: start;
+  }
+
+  .modalActions {
+    flex-direction: column;
+  }
 }
