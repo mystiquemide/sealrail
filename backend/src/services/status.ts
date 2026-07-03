@@ -314,16 +314,8 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
 
   const csprCloudConfigured = isCsprCloudConfigured();
 
-  // Fire-and-forget CSPR.cloud health probe — do not block /api/status on external calls.
-  if (csprCloudConfigured) {
-    getCsprCloudHealth()
-      .then((h) => {
-        // Health probed successfully — available to the next poll.
-      })
-      .catch(() => {
-        // Probe failed — defaults remain.
-      });
-  }
+  // CSPR.cloud values are populated by the now-async caller.
+  // This keeps the synchronous contract working for tests.
 
   // Determine overall public status from blocking readiness only.
   // In testnet mode, hosted Blocky / bky-as availability is reported honestly
@@ -361,6 +353,24 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
   };
+}
+
+export async function getPublicStatusAsync(startTime: number): Promise<PublicStatusResponse> {
+  const base = getPublicStatus(startTime);
+
+  if (base.cspr_cloud_configured) {
+    try {
+      const health = await getCsprCloudHealth();
+      base.cspr_cloud_api_reachable = health.apiReachable;
+      base.cspr_cloud_x402_ready = health.x402FacilitatorReachable;
+      base.cspr_cloud_latest_rate = health.latestCsprUsdRate;
+    } catch (err: unknown) {
+      // Probe failed — leave defaults.
+      console.error("CSPR.cloud health probe failed in getPublicStatusAsync:", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  return base;
 }
 
 // ── Admin-safe status (full detail, no secrets) ─
