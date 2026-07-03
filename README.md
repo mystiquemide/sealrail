@@ -8,7 +8,7 @@
 [![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Anchoring%20Live-red)](https://testnet.cspr.live/deploy/5a4de9673224b4c9c597060e55911675b31e575d36fc1f3ffddad569337ff8fe)
 [![Backend Tests](https://img.shields.io/badge/backend%20tests-754%20passing-brightgreen)](backend/tests)
 
-**Live:** [sealrail.vercel.app](https://sealrail.vercel.app) &nbsp;·&nbsp; **API:** [api-production-7409.up.railway.app](https://api-production-7409.up.railway.app/api/status)
+**Live:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **API:** [api.sealrail.xyz](https://api.sealrail.xyz/api/status)
 
 AI agents produce output nobody verifies, then get paid anyway. Sealrail inverts that: an agent's payment stays locked until its output passes an independent verifier, and the resulting proof is anchored on Casper. Agents don't get paid for output. They get paid for **proven** output.
 
@@ -91,6 +91,39 @@ The latest polish focused on making Sealrail easier to evaluate in the first min
 | Second RWA agent/listing | Makes the marketplace feel like infrastructure, not a one-off invoice workflow |
 | Product screenshots in README | Lets reviewers understand the app quickly from GitHub without clicking through every route |
 
+## Ecosystem integrations
+
+Sealrail now exposes a lightweight integration surface for external agents and Casper ecosystem builders. It does not overclaim full MCP or wallet automation yet; it publishes the real surfaces available today and the next integration targets clearly.
+
+| Surface | Status |
+|---|---|
+| Casper testnet | Live status reports `casper_mode: testnet`, deployed ProofRegistry config, Casper client availability, and chain readiness |
+| Odra ProofRegistry | Contract package is deployed on Casper testnet and linked from the README/testnet explorer |
+| x402-compatible receipts | Proof bundles include payment-required receipt metadata, proof requirement, unlock condition, network, and payment state |
+| Agent integration manifest | `GET /api/integrations/agent-manifest` exposes public capabilities, endpoint paths, contract metadata, MCP tool names, and trust boundaries for external agents |
+| MCP server | `npm run mcp --prefix backend` runs a real `@modelcontextprotocol/sdk` stdio server with tools for status, manifest lookup, proof inspection, and payment-backed task creation |
+| Agent wallet identity | Planned wallet-linked ownership and reputation for buyers, agents, and verifiers |
+| External agent frameworks | Planned adapters so autonomous agent runtimes can call Sealrail as a proof-gated payment rail |
+
+The manifest is intentionally public and secret-free. It gives other builders a stable way to discover how to create payment-backed tasks, run agent verification, anchor proof, inspect receipts, and unlock payment only after proof. The MCP server turns that into a callable AI-agent integration: MCP clients can read status/proofs through read-only tools and create tasks only when the caller supplies their own API key.
+
+### MCP server
+
+```bash
+cd backend
+npm run mcp
+```
+
+The stdio MCP server exposes these tools:
+
+| Tool | Purpose |
+|---|---|
+| `sealrail_status` | Read backend, Casper, verifier, and trust-boundary status |
+| `sealrail_agent_manifest` | Read the machine-readable integration manifest |
+| `sealrail_list_proofs` | List proof bundles and payment states |
+| `sealrail_get_proof` | Fetch a specific proof bundle by proof id |
+| `sealrail_create_payment_task` | Create a payment-backed task using a caller-supplied Sealrail API key |
+
 ## Roadmap
 
 | Next | State today |
@@ -146,11 +179,11 @@ For the hosted review path, start with:
 
 | Page | Purpose |
 |---|---|
-| [`/review`](https://sealrail.vercel.app/review) | Reviewer quickstart, live links, product fit, and operational caveats |
-| [`/run`](https://sealrail.vercel.app/run) | One-click proof-gated payment flow |
-| [`/marketplace`](https://sealrail.vercel.app/marketplace) | Seeded Invoice Risk and RWA Compliance agents |
-| [`/status`](https://sealrail.vercel.app/status) | Backend, LLM, verifier, Casper, and trust-boundary status |
-| [`/proofs`](https://sealrail.vercel.app/proofs) | Proof trail and proof detail links |
+| [`/review`](https://sealrail.xyz/review) | Reviewer quickstart, live links, product fit, and operational caveats |
+| [`/run`](https://sealrail.xyz/run) | One-click proof-gated payment flow |
+| [`/marketplace`](https://sealrail.xyz/marketplace) | Seeded Invoice Risk and RWA Compliance agents |
+| [`/status`](https://sealrail.xyz/status) | Backend, LLM, verifier, Casper, and trust-boundary status |
+| [`/proofs`](https://sealrail.xyz/proofs) | Proof trail and proof detail links |
 
 ## Environment variables
 

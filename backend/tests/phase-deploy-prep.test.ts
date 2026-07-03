@@ -274,6 +274,10 @@ describe("Public Status", () => {
     expect(s).toHaveProperty("tee_hookup_blocked");
     expect(s).toHaveProperty("llm_configured");
     expect(s).toHaveProperty("db_connected");
+    expect(s).toHaveProperty("cspr_cloud_configured");
+    expect(s).toHaveProperty("cspr_cloud_api_reachable");
+    expect(s).toHaveProperty("cspr_cloud_x402_ready");
+    expect(s).toHaveProperty("cspr_cloud_latest_rate");
     expect(s).toHaveProperty("node_env");
     expect(s).toHaveProperty("timestamp");
     expect(s).toHaveProperty("uptime_seconds");
@@ -291,6 +295,7 @@ describe("Public Status", () => {
     expect(json).not.toContain("secret");
     expect(json).not.toContain("token");
     expect(json).not.toContain("password");
+    expect(json).not.toContain("CSPR_CLOUD_TOKEN");
   });
 
   it("db_connected is true with in-memory DB", () => {
@@ -302,6 +307,11 @@ describe("Public Status", () => {
     const s = getPublicStatus(Date.now());
     expect(typeof s.tee_hookup_blocked).toBe("boolean");
     expect(typeof s.hosted_tee_ready).toBe("boolean");
+  });
+
+  it("csp_cloud_configured is a boolean", () => {
+    const s = getPublicStatus(Date.now());
+    expect(typeof s.cspr_cloud_configured).toBe("boolean");
   });
 
   it("uptime is non-negative", () => {
@@ -500,6 +510,8 @@ describe("Status API Routes", () => {
     expect(body).toHaveProperty("tee_hookup_blocked");
     expect(body).toHaveProperty("llm_configured");
     expect(body).toHaveProperty("db_connected");
+    expect(body).toHaveProperty("cspr_cloud_configured");
+    expect(body).toHaveProperty("cspr_cloud_api_reachable");
 
     // No secrets in response
     const json = JSON.stringify(body);

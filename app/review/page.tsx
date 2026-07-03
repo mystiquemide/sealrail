@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
+import { ecosystemIntegrations } from "@/lib/ecosystem";
 import styles from "@/components/docs-legal/DocsLegal.module.css";
 
 const checks = [
@@ -63,6 +64,43 @@ export default function ReviewPage() {
               <strong>Odra/TEE-ready:</strong> verifier records bind WASM/schema hashes and future hosted TEE claims.
             </li>
           </ul>
+        </section>
+
+        <section className={styles.docSection}>
+          <div className={styles.sectionLabel}>Ecosystem integrations</div>
+          <h2 className={styles.sectionHeading}>Built as an integration surface for Casper agents.</h2>
+          <p className={styles.bodyText}>
+            SealRail now exposes a real MCP stdio server, public agent integration manifest, plus live Casper, Odra, and
+            x402-compatible proof/payment metadata. External agents can inspect the manifest or connect through MCP to
+            read status, inspect proof bundles, and create payment-backed tasks with a caller-provided API key.
+          </p>
+          <div className={styles.architectureBox}>
+            <div className={styles.sectionLabel}>Live now</div>
+            <ul>
+              {ecosystemIntegrations.live.map((item) => (
+                <li key={item.title}>
+                  <strong>{item.title}:</strong> {item.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={styles.infoBox}>
+            <div className={styles.infoBoxLabel}>Manifest endpoint</div>
+            <p className={styles.bodyText}>
+              <code>Backend {ecosystemIntegrations.agentManifestPath}</code> publishes capabilities, endpoints, Casper contract
+              metadata, x402 receipt support, and current trust boundaries without exposing secrets.
+            </p>
+          </div>
+          <div className={styles.architectureBox}>
+            <div className={styles.sectionLabel}>Next integrations</div>
+            <ul>
+              {ecosystemIntegrations.roadmap.map((item) => (
+                <li key={item.title}>
+                  <strong>{item.title}:</strong> {item.description}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       </main>
     </div>

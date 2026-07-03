@@ -9,6 +9,7 @@ import { isCliAvailable, getCliVersion } from "./tee.js";
 import { isLlmConfigured, getLlmProviderHealth } from "./llm-provider.js";
 import { isCasperClientAvailable, getCasperClientVersion } from "./casper.js";
 import { healthCheck as blockyHealthCheck } from "./blocky.js";
+import { isCsprCloudConfigured, getCsprCloudHealth } from "./cspr-cloud.js";
 import { getDb } from "../db.js";
 
 // ── Blocky status ────────────────────────
@@ -296,6 +297,10 @@ export interface PublicStatusResponse {
   tee_hookup_blocked: boolean;
   llm_configured: boolean;
   db_connected: boolean;
+  cspr_cloud_configured: boolean;
+  cspr_cloud_api_reachable: boolean;
+  cspr_cloud_x402_ready: boolean;
+  cspr_cloud_latest_rate: number | null;
   node_env: string;
   timestamp: string;
   uptime_seconds: number;
@@ -306,6 +311,19 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
   const casper = getCasperReadiness();
   const llm = getLlmReadiness();
   const database = getDbReadiness();
+
+  const csprCloudConfigured = isCsprCloudConfigured();
+
+  // Fire-and-forget CSPR.cloud health probe — do not block /api/status on external calls.
+  if (csprCloudConfigured) {
+    getCsprCloudHealth()
+      .then((h) => {
+        // Health probed successfully — available to the next poll.
+      })
+      .catch(() => {
+        // Probe failed — defaults remain.
+      });
+  }
 
   // Determine overall public status from blocking readiness only.
   // In testnet mode, hosted Blocky / bky-as availability is reported honestly
@@ -335,6 +353,10 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     tee_hookup_blocked: blocky.teeHookupBlocked,
     llm_configured: llm.configured,
     db_connected: database.connected,
+    cspr_cloud_configured: csprCloudConfigured,
+    cspr_cloud_api_reachable: false,
+    cspr_cloud_x402_ready: false,
+    cspr_cloud_latest_rate: null,
     node_env: config.nodeEnv,
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),

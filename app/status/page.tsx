@@ -57,6 +57,21 @@ function buildRows(s: PublicStatus) {
       color: s.casper_contract_ready ? GREEN : AMBER,
     },
     {
+      name: "MCP server",
+      state: "npm run mcp --prefix backend — tools for status, manifests, proofs, and task creation",
+      color: GREEN,
+    },
+    {
+      name: "Agent integration manifest",
+      state: "Backend /api/integrations/agent-manifest — public capabilities for external agents",
+      color: GREEN,
+    },
+    {
+      name: "x402-compatible receipts",
+      state: "Proof bundles include payment-required receipt metadata and unlock conditions",
+      color: GREEN,
+    },
+    {
       name: "Explorer",
       state: `${explorerBase} (real deploy hashes on-chain)`,
       color: GREEN,

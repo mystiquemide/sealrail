@@ -11,15 +11,18 @@
     "build": "tsc",
     "test": "vitest run",
     "lint": "tsc --noEmit",
+    "mcp": "tsx --env-file-if-exists=.env src/mcp/server.ts",
     "seed": "node dist/scripts/seed.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^11.7.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.0",
+    "tsx": "^4.19.0",
     "uuid": "^11.1.0",
-    "tsx": "^4.19.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

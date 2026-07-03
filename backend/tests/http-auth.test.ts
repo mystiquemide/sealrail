@@ -101,6 +101,28 @@ describe("HTTP Auth: Public Endpoints", () => {
     expect(body).toHaveProperty("node_env");
   });
 
+  it("GET /api/integrations/agent-manifest returns public ecosystem integration metadata", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/integrations/agent-manifest" });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.name).toBe("SealRail");
+    expect(body.network).toBeDefined();
+    expect(body.capabilities).toContain("create_payment_backed_task");
+    expect(body.capabilities).toContain("anchor_proof_on_casper");
+    expect(body.capabilities).toContain("serve_mcp_tools_for_external_agents");
+    expect(body.endpoints.createTask).toBe("/api/tasks");
+    expect(body.endpoints.status).toBe("/api/status");
+    expect(body.integrations.implemented).toEqual(
+      expect.arrayContaining(["casper_testnet", "odra_proof_registry", "x402_compatible_receipts", "mcp_server"])
+    );
+    expect(body.mcp.tools).toEqual(expect.arrayContaining(["sealrail_status", "sealrail_create_payment_task"]));
+    expect(body.integrations.planned).toEqual(
+      expect.arrayContaining(["agent_wallet_identity", "external_agent_frameworks"])
+    );
+    expect(res.body).not.toContain("secret");
+    expect(res.body).not.toContain("api_key");
+  });
+
   it("GET /api/agents returns 200 without auth", async () => {
     const res = await app.inject({ method: "GET", url: "/api/agents" });
     expect(res.statusCode).toBe(200);

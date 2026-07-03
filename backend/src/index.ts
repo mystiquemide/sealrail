@@ -18,6 +18,7 @@ import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerApiKeyRoutes } from "./routes/api-keys.js";
 import { registerVerifierRoutes } from "./routes/verifiers.js";
 import { registerAgentRuntimeRoutes } from "./routes/agent-runtime.js";
+import { registerIntegrationRoutes } from "./routes/integrations.js";
 import { registerStatusRoutes, setStatusStartTime } from "./routes/status.js";
 import { requireApiKey } from "./middleware/auth.js";
 import { validateDeploymentConfig, getValidationSummary } from "./services/config-validation.js";
@@ -161,6 +162,7 @@ export function buildApp() {
   registerApiKeyRoutes(app);
   registerVerifierRoutes(app);
   registerAgentRuntimeRoutes(app);
+  registerIntegrationRoutes(app);
 
   return app;
 }

@@ -29,6 +29,9 @@ export const config = {
   casperAccountKeyPath: envStr("CASPER_ACCOUNT_KEY_PATH", ""),
   csprCloudApiKey: envStr("CSPR_CLOUD_API_KEY", ""),
   csprCloudToken: envStr("CSPR_CLOUD_TOKEN", ""),
+  csprCloudApiUrl: envStr("CSPR_CLOUD_API_URL", "https://api.testnet.cspr.cloud"),
+  csprCloudNodeUrl: envStr("CSPR_CLOUD_NODE_URL", "https://node.testnet.cspr.cloud"),
+  csprCloudX402FacilitatorUrl: envStr("CSPR_CLOUD_X402_FACILITATOR_URL", "https://x402-facilitator.cspr.cloud"),
   casperContractHash: envStr("CASPER_CONTRACT_HASH", ""),
   casperMode: envStr("CASPER_MODE", "dry_run") as "dry_run" | "testnet" | "mainnet",
 
