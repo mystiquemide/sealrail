@@ -1,547 +1,292 @@
-# Architecture: Verified Agent Payments on Casper
+# Architecture: SealRail
 
-Date: 2026-06-30
-Phase: Master Forge Phase 2
+Date: 2026-07-03
+Phase: DoraHacks Casper Agentic Buildathon submission
 Core positioning: No Proof without a Payment.
-First product vertical: RWA invoice verification agent
+Deployed on: Railway (backend), Vercel (frontend)
 
-## 1. Architecture goal
+## 1. System architecture
 
-Build a payment-backed proof layer for AI-agent work on Casper.
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (Vercel)"]
+        Web["Next.js 16 · React 19\n19 routes"]
+    end
 
-The product must prove three things in one judge-friendly flow:
+    subgraph Backend["Backend (Railway)"]
+        API["Fastify 5 API · Node 20+\napi.sealrail.xyz"]
+        DB[("SQLite · Persistent Volume\n/data")]
+        Agent["Agent Runtime\nLLM worker (Groq)"]
+        Verifier["Verifier Engine\nSchema + WASM hash"]
+        CSPRCloud["CSPR.cloud Client\nRates · Deploys · Nodes"]
+        MCP["MCP Server\n@modelcontextprotocol/sdk"]
+        State["Payment State Machine\nrequested → anchored → payable"]
+    end
 
-1. A user created a payment-backed task.
-2. An AI-agent result was checked by a Blocky-compatible verifier.
-3. The resulting proof hash was anchored on Casper.
+    subgraph External["External Services"]
+        LLM["Groq / OpenAI-compatible"]
+        Casper["Casper Testnet\nProofRegistry contract"]
+        Blocky["Blocky AS\nTEE Attestation (pending)"]
+        CSPR["CSPR.cloud API\nIndexed Casper data"]
+    end
 
-## 2. System overview
-
-```text
-User / Judge Dashboard
-        |
-        v
-Backend API
-        |
-        +-- Agent Task Service
-        |       |
-        |       +-- creates task
-        |       +-- tracks payment state
-        |       +-- stores proof state
-        |
-        +-- Blocky Adapter
-        |       |
-        |       +-- local-server provider now
-        |       +-- hosted-TEE provider when Blocky key arrives
-        |       +-- verifies attestation claims
-        |
-        +-- Casper Anchoring Service
-        |       |
-        |       +-- calls Odra proof registry
-        |       +-- stores attestation hash and output hash
-        |
-        +-- x402-style Payment Gate
-                |
-                +-- requested
-                +-- proof_pending
-                +-- proof_verified
-                +-- payable
-                +-- paid
+    Web --> API
+    API --> DB
+    API --> Agent --> LLM
+    API --> Verifier
+    API --> State
+    API --> CSPRCloud --> CSPR
+    API --> Casper
+    API --> Blocky
+    MCP --> API
 ```
 
-## 3. Components
+## 2. Full data flow
 
-### 3.1 Frontend Dashboard
+```mermaid
+sequenceDiagram
+    actor B as Buyer
+    participant W as sealrail.xyz
+    participant API as api.sealrail.xyz
+    participant DB as SQLite
+    participant A as Agent (Groq)
+    participant V as Verifier
+    participant C as Casper Testnet
+    participant CS as CSPR.cloud
 
-Purpose: give judges a clear proof trail.
+    B->>W: Open /run, create task
+    W->>API: POST /api/tasks
+    API->>DB: Store task (payment_state: requested)
+    API-->>W: task_id
 
-Pages:
+    B->>W: Click "Run full flow"
+    W->>API: POST /api/tasks/:id/run
+    API->>A: Send structured prompt
+    A-->>API: Structured output + hashes
+    API->>DB: Store output, hashes
 
-| Page | Purpose |
+    API->>V: Verify against schema + WASM hash
+    V-->>API: Proof verified
+    API->>DB: Store verification result
+
+    API->>C: Anchor proof hash on ProofRegistry
+    C-->>API: Deploy hash
+    API->>CS: Confirm deploy (CSPR.cloud)
+    CS-->>API: Deploy confirmed
+    API->>DB: payment_state: anchored
+
+    B->>W: Click "Unlock payment"
+    W->>API: POST /api/tasks/:id/unlock-payment
+    API->>DB: Check proof verified → payment_state: payable
+    API-->>W: Payment unlockable
+```
+
+## 3. Component breakdown
+
+### 3.1 Frontend (sealrail.xyz)
+
+| Page | Route | Purpose |
+|---|---|---|
+| Homepage | `/` | Product story, hero, primary CTA |
+| Run flow | `/run` | One-click proof-gated payment flow |
+| Marketplace | `/marketplace` | Invoice Risk Agent + RWA Compliance Agent |
+| Marketplace detail | `/marketplace/[id]` | Agent listing detail with pricing |
+| Proof explorer | `/proofs` | Browse all anchored proofs |
+| Proof detail | `/proofs/[id]` | Full proof trail: hashes, receipt, Casper state |
+| Agent registry | `/agents` | Registered agents with code hashes |
+| Agent owner | `/owner` | Agent management dashboard |
+| Workflows | `/workflows` | Multi-step workflow templates |
+| Status | `/status` | Backend, LLM, verifier, Casper, CSPR.cloud status |
+| Reviewer quickstart | `/review` | Judge-friendly evaluation path |
+| Docs | `/docs` | Architecture, API, trust boundaries |
+| Terms | `/terms` | Terms of service |
+| Privacy | `/privacy` | Privacy policy |
+
+**Stack**: Next.js 16 (App Router), React 19, Tailwind 4, CSS Modules
+
+### 3.2 Backend API (api.sealrail.xyz)
+
+**Stack**: Fastify 5, TypeScript 5 (strict), better-sqlite3, Node 20+
+
+**Routes**:
+
+| Module | Endpoints |
 |---|---|
-| `/` | Product story and primary task run CTA |
-| `/run` | Submit invoice task and run proof flow |
-| `/proofs` | Browse anchored proofs |
-| `/proofs/[taskId]` | Inspect one proof in detail |
-| `/agents` | View registered agents and code hashes |
+| Tasks | `POST /api/tasks`, `GET /api/tasks/:id`, `POST /api/tasks/:id/run`, `POST /api/tasks/:id/verify`, `POST /api/tasks/:id/anchor`, `POST /api/tasks/:id/unlock-payment` |
+| Proofs | `GET /api/proofs`, `GET /api/proofs/:id` |
+| Marketplace | `GET /api/marketplace`, `GET /api/marketplace/:id` |
+| Agents | `GET /api/agents`, `POST /api/agents` |
+| Status | `GET /api/status`, `GET /api/health` |
+| Integrations | `GET /api/integrations/agent-manifest`, `GET /api/integrations/cspr-cloud/status`, `GET /api/integrations/cspr-cloud/deploys/:hash`, `GET /api/integrations/cspr-cloud/rates/cspr/latest` |
+| Admin | `GET /api/admin/readiness` |
+| Keys | `POST /api/keys`, `GET /api/keys` |
 
-Key UI states:
+**Services**:
 
-```text
-Payment intent created
-Agent output generated
-Blocky verification running
-Proof verified
-Anchoring on Casper
-Payment unlocked
+```
+backend/src/
+  routes/           Fastify route modules
+  services/         Domain logic
+    agent.ts        Agent dispatch + LLM prompt building
+    verification.ts Schema + WASM hash verification engine
+    anchoring.ts    Casper client + deploy management
+    payments.ts     Payment state machine (requested → anchored → payable)
+    reputation.ts   Proof/payment history scoring
+    keys.ts         scrypt-hashed API key management
+    csprCloud.ts    CSPR.cloud client (deploys, rates, nodes, x402)
+  mcp/              MCP stdio server (5 tools)
+  scripts/seed.ts   Idempotent first-party record setup
 ```
 
-### 3.2 Backend API
+**Payment state machine**:
 
-Recommended stack:
-
-```text
-Node.js / TypeScript
-Fastify or Express
-SQLite for hackathon local persistence
-CLI adapters for bky-as, bky-c, and casper-client
+```
+requested → proof_pending → proof_verified → anchored → payable → paid
+                                                         ↘ failed
 ```
 
-Why this stack:
+Core invariants enforced in the state machine:
+- No payment unlocks without `proof_verified` state
+- Placeholder proofs can never advance state
+- Anchor must succeed before `anchored` state
+- Payment unlock checks proof ownership + state
 
-1. Fast to build.
-2. Easy frontend integration.
-3. Easy shelling out to Blocky CLI and Casper CLI.
-4. Good enough for hackathon proof.
+### 3.3 CSPR.cloud Integration
 
-### 3.3 Blocky Adapter
+Four live endpoints:
 
-Interface:
+```typescript
+// 1. Status check — CSPR.cloud API + x402 + node health
+GET /api/integrations/cspr-cloud/status
+→ { api_reachable, x402_ready, node_healthy, latest_rate, ... }
 
-```ts
-type BlockyMode = "local-server" | "hosted-tee";
+// 2. Deploy confirmation
+GET /api/integrations/cspr-cloud/deploys/:deployHash
+→ { deploy_hash, status, block_hash, timestamp, ... }
 
-interface BlockyProvider {
-  mode: BlockyMode;
-  attestInvoiceRisk(input: InvoiceRiskInput): Promise<BlockyAttestationResult>;
-  verifyAttestation(attestationPath: string): Promise<VerifiedBlockyClaims>;
-}
+// 3. CSPR/USD rate
+GET /api/integrations/cspr-cloud/rates/cspr/latest
+→ { rate: "0.00206217", ... }
+
+// 4. x402 facilitator discovery
+GET /api/integrations/cspr-cloud/status
+→ { x402_ready: true, networks: ["casper-test"] }
 ```
 
-Current provider:
+Background probe polls CSPR.cloud every 30s, caching results for `/api/status`.
 
-```text
-local-server provider
-```
+### 3.4 MCP Server
 
-Uses:
+Real `@modelcontextprotocol/sdk` stdio server:
 
 ```bash
-cat fn-call.json | bky-as attest-fn-call > out.json
-jq '{ enclave_attested_application_public_key: .enclave_attested_application_public_key.enclave_attestation, transitive_attested_function_call: .transitive_attestation }' out.json | bky-as verify-fn-call > verified.json
+cd backend && npm run mcp
 ```
 
-Correction for implementation: use exact verified command already tested:
+5 tools exposed:
 
-```bash
-jq '{ enclave_attested_application_public_key: .enclave_attested_application_public_key.enclave_attestation, transitive_attested_function_call: .transitive_attested_function_call.transitive_attestation }' out.json | bky-as verify-fn-call > verified.json
+| Tool | Type | Purpose |
+|---|---|---|
+| `sealrail_status` | Read | Backend, Casper, CSPR.cloud, verifier, trust boundaries |
+| `sealrail_agent_manifest` | Read | Machine-readable integration manifest |
+| `sealrail_list_proofs` | Read | List proof bundles and payment states |
+| `sealrail_get_proof` | Read | Fetch proof bundle by ID |
+| `sealrail_create_payment_task` | Write | Create payment-backed task (requires API key) |
+
+Any MCP-compatible agent (Claude, Cursor, Copilot) can discover and call SealRail.
+
+### 3.5 Casper Contract (Odra)
+
+**ProofRegistry** deployed on Casper testnet:
+
+```
+Package hash: hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846
+Deploy tx:    https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196
 ```
 
-Hosted provider later changes config:
+Entry points: `register_agent`, `create_payment_intent`, `anchor_proof`, `mark_paid`, `get_agent`, `get_task`
 
-```toml
-host = "HOSTED_BLOCKY_TEE_SERVER"
-auth_token = "BLOCKY_AS_API_KEY"
+23/23 tests passing (`cargo odra test`).
+
+### 3.6 LLM Agent Runtime
+
+| Provider | Status |
+|---|---|
+| Groq | Configured, live |
+| OpenAI-compatible | `LLM_API_BASE_URL` + `LLM_API_KEY` |
+| None | Fails 503 honestly — never fabricates |
+
+Agents receive structured prompts, return hash-bound output with input/output hashes. The verifier checks output against the registered schema + WASM hash before any state can advance.
+
+### 3.7 Blocky TEE Adapter
+
+| Mode | Status |
+|---|---|
+| `local-server` | Adapter built, CLI integration tested |
+| `hosted-tee` | Config-gated, pending Blocky AS access provisioning |
+| Unavailable | `GET /api/status` reports honestly — never silently simulates |
+
+## 4. Deployment architecture
+
+```mermaid
+flowchart LR
+    GH["GitHub\nmaster branch"]
+    Railway["Railway\napi.sealrail.xyz"]
+    Vercel["Vercel\nsealrail.xyz"]
+    Volume["Persistent Volume\n/data (SQLite)"]
+    CI["GitHub Actions\nCI + CodeQL"]
+
+    GH -->|push| CI
+    CI -->|pass| Railway
+    CI -->|pass| Vercel
+    Railway --> Volume
 ```
 
-### 3.4 Casper Proof Registry
-
-Purpose: store proof metadata on Casper.
-
-Odra contract modules:
-
-```text
-AgentRegistry
-ProofRegistry
-PaymentIntentRegistry
-```
-
-For qualification, these can live in one contract:
-
-```text
-VerifiedAgentPayments
-```
-
-Contract responsibilities:
-
-1. Register an agent.
-2. Create a payment-backed task intent.
-3. Anchor proof hashes.
-4. Mark task as verified.
-5. Expose getters for dashboard.
-
-### 3.5 Payment Gate
-
-The payment layer is modelled first as state because the hackathon core is proof + Casper transaction.
-
-Payment states:
-
-```text
-requested -> proof_pending -> proof_verified -> payable -> paid
-```
-
-Minimum viable behavior:
-
-1. User creates task with payment intent amount.
-2. Task starts as `requested`.
-3. Backend generates/verifies Blocky proof.
-4. Casper proof registry marks task as `proof_verified`.
-5. UI marks it `payable`.
-6. User or user action marks `paid`.
-
-Stretch:
-
-```text
-integrate real x402 flow for machine payment request/settlement
-```
-
-## 4. Data models
-
-### 4.1 Agent
-
-```ts
-type Agent = {
-  agentId: string;
-  owner: string;
-  name: string;
-  description: string;
-  taskType: "invoice_risk";
-  verifierFunction: "verifyInvoiceRisk";
-  wasmCodeHash: string;
-  blockyMode: "local-server" | "hosted-tee";
-  active: boolean;
-  createdAt: string;
-};
-```
-
-### 4.2 Task
-
-```ts
-type AgentTask = {
-  taskId: string;
-  agentId: string;
-  invoiceId: string;
-  paymentAmount: string;
-  paymentCurrency: "CSPR" | "USD";
-  paymentState: "requested" | "proof_pending" | "proof_verified" | "payable" | "paid" | "failed";
-  inputHash?: string;
-  outputHash?: string;
-  attestationHash?: string;
-  casperDeployHash?: string;
-  verified: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-```
-
-### 4.3 Invoice input
-
-```ts
-type InvoiceRiskInput = {
-  task_id: string;
-  invoice_id: string;
-  vendor: string;
-  buyer: string;
-  amount_usd: number;
-  currency: string;
-  due_days: number;
-  line_items: string[];
-  ai_suggested_risk: number;
-};
-```
-
-### 4.4 Verified output
-
-```ts
-type InvoiceRiskOutput = {
-  success: boolean;
-  error: string;
-  value: {
-    task_id: string;
-    invoice_id: string;
-    approved: boolean;
-    risk_score: number;
-    reason_codes: string[];
-    policy: string;
-    ai_score_accepted: boolean;
-  };
-};
-```
-
-### 4.5 Blocky claims
-
-```ts
-type VerifiedBlockyClaims = {
-  hash_of_code: string;
-  function: string;
-  hash_of_input: string;
-  output: string;
-  hash_of_secrets: string;
-};
-```
-
-## 5. Backend API contracts
-
-### POST `/api/tasks`
-
-Creates a payment-backed invoice verification task.
-
-Request:
-
-```json
-{
-  "invoice_id": "INV-2026-TEE-001",
-  "vendor": "Lagos Solar Logistics Ltd",
-  "buyer": "RWA Credit Pool A",
-  "amount_usd": 4200,
-  "currency": "USD",
-  "due_days": 30,
-  "line_items": ["solar panel shipment", "customs documentation"],
-  "ai_suggested_risk": 20,
-  "payment_amount": "1.0",
-  "payment_currency": "CSPR"
-}
-```
-
-Response:
-
-```json
-{
-  "task_id": "task-casper-run-001",
-  "payment_state": "requested"
-}
-```
-
-### POST `/api/tasks/:taskId/run-proof`
-
-Runs Blocky attestation and verification.
-
-Response:
-
-```json
-{
-  "task_id": "task-casper-run-001",
-  "blocky_mode": "local-server",
-  "verified": true,
-  "claims": {
-    "hash_of_code": "...",
-    "hash_of_input": "...",
-    "hash_of_secrets": "..."
-  },
-  "output": {
-    "approved": true,
-    "risk_score": 10
-  },
-  "attestation_hash": "80d086e89c3261c617cfac916e6b02b5b9e6649769734375c3a3595f7b95cd44"
-}
-```
-
-### POST `/api/tasks/:taskId/anchor`
-
-Anchors proof hash on Casper.
-
-Response:
-
-```json
-{
-  "task_id": "task-casper-run-001",
-  "casper_deploy_hash": "...",
-  "payment_state": "proof_verified"
-}
-```
-
-### POST `/api/tasks/:taskId/mark-paid`
-
-Marks verified task as paid for run/payment-gate purposes.
-
-Response:
-
-```json
-{
-  "task_id": "task-casper-run-001",
-  "payment_state": "paid"
-}
-```
-
-### GET `/api/tasks/:taskId`
-
-Returns full proof trail.
-
-### GET `/api/proofs`
-
-Returns proof explorer list.
-
-### GET `/api/agents`
-
-Returns registered agents.
-
-## 6. Odra contract design
-
-Contract name:
-
-```text
-VerifiedAgentPayments
-```
-
-Storage:
-
-```rust
-pub struct VerifiedAgentPayments {
-    owner: Var<Address>,
-    agents: Mapping<String, AgentRecord>,
-    agent_registered: Mapping<String, bool>,
-    tasks: Mapping<String, TaskRecord>,
-    task_registered: Mapping<String, bool>,
-}
-```
-
-Use explicit sentinel mappings because OdraVM `Mapping<Address, T>` can return defaults in local tests. Use sentinel pattern for all critical existence checks.
-
-Types:
-
-```rust
-#[odra::odra_type]
-pub struct AgentRecord {
-    pub owner: Address,
-    pub name: String,
-    pub verifier_function: String,
-    pub wasm_code_hash: String,
-    pub active: bool,
-}
-
-#[odra::odra_type]
-pub struct TaskRecord {
-    pub agent_id: String,
-    pub task_id: String,
-    pub payment_amount: U512,
-    pub payment_state: String,
-    pub input_hash: String,
-    pub output_hash: String,
-    pub attestation_hash: String,
-    pub verified: bool,
-}
-```
-
-Entry points:
-
-```rust
-pub fn init(&mut self)
-pub fn register_agent(&mut self, agent_id: String, name: String, verifier_function: String, wasm_code_hash: String)
-pub fn create_payment_intent(&mut self, task_id: String, agent_id: String, payment_amount: U512)
-pub fn anchor_proof(&mut self, task_id: String, input_hash: String, output_hash: String, attestation_hash: String)
-pub fn mark_paid(&mut self, task_id: String)
-pub fn get_agent(&self, agent_id: String) -> Option<AgentRecord>
-pub fn get_task(&self, task_id: String) -> Option<TaskRecord>
-```
-
-Events:
-
-```rust
-AgentRegistered
-PaymentIntentCreated
-ProofAnchored
-PaymentMarkedPaid
-```
-
-Errors:
-
-```rust
-NotOwner
-AgentNotFound
-AgentInactive
-TaskNotFound
-TaskAlreadyExists
-ProofAlreadyAnchored
-ProofMissing
-PaymentNotVerified
-```
-
-## 7. File structure
-
-```text
-casper-tee-agent-payments/
-  memory.md
-  README.md
-  .env.example
-  docs/
-    PRD.md
-    PRD.docx
-    ARCHITECTURE.md
-    DESIGN.md
-    TASKS.md
-  contracts/
-    verified-agent-payments/
-      Cargo.toml
-      rust-toolchain.toml
-      src/lib.rs
-      tests/proof_registry.rs
-  backend/
-    package.json
-    src/
-      index.ts
-      db.ts
-      services/blocky.ts
-      services/casper.ts
-      services/tasks.ts
-      routes/tasks.ts
-      types.ts
-  frontend/
-    package.json
-    src/
-      app/page.tsx
-      app/run/page.tsx
-      app/proofs/page.tsx
-      app/proofs/[taskId]/page.tsx
-      components/ProofTimeline.tsx
-      components/PaymentStatus.tsx
-      lib/api.ts
-  blocky/
-    invoice-verifier/
-      main.go
-      go.mod
-      fn-call.template.json
-```
-
-## 8. Environment variables
-
-```text
-CSPR_CLOUD_API_KEY
-CSPR_CLOUD_TOKEN
-CASPER_RPC_URL
-CASPER_CHAIN_NAME
-CASPER_ACCOUNT_KEY_PATH
-BLOCKY_MODE
-BLOCKY_AS_API_KEY
-BLOCKY_AS_HOST
-BLOCKY_CONFIG_PATH
-DATABASE_URL
-```
-
-## 9. Security notes
-
-1. Never commit real API keys.
-2. Never claim local Blocky mode is a real TEE.
-3. Hash sensitive inputs before anchoring on-chain.
-4. Keep invoice product data synthetic.
-5. Validate that `hash_of_code` matches expected WASM hash before accepting proof.
-6. Validate function name is exactly `verifyInvoiceRisk`.
-7. Validate decoded output references the same `task_id`.
-
-## 10. Build sequencing
-
-Backend/proof layer first:
-
-1. Odra proof registry contract.
-2. Contract tests.
-3. Backend task store.
-4. Blocky adapter using existing local proof path.
-5. Casper anchoring adapter.
-6. Payment state machine.
-7. Frontend dashboard.
-8. README and product run script.
-
-## 11. Acceptance gate for Phase 2
-
-Phase 2 is complete when these files exist:
-
-1. `docs/ARCHITECTURE.md`
-2. `docs/DESIGN.md`
-3. `docs/TASKS.md`
-4. `.env.example`
-5. Updated `memory.md`
-
-Next phase after approval:
-
-```text
-Phase 2.5 backend/code audit plan, then Phase 3 build task 1: Odra proof registry contract.
-```
+- **Railway**: Auto-deploys from `master`, persistent volume for SQLite, health checks against `/api/health`
+- **Vercel**: Auto-deploys frontend from `master`, `NEXT_PUBLIC_API_URL=https://api.sealrail.xyz`
+- **GitHub Actions**: CI runs 754 backend tests + `tsc --noEmit` + CodeQL on every push
+
+## 5. Environment variables
+
+Backend (`backend/.env`):
+
+| Var | Required | Purpose |
+|---|---|---|
+| `DATABASE_PATH` | No | SQLite file path (default: `/data/sealrail.db` on Railway) |
+| `PORT` | No | Server port (default: 3001) |
+| `NODE_ENV` | No | `development` / `production` |
+| `LLM_API_BASE_URL` | Yes* | OpenAI-compatible endpoint for agent execution |
+| `LLM_API_KEY` | Yes* | API key for LLM provider |
+| `LLM_MODEL` | No | Model name (default: `gpt-4o-mini`) |
+| `CASPER_MODE` | No | `dry_run` (default), `testnet`, `mainnet` |
+| `CASPER_CONTRACT_HASH` | Yes** | Deployed ProofRegistry hash |
+| `CSPR_CLOUD_TOKEN` | No | CSPR.cloud API token for Casper data |
+| `BLOCKY_MODE` | No | `none` (default), `local-server`, `hosted-tee` |
+| `BLOCKY_AS_API_KEY` | No | Blocky AS API key |
+| `BLOCKY_AS_HOST` | No | Blocky AS host URL |
+| `ALLOW_BOOTSTRAP_KEYS` | No | Permit self-serve API key creation (default: `true`) |
+| `FRONTEND_ORIGIN` | No | CORS allowlist |
+
+\* Required for agent execution. Without it, runs fail 503.
+\** Required when `CASPER_MODE=testnet` or `mainnet`.
+
+## 6. Trust boundaries
+
+| Layer | Production status | Guard |
+|---|---|---|
+| CSPR.cloud API | ✅ Live | Token-based auth, public status visible |
+| Casper testnet anchoring | ✅ Live | Fails closed if `CASPER_MODE` misconfigured |
+| MCP server | ✅ Live | Read tools public, write tool requires API key |
+| LLM agent execution | ✅ Live (Groq) | Fails 503 if unconfigured, never fabricates |
+| Payment unlock | ✅ Enforced | State machine, placeholder proofs can't advance |
+| TEE attestation | ⚠️ Pending | Adapter built, config-gated, never silently simulated |
+| Mainnet anchoring | ❌ Not active | Path exists, fails closed |
+
+## 7. Test architecture
+
+| Suite | Count | Framework | Coverage |
+|---|---|---|---|
+| Backend unit | 754 tests | Vitest | State machine, routes, services, verification, payments, keys, marketplace, CSPR.cloud, MCP |
+| Contract | 23/23 | cargo-odra | Agent registry, proof anchoring, payment transitions, error paths |
+| TypeScript | tsc --noEmit | TypeScript 5 strict | Full backend + frontend |
+| CI | GitHub Actions | CI + CodeQL | Every push to master |
