@@ -56,9 +56,14 @@ describe("toProofRow", () => {
     expect(toProofRow(makeDetail({ status: "failed" }), "A").proofState).toBe("Failed");
   });
 
-  it("URL-encodes the task title in the detail link", () => {
-    const row = toProofRow(makeDetail({ status: "paid", title: "INV 20/42" }), "A");
-    expect(row.href).toBe("/proofs/INV%2020%2F42");
+  it("links to the canonical proof id when a proof record exists", () => {
+    const row = toProofRow(makeDetail({ status: "paid", proof: { id: "proof 20/42" } }), "A");
+    expect(row.href).toBe("/proofs/proof%2020%2F42");
+  });
+
+  it("falls back to the task id when no proof record exists", () => {
+    const row = toProofRow(makeDetail({ status: "running", proof: null }), "A");
+    expect(row.href).toBe("/proofs/task-1");
   });
 });
 

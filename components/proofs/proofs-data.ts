@@ -49,7 +49,7 @@ export function toProofRow(detail: TaskDetail, agentName: string): ProofRow {
     payColor: payState.color,
     hash: proof?.casper_anchor_hash ?? (proof ? "pending" : "none"),
     mode: "TEE Verification Mode",
-    href: `/proofs/${encodeURIComponent(detail.task.title || detail.task.id)}`,
+    href: `/proofs/${encodeURIComponent(proof?.id ?? detail.task.id)}`,
   };
 }
 
