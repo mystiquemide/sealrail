@@ -233,7 +233,11 @@ export function getDeploymentReadiness(): DeploymentReadiness {
     }
   }
   if (!blocky.cliInstalled) {
-    blockers.push("bky-as CLI not found. Install Blocky AS CLI from https://github.com/blocky/blocky-as");
+    if (config.casperMode === "mainnet") {
+      blockers.push("bky-as CLI not found. Install Blocky AS CLI from https://github.com/blocky/blocky-as");
+    } else {
+      warnings.push("bky-as CLI not found. Hosted/local TEE attestation is unavailable; LLM-backed agent execution and Casper testnet anchoring remain operational.");
+    }
   }
 
   // Casper blockers
@@ -303,16 +307,19 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
   const llm = getLlmReadiness();
   const database = getDbReadiness();
 
-  // Determine overall status
+  // Determine overall public status from blocking readiness only.
+  // In testnet mode, hosted Blocky / bky-as availability is reported honestly
+  // via the dedicated fields below, but it should not mark the whole backend as
+  // degraded when Casper anchoring, database, and LLM-backed agent execution are
+  // operational. Config validation treats missing hosted TEE access as a
+  // warning in testnet, so public status must follow the same contract.
   let status: "ok" | "degraded" | "not_ready";
-  if (database.connected && casper.mode !== "mainnet") {
-    if (blocky.cliInstalled) {
-      status = "ok";
-    } else {
-      status = "degraded";
-    }
-  } else {
+  if (!database.connected || casper.mode === "mainnet" || casper.testnetBlocked) {
     status = "not_ready";
+  } else if (!llm.configured && llm.provider !== "none") {
+    status = "degraded";
+  } else {
+    status = "ok";
   }
 
   return {
