@@ -20,6 +20,7 @@ import { registerVerifierRoutes } from "./routes/verifiers.js";
 import { registerAgentRuntimeRoutes } from "./routes/agent-runtime.js";
 import { registerIntegrationRoutes } from "./routes/integrations.js";
 import { registerStatusRoutes, setStatusStartTime } from "./routes/status.js";
+import { startCsprCloudHealthProbe } from "./services/cspr-health-cache.js";
 import { requireApiKey } from "./middleware/auth.js";
 import { validateDeploymentConfig, getValidationSummary } from "./services/config-validation.js";
 import { getPublicStatus } from "./services/status.js";
@@ -226,6 +227,9 @@ export async function startServer() {
   app.log.info(
     `Sealrail backend running at http://${config.host}:${config.port} - mode: ${config.teeVerificationMode}`
   );
+
+  // Start CSPR.cloud health probe (background, non-blocking)
+  startCsprCloudHealthProbe();
 
   // One-line config-state summary so a misconfigured start is impossible to miss
   const llmConfigured = Boolean(config.llmApiBaseUrl && config.llmApiKey);

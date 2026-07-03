@@ -8,7 +8,6 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { requireApiKey } from "../middleware/auth.js";
 import {
   getPublicStatus,
-  getPublicStatusAsync,
   getAdminStatus,
   getHealth,
 } from "../services/status.js";
@@ -32,12 +31,12 @@ export function registerStatusRoutes(app: FastifyInstance): void {
 
   // ── Public status (sanitized for external consumers) ──
   app.get("/api/status", async (_request: FastifyRequest, reply: FastifyReply) => {
-    return reply.send(await getPublicStatusAsync(_startTime));
+    return reply.send(getPublicStatus(_startTime));
   });
 
   // ── Detailed status (public - shows read-only readiness without secrets) ──
   app.get("/api/status/detailed", async (_request: FastifyRequest, reply: FastifyReply) => {
-    return reply.send(await getPublicStatusAsync(_startTime));
+    return reply.send(getPublicStatus(_startTime));
   });
 
   // ── Admin status (authenticated, full detail) ──

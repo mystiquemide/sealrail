@@ -9,7 +9,8 @@ import { isCliAvailable, getCliVersion } from "./tee.js";
 import { isLlmConfigured, getLlmProviderHealth } from "./llm-provider.js";
 import { isCasperClientAvailable, getCasperClientVersion } from "./casper.js";
 import { healthCheck as blockyHealthCheck } from "./blocky.js";
-import { isCsprCloudConfigured, getCsprCloudHealth } from "./cspr-cloud.js";
+import { isCsprCloudConfigured } from "./cspr-cloud.js";
+import { getCachedCsprCloudHealth } from "./cspr-health-cache.js";
 import { getDb } from "../db.js";
 
 // ── Blocky status ────────────────────────
@@ -313,9 +314,7 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
   const database = getDbReadiness();
 
   const csprCloudConfigured = isCsprCloudConfigured();
-
-  // CSPR.cloud values are populated by the now-async caller.
-  // This keeps the synchronous contract working for tests.
+  const csprHealth = getCachedCsprCloudHealth();
 
   // Determine overall public status from blocking readiness only.
   // In testnet mode, hosted Blocky / bky-as availability is reported honestly
@@ -346,31 +345,13 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     llm_configured: llm.configured,
     db_connected: database.connected,
     cspr_cloud_configured: csprCloudConfigured,
-    cspr_cloud_api_reachable: false,
-    cspr_cloud_x402_ready: false,
-    cspr_cloud_latest_rate: null,
+    cspr_cloud_api_reachable: csprHealth.apiReachable,
+    cspr_cloud_x402_ready: csprHealth.x402Ready,
+    cspr_cloud_latest_rate: csprHealth.latestRate,
     node_env: config.nodeEnv,
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
   };
-}
-
-export async function getPublicStatusAsync(startTime: number): Promise<PublicStatusResponse> {
-  const base = getPublicStatus(startTime);
-
-  if (base.cspr_cloud_configured) {
-    try {
-      const health = await getCsprCloudHealth();
-      base.cspr_cloud_api_reachable = health.apiReachable;
-      base.cspr_cloud_x402_ready = health.x402FacilitatorReachable;
-      base.cspr_cloud_latest_rate = health.latestCsprUsdRate;
-    } catch (err: unknown) {
-      // Probe failed — leave defaults.
-      console.error("CSPR.cloud health probe failed in getPublicStatusAsync:", err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  return base;
 }
 
 // ── Admin-safe status (full detail, no secrets) ─
