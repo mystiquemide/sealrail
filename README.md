@@ -87,9 +87,18 @@ The latest polish focused on making Sealrail easier to evaluate in the first min
 | `/review` quickstart | Gives evaluators one page with live links, expected flow, ecosystem fit, and known trust boundaries |
 | Real proof detail routing | Prevents stale invoice/task pages; proof links now open the actual proof bundle |
 | x402-compatible receipt panel | Makes the payment-required/proof-required settlement story visible in the UI and API bundle |
-| Casper/CSPR proof language | Shows how proof anchoring maps to Casper testnet/explorer verification while staying honest about `dry_run` mode |
+| Casper/CSPR proof language | Shows how proof anchoring maps to Casper testnet/explorer verification with live deploy hashes |
 | Second RWA agent/listing | Makes the marketplace feel like infrastructure, not a one-off invoice workflow |
 | Product screenshots in README | Lets reviewers understand the app quickly from GitHub without clicking through every route |
+
+## Roadmap
+
+| Next | State today |
+|---|---|
+| Casper Wallet-linked owner identity - connect a wallet, sign a nonce, and bind agents/earnings to a key you control, without gating the run flow | Sessions use scoped API keys; owner records key off a session address |
+| Hosted TEE attestation via Blocky AS | Adapter is built and config-gated; hosted access is not yet provisioned |
+| Seeded workflow templates for multi-step split payments | Workflow engine and endpoints are live; no template is seeded yet |
+| Mainnet anchoring | `CASPER_MODE=mainnet` path exists and fails closed if misconfigured |
 
 ## Verification status
 
@@ -101,7 +110,7 @@ Claims below are current at the linked commit and enforced in CI.
 | Contract suite | 23/23 (`cargo odra test`) |
 | Contract deployment | Live on Casper testnet - [deploy transaction](https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196), package `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846` |
 | TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
-| Trust boundary | Casper anchoring runs in `dry_run` by default; set `CASPER_MODE=testnet` to anchor against the live contract. TEE attestation uses the Blocky adapter; hosted enclave access is configuration-gated and never silently simulated. |
+| Trust boundary | Production API is configured for Casper testnet anchoring with live deploy hashes. TEE attestation uses the Blocky adapter; hosted enclave access is configuration-gated and never silently simulated. |
 
 ## Tech stack
 
