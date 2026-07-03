@@ -51,7 +51,7 @@ export default function MarketplacePage() {
         active="Marketplace"
         links={[
           { label: "Proofs", href: "/proofs" },
-          { label: "Agents", href: "/#vertical" },
+          { label: "Agents", href: "/agents" },
         ]}
         cta={{ label: "Start run", href: "/run", variant: "primary" }}
       />

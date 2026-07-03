@@ -15,12 +15,12 @@ type AppNavProps = {
 };
 
 const DEFAULT_LINKS: AppNavLink[] = [
-  { label: "Proofs", href: "/#proofs" },
-  { label: "Agents", href: "/#vertical" },
-  { label: "Docs", href: "/#tee" },
+  { label: "Proofs", href: "/proofs" },
+  { label: "Agents", href: "/agents" },
+  { label: "Docs", href: "/docs" },
 ];
 
-const DEFAULT_CTA: AppNavCta = { label: "View proofs", href: "/#proofs", variant: "ghost" };
+const DEFAULT_CTA: AppNavCta = { label: "View proofs", href: "/proofs", variant: "ghost" };
 
 export function AppNav({ active, links = DEFAULT_LINKS, cta = DEFAULT_CTA, maxWidth = 1240 }: AppNavProps) {
   return (
