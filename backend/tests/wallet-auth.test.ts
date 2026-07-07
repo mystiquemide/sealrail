@@ -18,6 +18,7 @@ const { PrivateKey, KeyAlgorithm } = pkg as unknown as {
     generate(algorithm: number): {
       publicKey: { toHex(): string };
       signAndAddAlgorithmBytes(msg: Uint8Array): Uint8Array;
+      sign(msg: Uint8Array): Uint8Array;
     };
   };
   KeyAlgorithm: { ED25519: number; SECP256K1: number };
@@ -86,6 +87,37 @@ describe("Casper wallet auth", () => {
     });
     expect(listRes.statusCode).toBe(200);
     expect(listRes.json().owner_address).toBe(publicKeyHex);
+  });
+
+  it("verifies a signature with no algorithm-tag byte, matching what a real wallet returns (not casper-js-sdk's own signAndAddAlgorithmBytes convenience format)", async () => {
+    const key = PrivateKey.generate(KeyAlgorithm.ED25519);
+    const publicKeyHex = key.publicKey.toHex();
+
+    const challengeRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/wallet/challenge",
+      payload: { public_key: publicKeyHex },
+    });
+    const challenge = challengeRes.json() as { nonce: string; transaction: { hash: string } };
+    const hashBytes = hexToBytes(challenge.transaction.hash);
+
+    // Real wallets sign the message and return a bare signature - no leading
+    // algorithm-tag byte. This is what tripped up an actual Casper Wallet
+    // user against the first version of this endpoint.
+    const rawSignature = key.sign(hashBytes);
+    expect(rawSignature.length).toBe(64);
+
+    const verifyRes = await app.inject({
+      method: "POST",
+      url: "/api/auth/wallet/verify",
+      payload: {
+        public_key: publicKeyHex,
+        nonce: challenge.nonce,
+        signature: Buffer.from(rawSignature).toString("hex"),
+      },
+    });
+
+    expect(verifyRes.statusCode).toBe(200);
   });
 
   it("verifies a real Secp256k1 wallet signature", async () => {

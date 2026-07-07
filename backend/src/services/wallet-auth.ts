@@ -103,6 +103,42 @@ export function createWalletChallenge(publicKeyHex: string): WalletChallenge {
 }
 
 /**
+ * casper-js-sdk's own PublicKey.verifySignature() unconditionally strips the
+ * first byte, expecting the 1-byte algorithm tag that casper-js-sdk's own
+ * signAndAddAlgorithmBytes() adds (used for signatures the SDK itself
+ * generates and attaches to a Transaction's approvals). Real Casper Wallet
+ * (and other wallets) return a plain signature over the message with no
+ * such tag. Accept either shape: try the bytes as given, and if that fails
+ * and the length matches a raw (untagged) signature, retry with the correct
+ * tag byte (derived from the public key's own algorithm prefix) prepended.
+ */
+function verifiesUnderEitherByteLayout(
+  publicKey: { verifySignature(message: Uint8Array, sig: Uint8Array): boolean },
+  publicKeyHex: string,
+  hashBytes: Buffer,
+  signatureBytes: Buffer
+): boolean {
+  try {
+    if (publicKey.verifySignature(hashBytes, signatureBytes)) return true;
+  } catch {
+    // fall through to the untagged-signature retry below
+  }
+
+  const RAW_SIGNATURE_LENGTH = 64;
+  if (signatureBytes.length === RAW_SIGNATURE_LENGTH) {
+    const algoByte = Buffer.from(publicKeyHex.slice(0, 2), "hex");
+    const tagged = Buffer.concat([algoByte, signatureBytes]);
+    try {
+      if (publicKey.verifySignature(hashBytes, tagged)) return true;
+    } catch {
+      // neither layout verified
+    }
+  }
+
+  return false;
+}
+
+/**
  * Verify that the wallet holding `publicKeyHex` actually signed the
  * challenge transaction for `nonce`. Throws WalletAuthError on any failure;
  * returns silently on success and marks the challenge as used (single use).
@@ -142,14 +178,7 @@ export function verifyWalletChallenge(publicKeyHex: string, nonce: string, signa
 
   const hashBytes = Buffer.from(challenge.transactionHashHex, "hex");
 
-  let valid = false;
-  try {
-    valid = publicKey.verifySignature(hashBytes, signatureBytes);
-  } catch {
-    valid = false;
-  }
-
-  if (!valid) {
+  if (!verifiesUnderEitherByteLayout(publicKey, publicKeyHex, hashBytes, signatureBytes)) {
     throw new WalletAuthError("INVALID_SIGNATURE", "Signature does not match the challenge transaction.");
   }
 
