@@ -50,3 +50,8 @@ docs/audits/SEALRAIL_ELITE_HACKATHON_AUDIT.md
 # Casper keys
 *.pem
 ~/.casper/
+
+# Raw video/audio production working files and internal audit deliverables
+# (not needed in the repo; keep locally, share the finished video separately)
+final-video/
+audit-deliverables/
