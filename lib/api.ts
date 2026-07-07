@@ -164,7 +164,7 @@ export const runDemoInvoiceProof = (body: {
       model_metadata: { provider: string; model: string } | null;
       duration_ms: number;
     };
-  }>("/api/demo/invoice-proof", { method: "POST", body });
+  }>("/api/demo/invoice-proof", { method: "POST", body, auth: true });
 
 // ── Tasks ──
 

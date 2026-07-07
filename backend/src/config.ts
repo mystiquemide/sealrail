@@ -51,6 +51,11 @@ export const config = {
   // to require an authenticated key for POST /api/api-keys.
   allowBootstrapKeys:
     envStr("ALLOW_BOOTSTRAP_KEYS", envStr("NODE_ENV", "development") === "production" ? "false" : "true") === "true",
+  // Require a Casper-wallet-verified API key before the public demo flow will
+  // run. Kill switch: set REQUIRE_WALLET_AUTH=false to fall back to the old
+  // unauthenticated demo-buyer behavior without a code change, if wallet
+  // verification ever misbehaves for real users.
+  requireWalletAuth: envStr("REQUIRE_WALLET_AUTH", "true") === "true",
 
   // Verification mode - TEE verification adapter (no hosted enclave claims)
   teeVerificationMode: "tee_verification_mode" as const,

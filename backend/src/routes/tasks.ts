@@ -22,7 +22,7 @@ import {
 } from "../services/tasks.js";
 import { getAgentOutput, runTaskWithAgentExecution } from "../services/agent-runtime.js";
 import { LlmProviderError } from "../services/llm-provider.js";
-import { requireApiKeyWithScope } from "../middleware/auth.js";
+import { requireApiKey, requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 import { config } from "../config.js";
 import type { Payment, Task, TaskStatus } from "../types.js";
@@ -89,8 +89,9 @@ function publicPayment(payment: Payment | null): Payment | null {
 export function registerTaskRoutes(app: FastifyInstance): void {
 
   // ── POST /api/demo/invoice-proof ─────────
-  // Public demo runner: executes the invoice flow server-side without exposing
-  // API keys or broad write scopes to browsers. Rate limiting still applies.
+  // Demo runner: executes the invoice flow server-side without exposing broad
+  // write scopes to browsers. Requires a Casper-wallet-verified API key
+  // unless REQUIRE_WALLET_AUTH=false (kill switch). Rate limiting still applies.
   app.post<{
     Body: {
       agent_id?: string;
@@ -103,7 +104,10 @@ export function registerTaskRoutes(app: FastifyInstance): void {
     };
   }>(
     "/api/demo/invoice-proof",
-    { schema: { body: createTaskSchema } },
+    {
+      schema: { body: createTaskSchema },
+      preHandler: config.requireWalletAuth ? [requireApiKey] : [],
+    },
     async (request, reply) => {
       const body = request.body;
       try {
@@ -113,7 +117,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
         }
 
         const { task, payment } = createTaskWithPayment({
-          buyerAddress: "demo-buyer",
+          buyerAddress: request.apiKey?.owner_address ?? "demo-buyer",
           agentId,
           title: body.title,
           taskType: body.task_type,

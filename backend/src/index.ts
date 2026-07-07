@@ -19,6 +19,7 @@ import { registerApiKeyRoutes } from "./routes/api-keys.js";
 import { registerVerifierRoutes } from "./routes/verifiers.js";
 import { registerAgentRuntimeRoutes } from "./routes/agent-runtime.js";
 import { registerIntegrationRoutes } from "./routes/integrations.js";
+import { registerWalletAuthRoutes } from "./routes/wallet-auth.js";
 import { registerStatusRoutes, setStatusStartTime } from "./routes/status.js";
 import { startCsprCloudHealthProbe } from "./services/cspr-health-cache.js";
 import { requireApiKey } from "./middleware/auth.js";
@@ -179,6 +180,7 @@ export function buildApp() {
   registerVerifierRoutes(app);
   registerAgentRuntimeRoutes(app);
   registerIntegrationRoutes(app);
+  registerWalletAuthRoutes(app);
 
   return app;
 }

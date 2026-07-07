@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: "Proofs", href: "#proofs" },
   { label: "Agents", href: "/agents" },
   { label: "Docs", href: "/docs" },
+  { label: "Vote on cspr.fans", href: "https://cspr.fans" },
   { label: "Start run", href: "/run" },
 ];
 
@@ -44,6 +45,9 @@ export function Hero() {
           <Link href="/docs" className={styles.navLink}>
             Docs
           </Link>
+          <a href="https://cspr.fans" target="_blank" rel="noopener noreferrer" className={styles.navLink}>
+            Vote on cspr.fans
+          </a>
           <Link href="/run" className={styles.navCta}>
             Start run
           </Link>

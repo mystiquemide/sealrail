@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { SealrailMark } from "@/components/brand/SealrailMark";
 import { MobileNav } from "@/components/nav/MobileNav";
+import { WalletStatus } from "@/components/app/WalletStatus";
 import styles from "./AppNav.module.css";
 
 export type AppNavLink = { label: string; href: string };
@@ -37,6 +40,7 @@ export function AppNav({ active, links = DEFAULT_LINKS, cta = DEFAULT_CTA, maxWi
               {link.label}
             </Link>
           ))}
+          <WalletStatus />
           {cta ? (
             <Link href={cta.href} className={cta.variant === "primary" ? styles.ctaPrimary : styles.cta}>
               {cta.label}
