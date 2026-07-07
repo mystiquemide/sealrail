@@ -1,5 +1,5 @@
 import type { Agent, AgentReputation, Proof, TaskDetail, VerifierTemplate } from "@/lib/api-types";
-import { formatMode } from "@/components/agents/agents-data";
+import { formatMode, hasDemoRuntime } from "@/components/agents/agents-data";
 
 export type ReputationStats = {
   score: number;
@@ -35,6 +35,7 @@ export type AgentProfile = {
   runtimeType: string;
   supportedTaskTypes: string[];
   listingHref?: string;
+  hasDemoRuntime: boolean;
   reputation: ReputationStats;
   verifier: VerifierInfo;
   proofHistory: ProofHistoryItem[];
@@ -76,6 +77,7 @@ export function buildAgentProfile(
     statusColor: STATUS_COLOR[agent.status],
     runtimeType: agent.pricing_model === "workflow_split" ? "Workflow step" : "LLM worker",
     supportedTaskTypes: agent.supported_task_types,
+    hasDemoRuntime: hasDemoRuntime(agent.category),
     reputation: {
       score: reputation.score,
       verifiedRuns: reputation.verified_runs,

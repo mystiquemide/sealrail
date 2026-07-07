@@ -11,7 +11,16 @@ export type AgentListItem = {
   verifier?: string;
   mode?: string;
   profileHref: string;
+  hasDemoRuntime: boolean;
 };
+
+// The public one-click demo (/run) only has an executable agent runtime for
+// invoice-risk tasks. Other categories (e.g. RWA compliance) are listed in
+// the marketplace but have no working run path yet, so their CTA must not
+// pretend otherwise.
+export function hasDemoRuntime(category: string): boolean {
+  return category === "invoice";
+}
 
 const STATUS_COLOR: Record<Agent["status"], string> = {
   active: "#64D96B",
@@ -38,5 +47,6 @@ export function toAgentListItem(agent: Agent, verifiersById: Map<string, Verifie
     verifier: verifier?.name,
     mode: verifier?.mode_support?.[0] ? formatMode(verifier.mode_support[0]) : undefined,
     profileHref: `/agents/${agent.id}`,
+    hasDemoRuntime: hasDemoRuntime(agent.category),
   };
 }

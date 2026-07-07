@@ -34,10 +34,15 @@ export function AgentRow({ agent }: { agent: AgentListItem }) {
       </div>
       {agent.isActive ? (
         <div className={styles.rowActions}>
-          <Link href="/run" className={styles.rowActionPrimary}>
-            Start run
-          </Link>
-          <Link href={agent.profileHref ?? "#"} className={styles.rowActionGhost}>
+          {agent.hasDemoRuntime ? (
+            <Link href="/run" className={styles.rowActionPrimary}>
+              Start run
+            </Link>
+          ) : null}
+          <Link
+            href={agent.profileHref ?? "#"}
+            className={agent.hasDemoRuntime ? styles.rowActionGhost : styles.rowActionPrimary}
+          >
             View proofs
           </Link>
         </div>

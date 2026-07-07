@@ -58,7 +58,11 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
           { label: "Agents", href: "/agents" },
           { label: "Proofs", href: "/proofs" },
         ]}
-        cta={{ label: "Start run", href: "/run", variant: "primary" }}
+        cta={
+          profile?.hasDemoRuntime
+            ? { label: "Start run", href: "/run", variant: "primary" }
+            : undefined
+        }
       />
 
       <main id="main" tabIndex={-1} className={styles.wrap}>
@@ -122,9 +126,13 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
                 </div>
               </div>
               <div className={styles.headerActions}>
-                <Link href="/run" className={styles.btnPrimary}>
-                  Start task
-                </Link>
+                {profile.hasDemoRuntime ? (
+                  <Link href="/run" className={styles.btnPrimary}>
+                    Start task
+                  </Link>
+                ) : (
+                  <p className={styles.reputationNote}>No live demo runtime for this agent yet.</p>
+                )}
                 {profile.listingHref ? (
                   <Link href={profile.listingHref} className={styles.btnGhost}>
                     Open listing
