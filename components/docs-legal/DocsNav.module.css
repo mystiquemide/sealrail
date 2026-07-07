@@ -2,8 +2,9 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(249, 248, 246, 0.9);
-  backdrop-filter: blur(8px);
+  /* Fully opaque - a translucent sticky header lets scrolled content show
+     through blurred behind it, which reads as broken/bleeding text. */
+  background: #f9f8f6;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
