@@ -180,23 +180,33 @@
 .infoRowLabel {
   font-size: 13px;
   color: #8c8c8a;
+  flex-shrink: 0;
 }
 
 .infoRowValue {
   font-size: 13px;
   color: #e4e4e2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .infoRowValueMono {
   font-family: var(--font-mono);
   font-size: 13px;
   color: #e4e4e2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .infoRowValueMonoSmall {
   font-family: var(--font-mono);
   font-size: 12.5px;
   color: #9a9a98;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .infoRowValueMuted {
