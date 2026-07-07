@@ -75,10 +75,20 @@ export default function RunPage() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    listAgents({ status: "active", category: "invoice" }).then(({ agents }) => {
-      setAgent(agents[0] ?? null);
-    });
+    let alive = true;
+
+    listAgents({ status: "active", category: "invoice" })
+      .then(({ agents }) => {
+        if (alive) setAgent(agents[0] ?? null);
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setErrorMessage(err instanceof ApiClientError ? err.message : "Couldn't load the invoice agent. Please refresh.");
+        setAgent(null);
+      });
+
     return () => {
+      alive = false;
       if (copyTimer.current) clearTimeout(copyTimer.current);
     };
   }, []);

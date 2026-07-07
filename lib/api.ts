@@ -20,7 +20,7 @@ import type {
   WorkflowTemplate,
 } from "./api-types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api-production-7409.up.railway.app";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.sealrail.xyz";
 
 export class ApiClientError extends Error {
   status: number;
