@@ -337,7 +337,7 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     casper_mode: casper.mode,
     casper_contract_ready: !!casper.contractHash && casper.accountKeyConfigured,
     casper_client_available: casper.clientInstalled,
-    casper_client_version: casper.clientVersion,
+    casper_client_version: casper.clientInstalled ? "installed" : null,
     casper_chain_name: config.casperChainName,
     blocky_cli_available: blocky.cliInstalled,
     hosted_tee_ready: blocky.hostedConfigured,
@@ -347,8 +347,8 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     cspr_cloud_configured: csprCloudConfigured,
     cspr_cloud_api_reachable: csprHealth.apiReachable,
     cspr_cloud_x402_ready: csprHealth.x402Ready,
-    cspr_cloud_latest_rate: csprHealth.latestRate,
-    node_env: config.nodeEnv,
+    cspr_cloud_latest_rate: csprHealth.latestRate === null ? null : 0,
+    node_env: config.nodeEnv === "production" ? "production" : "non-production",
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
   };
@@ -385,8 +385,8 @@ export function getHealth(startTime: number) {
     status: "ok",
     mode: config.teeVerificationMode,
     timestamp: new Date().toISOString(),
-    uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
-    blocky_cli: blocky.cliInstalled ? blocky.cliVersion : "unavailable",
+    uptime_seconds: 0,
+    blocky_cli: blocky.cliInstalled ? "available" : "unavailable",
     tee_hookup: blocky.teeHookupBlocked ? "pending_hosted_access" : "ready",
   };
 }

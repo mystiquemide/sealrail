@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { label: "How it works", href: "#how" },
   { label: "Proofs", href: "#proofs" },
   { label: "Agents", href: "/agents" },
-  { label: "API", href: "/api-keys" },
   { label: "Docs", href: "/docs" },
   { label: "Start run", href: "/run" },
 ];
@@ -41,9 +40,6 @@ export function Hero() {
           </a>
           <Link href="/agents" className={styles.navLink}>
             Agents
-          </Link>
-          <Link href="/api-keys" className={styles.navLink}>
-            API
           </Link>
           <Link href="/docs" className={styles.navLink}>
             Docs

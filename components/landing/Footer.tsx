@@ -16,7 +16,6 @@ const FOOTER_LINK_HREFS: Record<string, string> = {
   Agents: "/agents",
   Architecture: "/docs#product-flow",
   API: "/docs#api-reference",
-  "API keys": "/api-keys",
   "Casper contract":
     "https://testnet.cspr.live/transaction/b2c6a9326545a137c3d7772385e9fe8003129e29f29336d451785e6a7f3a6196",
   "Blocky adapter": "/docs#safety",

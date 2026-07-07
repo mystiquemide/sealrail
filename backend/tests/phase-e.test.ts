@@ -46,7 +46,6 @@ import type { TaskStatus, PaymentStatus } from "../src/types.js";
 // Use a test-specific file database to avoid shared-memory conflicts with other test suites
 process.env.DATABASE_PATH = ":memory:";
 // Force reset the singleton so this test file gets its own connection
-import { closeDb } from "../src/db.js";
 closeDb();
 
 // ── Test Suite ───────────────────────────

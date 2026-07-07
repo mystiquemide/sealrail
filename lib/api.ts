@@ -137,6 +137,35 @@ export const createTaskFromListing = (listingId: string, body: { buyer_address: 
     { method: "POST", body, auth: true }
   );
 
+// ── Public demo ──
+
+export const runDemoInvoiceProof = (body: {
+  agent_id: string;
+  buyer_address: string;
+  total_amount: number;
+  currency: Currency;
+  title?: string;
+  task_type?: string;
+  input?: Record<string, unknown>;
+}) =>
+  request<{
+    task_id: string;
+    payment_id: string;
+    proof_id: string;
+    anchor_hash: string;
+    deploy_hash: string | null;
+    casper_mode: string;
+    payment_status: string;
+    proof: { wasm_hash: string; attestation_hash: string };
+    output: {
+      result: Record<string, unknown>;
+      input_hash: string;
+      output_hash: string;
+      model_metadata: { provider: string; model: string } | null;
+      duration_ms: number;
+    };
+  }>("/api/demo/invoice-proof", { method: "POST", body });
+
 // ── Tasks ──
 
 export const listTasks = (filters?: { status?: TaskStatus }) =>

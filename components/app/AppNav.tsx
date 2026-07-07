@@ -17,7 +17,6 @@ type AppNavProps = {
 const DEFAULT_LINKS: AppNavLink[] = [
   { label: "Proofs", href: "/proofs" },
   { label: "Agents", href: "/agents" },
-  { label: "API keys", href: "/api-keys" },
   { label: "Docs", href: "/docs" },
 ];
 

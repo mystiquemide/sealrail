@@ -20,12 +20,13 @@ import {
   unlockTaskPayment,
   isValidTaskTransition,
 } from "../services/tasks.js";
-import { runTaskWithAgentExecution } from "../services/agent-runtime.js";
+import { getAgentOutput, runTaskWithAgentExecution } from "../services/agent-runtime.js";
 import { LlmProviderError } from "../services/llm-provider.js";
 import { requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 import { config } from "../config.js";
-import type { TaskStatus } from "../types.js";
+import type { Payment, Task, TaskStatus } from "../types.js";
+import { listAgents } from "../services/agents.js";
 
 // ── Request schemas ──────────────────────
 
@@ -59,10 +60,110 @@ const statusUpdateSchema = {
   },
 };
 
+
+function publicTask(task: Task): Task {
+  const input = task.input as Record<string, unknown>;
+  return {
+    ...task,
+    buyer_address: "demo-buyer",
+    input: {
+      invoice_id: input.invoice_id,
+      amount_usd: input.amount_usd,
+      terms: input.terms,
+    },
+  };
+}
+
+function publicPayment(payment: Payment | null): Payment | null {
+  if (!payment) return null;
+  return {
+    ...payment,
+    buyer_address: "demo-buyer",
+    recipients: [],
+  };
+}
+
 /**
  * Register task-related routes on the Fastify instance.
  */
 export function registerTaskRoutes(app: FastifyInstance): void {
+
+  // ── POST /api/demo/invoice-proof ─────────
+  // Public demo runner: executes the invoice flow server-side without exposing
+  // API keys or broad write scopes to browsers. Rate limiting still applies.
+  app.post<{
+    Body: {
+      agent_id?: string;
+      buyer_address: string;
+      total_amount: number;
+      currency: string;
+      title?: string;
+      task_type?: string;
+      input?: Record<string, unknown>;
+    };
+  }>(
+    "/api/demo/invoice-proof",
+    { schema: { body: createTaskSchema } },
+    async (request, reply) => {
+      const body = request.body;
+      try {
+        const agentId = body.agent_id || listAgents({ status: "active", category: "invoice" })[0]?.id;
+        if (!agentId) {
+          return reply.status(404).send({ error: "AGENT_NOT_FOUND", message: "No active invoice agent is registered." });
+        }
+
+        const { task, payment } = createTaskWithPayment({
+          buyerAddress: "demo-buyer",
+          agentId,
+          title: body.title,
+          taskType: body.task_type,
+          input: body.input,
+          totalAmount: body.total_amount,
+          currency: body.currency,
+        });
+
+        const runRes = await runTaskWithAgentExecution(task.id);
+        verifyTaskProof(task.id);
+        const anchorRes = await anchorTaskProof(task.id);
+        const unlockRes = unlockTaskPayment(task.id);
+        const output = getAgentOutput(task.id);
+        const { proofs } = getTaskWithTrail(task.id);
+        const latestProof = proofs[proofs.length - 1];
+
+        return reply.status(200).send({
+          task_id: task.id,
+          payment_id: payment.id,
+          proof_id: anchorRes.proofId || runRes.proofId,
+          anchor_hash: anchorRes.anchorHash,
+          deploy_hash: anchorRes.deployHash,
+          casper_mode: anchorRes.mode,
+          payment_status: unlockRes.paymentStatus,
+          proof: latestProof ? {
+            wasm_hash: latestProof.wasm_hash,
+            attestation_hash: latestProof.attestation_hash,
+          } : { wasm_hash: "pending", attestation_hash: "pending" },
+          output: output ? {
+            result: output.result,
+            input_hash: output.input_hash,
+            output_hash: output.output_hash,
+            model_metadata: output.model_metadata,
+            duration_ms: output.duration_ms,
+          } : null,
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        request.log.error({ err: msg }, "Public demo invoice proof failed");
+        if (msg.startsWith("INVALID") || msg.startsWith("NO_")) {
+          return reply.status(400).send({ error: "DEMO_FLOW_FAILED", message: msg });
+        }
+        if (err instanceof LlmProviderError && err.code === "PROVIDER_NOT_CONFIGURED") {
+          return reply.status(503).send({ error: "PROVIDER_NOT_CONFIGURED", message: "Agent execution is temporarily unavailable." });
+        }
+        return reply.status(500).send({ error: "DEMO_FLOW_FAILED", message: "Demo flow failed. Try again in a moment." });
+      }
+    }
+  );
+
   // ── POST /api/tasks ────────────────────
   // Phase E: Create a payment-backed task. Requires tasks:write scope.
   app.post<{
@@ -123,7 +224,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
     "/api/tasks",
     async (request, reply) => {
       const { status } = request.query;
-      const tasks = listTasks(status as TaskStatus | undefined);
+      const tasks = listTasks(status as TaskStatus | undefined).map(publicTask);
       return reply.status(200).send({ tasks, count: tasks.length });
     }
   );
@@ -144,8 +245,8 @@ export function registerTaskRoutes(app: FastifyInstance): void {
       }
 
       return reply.status(200).send({
-        task,
-        payment,
+        task: publicTask(task),
+        payment: publicPayment(payment),
         proofs: proofs.map((p) => ({
           id: p.id,
           agent_id: p.agent_id,

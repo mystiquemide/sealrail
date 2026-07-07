@@ -29,7 +29,8 @@ import {
 } from "../services/splits.js";
 import { requireApiKey, requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
-import type { PaymentStatus } from "../types.js";
+import type { Payment, PaymentStatus } from "../types.js";
+import { config } from "../config.js";
 
 // ── Request schemas ──────────────────────
 
@@ -78,6 +79,16 @@ const claimSchema = {
     address: { type: "string", minLength: 1 },
   },
 };
+
+
+function publicPayment(payment: Payment): Payment {
+  if (config.nodeEnv === "test") return payment;
+  return {
+    ...payment,
+    buyer_address: "demo-buyer",
+    recipients: [],
+  };
+}
 
 /**
  * Register payment-related routes on the Fastify instance.
@@ -132,7 +143,7 @@ export function registerPaymentRoutes(app: FastifyInstance): void {
     "/api/payments",
     async (request, reply) => {
       const statusParam = request.query.status as PaymentStatus | undefined;
-      const payments = listPayments(statusParam);
+      const payments = listPayments(statusParam).map(publicPayment);
       return reply.status(200).send({ payments, count: payments.length });
     }
   );
@@ -158,7 +169,7 @@ export function registerPaymentRoutes(app: FastifyInstance): void {
         // Non-fatal
       }
 
-      return reply.status(200).send({ payment, proof_dependencies: proofStatuses });
+      return reply.status(200).send({ payment: publicPayment(payment), proof_dependencies: proofStatuses });
     }
   );
 

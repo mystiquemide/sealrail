@@ -46,10 +46,11 @@ export const config = {
   apiKeyHashLength: envInt("API_KEY_HASH_LENGTH", 64),
   // Requests per minute per client IP. 0 disables rate limiting (local dev
   // and tests); set a positive value on any internet-facing deployment.
-  rateLimitMax: envInt("RATE_LIMIT_MAX", 0),
+  rateLimitMax: envInt("RATE_LIMIT_MAX", envStr("NODE_ENV", "development") === "production" ? 120 : 0),
   // Unauthenticated key creation (self-serve onboarding). Set ALLOW_BOOTSTRAP_KEYS=false
   // to require an authenticated key for POST /api/api-keys.
-  allowBootstrapKeys: envStr("ALLOW_BOOTSTRAP_KEYS", "true") !== "false",
+  allowBootstrapKeys:
+    envStr("ALLOW_BOOTSTRAP_KEYS", envStr("NODE_ENV", "development") === "production" ? "false" : "true") === "true",
 
   // Verification mode - TEE verification adapter (no hosted enclave claims)
   teeVerificationMode: "tee_verification_mode" as const,

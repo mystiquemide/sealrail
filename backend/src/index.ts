@@ -57,6 +57,17 @@ export function buildApp() {
     allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
   });
 
+  app.addHook("onRequest", async (_request, reply) => {
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("x-frame-options", "DENY");
+    reply.header("referrer-policy", "strict-origin-when-cross-origin");
+    reply.header("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    reply.header(
+      "content-security-policy",
+      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+    );
+  });
+
   // Fixed-window per-IP rate limiter as a plain onRequest hook. A hook (unlike
   // @fastify/rate-limit's onRoute mechanism) covers every route regardless of
   // plugin/route registration order in this synchronous factory.

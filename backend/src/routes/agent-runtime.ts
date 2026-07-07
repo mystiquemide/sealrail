@@ -114,19 +114,31 @@ export function registerAgentRuntimeRoutes(app: FastifyInstance): void {
   );
 
   // ── GET /api/agents/runtime/health ──────
-  // Public health endpoint for the agent runtime.
+  // Public health endpoint for the agent runtime. Returns only coarse readiness
+  // booleans; detailed provider/model/runtime metadata belongs in admin status.
   app.get("/api/agents/runtime/health", async (_request, reply) => {
     const runtimeHealth = getAgentRuntimeHealth();
     const llmHealth = getLlmProviderHealth();
     const invoiceRiskHealth = getInvoiceRiskAgentHealth();
 
-    return reply.status(200).send({
+    const payload = {
       status: "ok",
-      runtime: runtimeHealth,
-      llm: llmHealth,
-      invoice_risk_agent: invoiceRiskHealth,
+      runtime_ready: runtimeHealth.agentRuntimeAvailable,
+      llm_configured: llmHealth.configured,
+      invoice_risk_agent_ready: invoiceRiskHealth.providerConfigured,
       mode: config.teeVerificationMode,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    if (config.nodeEnv !== "production") {
+      return reply.status(200).send({
+        ...payload,
+        runtime: runtimeHealth,
+        llm: llmHealth,
+        invoice_risk_agent: invoiceRiskHealth,
+      });
+    }
+
+    return reply.status(200).send(payload);
   });
 }

@@ -1,160 +1,18 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
-import { ApiKeyTable } from "@/components/api-keys/ApiKeyTable";
-import { CreateApiKeyModal } from "@/components/api-keys/CreateApiKeyModal";
 import { EmptyState } from "@/components/app/EmptyState";
-import { ApiClientError, createApiKey, listApiKeys, revokeApiKey } from "@/lib/api";
-import { ensureSession } from "@/lib/session";
-import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
-import type { ApiKey } from "@/lib/api-types";
 import styles from "@/components/api-keys/ApiKeys.module.css";
 
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<ApiKey[] | null>(null);
-  const [error, setError] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [stage, setStage] = useState<"form" | "secret">("form");
-  const [newKeyName, setNewKeyName] = useState("");
-  const [selectedScopes, setSelectedScopes] = useState<string[]>(["tasks:write"]);
-  const [generatedSecret, setGeneratedSecret] = useState("");
-  const [validationMessage, setValidationMessage] = useState("");
-  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
-  const [creating, setCreating] = useState(false);
-  const [revokeErrorId, setRevokeErrorId] = useState<string | null>(null);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    loadKeys();
-    return () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    };
-  }, []);
-
-  async function loadKeys() {
-    try {
-      const { keys } = await listApiKeys();
-      setKeys(keys);
-    } catch {
-      setError(true);
-    }
-  }
-
-  function openModal() {
-    setModalOpen(true);
-    setStage("form");
-    setNewKeyName("");
-    setSelectedScopes(["tasks:write"]);
-    setValidationMessage("");
-  }
-
-  function closeModal() {
-    setModalOpen(false);
-    loadKeys();
-  }
-
-  function toggleScope(scope: string) {
-    setSelectedScopes((prev) => (prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]));
-  }
-
-  async function handleCreateKey() {
-    if (!newKeyName.trim()) {
-      setValidationMessage("Key name is required.");
-      return;
-    }
-    if (selectedScopes.length === 0) {
-      setValidationMessage("Select at least one scope.");
-      return;
-    }
-    setCreating(true);
-    setValidationMessage("");
-    try {
-      const session = await ensureSession();
-      const { secret } = await createApiKey({
-        name: newKeyName.trim(),
-        scopes: selectedScopes,
-        owner_address: session.ownerAddress,
-      });
-      setGeneratedSecret(secret);
-      setStage("secret");
-    } catch (err) {
-      setValidationMessage(err instanceof ApiClientError ? err.message : "Failed to create key.");
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  async function copySecret() {
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    try {
-      await navigator.clipboard.writeText(generatedSecret);
-      setCopyStatus("copied");
-    } catch {
-      setCopyStatus("failed");
-    }
-    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1600);
-  }
-
-  async function handleRevoke(id: string) {
-    setRevokeErrorId(null);
-    try {
-      await revokeApiKey(id);
-      loadKeys();
-    } catch {
-      setRevokeErrorId(id);
-    }
-  }
-
   return (
     <div className={styles.page}>
-      <AppNav
-        active="API keys"
-        maxWidth={1080}
-        links={[
-          { label: "Verifiers", href: "/verifiers" },
-          { label: "Proofs", href: "/proofs" },
-        ]}
-        cta={null}
-      />
-
+      <AppNav active="API keys" maxWidth={1040} links={[{ label: "Docs", href: "/docs" }, { label: "Run demo", href: "/run" }]} cta={null} />
       <main id="main" tabIndex={-1} className={styles.wrap}>
-        <div className={styles.headerRow}>
-          <div className={styles.headerCopy}>
-            <div className={styles.eyebrow}>API keys</div>
-            <h1 className={styles.title}>Create scoped keys for task, proof, agent, and workflow APIs.</h1>
-          </div>
-          <button onClick={openModal} className={styles.btnPrimary}>
-            Create key
-          </button>
-        </div>
-
-        {error ? (
-          <EmptyState error title="Couldn't load API keys" body={BACKEND_UNREACHABLE_BODY} />
-        ) : keys === null ? (
-          <p style={{ color: "#8c8c8a", fontSize: 13 }}>Loading...</p>
-        ) : (
-          <ApiKeyTable keys={keys} onRevoke={handleRevoke} revokeErrorId={revokeErrorId} />
-        )}
-
-        {modalOpen ? (
-          <CreateApiKeyModal
-            stage={stage}
-            newKeyName={newKeyName}
-            selectedScopes={selectedScopes}
-            validationMessage={validationMessage}
-            statusMessage={creating ? "Creating..." : undefined}
-            generatedSecret={generatedSecret}
-            copyLabel={
-              copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy secret"
-            }
-            onNameChange={setNewKeyName}
-            onToggleScope={toggleScope}
-            onCreate={handleCreateKey}
-            onCopySecret={copySecret}
-            onClose={closeModal}
-          />
-        ) : null}
+        <EmptyState
+          title="API key management is private"
+          body="Public demo browsers no longer mint or store API keys. Use backend-managed demo runs from /run, or manage production API keys from a private operator session."
+          actionLabel="Run public demo"
+          actionHref="/run"
+        />
       </main>
     </div>
   );
