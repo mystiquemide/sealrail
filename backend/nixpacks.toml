@@ -14,7 +14,11 @@ cmds = [
 ]
 
 [phases.install]
-cmds = ["npm ci"]
+# --include=dev guarantees devDependencies (typescript, vitest) install even
+# if NODE_ENV=production leaks into the build environment - without it, npm
+# ci silently honors that and skips them, and the next phase's `tsc` isn't
+# found at all.
+cmds = ["npm ci --include=dev"]
 
 [phases.build]
 cmds = ["npm run build"]
