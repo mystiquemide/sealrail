@@ -21,6 +21,7 @@ import {
   runDemoInvoiceProof,
 } from "@/lib/api";
 import { DEMO_BUYER_ADDRESS } from "@/lib/session";
+import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import type { Agent } from "@/lib/api-types";
 import styles from "@/components/run/Run.module.css";
 
@@ -29,6 +30,38 @@ const AMBER = "#F2B84B";
 const RED = "#F45B45";
 const GRAY = "#6E6E6C";
 const NEU = "#C9C9C7";
+
+function formatPaymentState(status: string): string {
+  switch (status) {
+    case "not_started":
+      return "Not started";
+    case "locked":
+      return "Locked";
+    case "unlockable":
+      return "Verified - ready to claim";
+    case "paid":
+      return "Unlocked";
+    case "blocked":
+      return "Blocked";
+    default:
+      return status;
+  }
+}
+
+function paymentStateColorFor(status: string, failed: boolean): string {
+  if (failed) return RED;
+  switch (status) {
+    case "paid":
+      return GREEN;
+    case "unlockable":
+    case "locked":
+      return AMBER;
+    case "blocked":
+      return RED;
+    default:
+      return GRAY;
+  }
+}
 
 const INITIAL_FIELDS: TaskFormFields = {
   invoiceId: "INV-1030",
@@ -63,9 +96,11 @@ export default function RunPage() {
   const [wasmHash, setWasmHash] = useState("pending");
   const [attHash, setAttHash] = useState("pending");
   const [anchHash, setAnchHash] = useState("pending");
-  const [paymentState, setPaymentState] = useState("Not started");
+  const [paymentStatusRaw, setPaymentStatusRaw] = useState("not_started");
+  const [paymentState, setPaymentState] = useState(formatPaymentState("not_started"));
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [fullFlowRunning, setFullFlowRunning] = useState(false);
+  const [agentLoadError, setAgentLoadError] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -78,6 +113,7 @@ export default function RunPage() {
       .catch((err) => {
         if (!alive) return;
         setErrorMessage(err instanceof ApiClientError ? err.message : "Couldn't load the invoice agent. Please refresh.");
+        setAgentLoadError(true);
         setAgent(null);
       });
 
@@ -117,7 +153,8 @@ export default function RunPage() {
       });
 
       setTaskId(demo.task_id);
-      setPaymentState("Locked");
+      setPaymentStatusRaw("locked");
+      setPaymentState(formatPaymentState("locked"));
       setStage(1);
       setBusyStep(2);
 
@@ -146,7 +183,8 @@ export default function RunPage() {
       setStage(5);
       setBusyStep(4);
 
-      setPaymentState(demo.payment_status === "paid" ? "Unlocked" : demo.payment_status);
+      setPaymentStatusRaw(demo.payment_status);
+      setPaymentState(formatPaymentState(demo.payment_status));
       setStage(6);
     } catch (err) {
       setErrorMessage(err instanceof ApiClientError ? err.message : "Demo flow failed.");
@@ -169,7 +207,8 @@ export default function RunPage() {
     setWasmHash("pending");
     setAttHash("pending");
     setAnchHash("pending");
-    setPaymentState("Not started");
+    setPaymentStatusRaw("not_started");
+    setPaymentState(formatPaymentState("not_started"));
     setErrorMessage(null);
     setCopyStatus("idle");
   }
@@ -196,7 +235,7 @@ export default function RunPage() {
         payment_required: true,
         proof_required: true,
         unlock_condition: "verified_proof_anchor",
-        payment_state: paymentState.toLowerCase(),
+        payment_state: paymentStatusRaw,
       },
     };
     if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -207,7 +246,7 @@ export default function RunPage() {
       setCopyStatus("failed");
     }
     copyTimer.current = setTimeout(() => setCopyStatus("idle"), 1800);
-  }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, deployHash, casperMode, paymentState]);
+  }, [taskId, output, fields.invoiceId, wasmHash, attHash, anchHash, deployHash, casperMode, paymentState, paymentStatusRaw]);
 
   const steps = computeSteps(stage, busyStep, failedStep, anchHash !== "pending" ? anchHash : undefined);
   const variants = computeButtonVariants(stage, busyStep, failedStep);
@@ -240,12 +279,20 @@ export default function RunPage() {
       <div className={styles.page}>
         <AppNav />
         <main id="main" tabIndex={-1} className={styles.headerWrap}>
-          <EmptyState
-            title="No invoice-risk agent registered yet"
-            body='Register an agent in the "invoice" category to run a payment-backed proof task.'
-            actionLabel="Register an agent"
-            actionHref="/owner/agents/new"
-          />
+          {agentLoadError ? (
+            <EmptyState
+              error
+              title="Couldn't load the invoice agent"
+              body={BACKEND_UNREACHABLE_BODY}
+            />
+          ) : (
+            <EmptyState
+              title="No invoice-risk agent registered yet"
+              body='Register an agent in the "invoice" category to run a payment-backed proof task.'
+              actionLabel="Register an agent"
+              actionHref="/owner/agents/new"
+            />
+          )}
         </main>
       </div>
     );
@@ -340,7 +387,7 @@ export default function RunPage() {
             anchHash={anchHash}
             anchColor={anchHash !== "pending" ? GREEN : GRAY}
             paymentState={paymentState}
-            paymentStateColor={stage >= 6 ? GREEN : failedStep ? RED : stage >= 1 ? AMBER : GRAY}
+            paymentStateColor={paymentStateColorFor(paymentStatusRaw, Boolean(failedStep))}
             hasProof={hasProof}
             copyLabel={copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Couldn't copy - select manually" : "Copy proof bundle"}
             onCopy={copyBundle}

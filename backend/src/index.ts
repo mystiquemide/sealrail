@@ -49,6 +49,10 @@ export function buildApp() {
     logger: {
       level: config.nodeEnv === "production" ? "warn" : "info",
     },
+    // Railway terminates TLS and proxies every request; without this, request.ip
+    // resolves to the proxy's address and the per-IP rate limiter below keys off
+    // one shared bucket instead of the real client.
+    trustProxy: true,
   });
 
   app.register(cors, {
