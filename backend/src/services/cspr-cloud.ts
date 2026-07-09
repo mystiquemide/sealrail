@@ -40,6 +40,34 @@ function headers(): Record<string, string> {
   };
 }
 
+
+const ALLOWED_CSPR_HOSTS = new Set([
+  "api.cspr.cloud",
+  "api.testnet.cspr.cloud",
+  "node.cspr.cloud",
+  "node.testnet.cspr.cloud",
+  "node.testnet.casper.network",
+  "x402-facilitator.cspr.cloud",
+]);
+
+function trustedUrl(baseUrl: string, path: string): string {
+  const base = new URL(baseUrl);
+  if (base.protocol !== "https:") {
+    throw new Error(`Untrusted CSPR.cloud URL protocol for ${base.hostname}`);
+  }
+  if (!ALLOWED_CSPR_HOSTS.has(base.hostname)) {
+    throw new Error(`Untrusted CSPR.cloud host: ${base.hostname}`);
+  }
+  return new URL(path, base).toString();
+}
+
+function validateDeployHash(deployHash: string): string {
+  if (!/^[0-9a-fA-F]{64}$/.test(deployHash)) {
+    throw new Error("INVALID_DEPLOY_HASH: deploy hash must be 64 hexadecimal characters");
+  }
+  return deployHash.toLowerCase();
+}
+
 async function fetchJson(url: string): Promise<{ ok: boolean; status: number; body: unknown }> {
   const res = await fetch(url, { headers: headers() });
   const text = await res.text();
@@ -65,7 +93,7 @@ function dataObject(body: unknown): Record<string, unknown> | null {
 
 export async function getLatestCsprUsdRate(): Promise<{ amount: number | null; created: string | null }> {
   if (!isCsprCloudConfigured()) return { amount: null, created: null };
-  const { ok, body, status } = await fetchJson(`${config.csprCloudApiUrl}/rates/1/latest`);
+  const { ok, body, status } = await fetchJson(trustedUrl(config.csprCloudApiUrl, "/rates/1/latest"));
   if (!ok) throw new Error(`CSPR.cloud rate lookup failed with HTTP ${status}`);
   const data = dataObject(body);
   return {
@@ -102,7 +130,7 @@ export async function getCsprCloudHealth(): Promise<CsprCloudHealth> {
   }
 
   try {
-    const { ok, body, status } = await fetchJson(`${config.csprCloudX402FacilitatorUrl}/supported`);
+    const { ok, body, status } = await fetchJson(trustedUrl(config.csprCloudX402FacilitatorUrl, "/supported"));
     health.x402FacilitatorReachable = ok;
     if (!ok) {
       health.errors.push(`CSPR.cloud x402 facilitator failed with HTTP ${status}`);
@@ -119,7 +147,7 @@ export async function getCsprCloudHealth(): Promise<CsprCloudHealth> {
   }
 
   try {
-    const { ok, status } = await fetchJson(`${config.csprCloudNodeUrl}/status`);
+    const { ok, status } = await fetchJson(trustedUrl(config.csprCloudNodeUrl, "/status"));
     health.casperNodeReachable = ok;
     if (!ok) health.errors.push(`CSPR.cloud Casper node failed with HTTP ${status}`);
   } catch (err) {
@@ -147,7 +175,8 @@ export async function getDeployConfirmation(deployHash: string): Promise<CsprClo
   }
 
   try {
-    const { ok, body, status } = await fetchJson(`${config.csprCloudApiUrl}/deploys/${deployHash}`);
+    const safeDeployHash = validateDeployHash(deployHash);
+    const { ok, body, status } = await fetchJson(trustedUrl(config.csprCloudApiUrl, `/deploys/${safeDeployHash}`));
     if (!ok) {
       return {
         configured: true,

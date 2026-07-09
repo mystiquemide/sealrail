@@ -1,4 +1,5 @@
 const STORAGE_KEY = "sealrail_session_key";
+let memorySession: StoredSession | null = null;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.sealrail.xyz";
 
 type WalletSignatureResponse =
@@ -29,18 +30,14 @@ export type StoredSession = {
 };
 
 function readStored(): StoredSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.sessionStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StoredSession;
-  } catch {
-    return null;
-  }
+  return memorySession;
 }
 
 export function clearSession() {
+  memorySession = null;
   if (typeof window === "undefined") return;
+  // Remove legacy browser-stored secrets from older builds. New sessions stay
+  // in memory only, so an API key is never persisted to Web Storage.
   window.localStorage.removeItem(STORAGE_KEY);
   window.sessionStorage.removeItem(STORAGE_KEY);
 }
@@ -121,7 +118,7 @@ async function connectWalletAndSign(): Promise<StoredSession> {
     prefix: verified.prefix,
   };
 
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  memorySession = session;
   return session;
 }
 

@@ -84,11 +84,20 @@ function validateSchemaObject(
  * Generate a URL-safe slug from a name.
  */
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64);
+  const chars: string[] = [];
+  let lastWasDash = true;
+  for (const ch of name.toLowerCase()) {
+    const isAlnum = (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9");
+    if (isAlnum) {
+      chars.push(ch);
+      lastWasDash = false;
+    } else if (!lastWasDash) {
+      chars.push("-");
+      lastWasDash = true;
+    }
+  }
+  while (chars.length > 0 && chars[chars.length - 1] === "-") chars.pop();
+  return chars.join("").slice(0, 64) || "verifier";
 }
 
 // ── Row mapping ───────────────────────────

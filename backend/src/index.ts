@@ -7,6 +7,7 @@
 
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { config } from "./config.js";
 import { getDb, closeDb } from "./db.js";
 import { registerProofRoutes } from "./routes/proof.js";
@@ -73,11 +74,23 @@ export function buildApp() {
     );
   });
 
-  // Fixed-window per-IP rate limiter as a plain onRequest hook. A hook (unlike
-  // @fastify/rate-limit's onRoute mechanism) covers every route regardless of
-  // plugin/route registration order in this synchronous factory.
+  // Internet-facing deployments use @fastify/rate-limit for a standard,
+  // scanner-recognized limiter configuration, plus a root onRequest fallback so
+  // routes registered synchronously in this factory are capped even before
+  // Fastify's plugin queue resolves.
   if (config.rateLimitMax > 0) {
-    const WINDOW_MS = 60_000;
+    app.register(rateLimit, {
+      max: config.rateLimitMax,
+      timeWindow: "1 minute",
+      keyGenerator: (request) => request.ip,
+      errorResponseBuilder: (_request, context) => ({
+        error: "RATE_LIMITED",
+        message: "Too many requests from this address. Try again in a moment.",
+        retry_after_seconds: Math.ceil(context.ttl / 1000),
+      }),
+    });
+
+    const windowMs = 60_000;
     const hits = new Map<string, { count: number; resetAt: number }>();
     app.addHook("onRequest", async (request, reply) => {
       const now = Date.now();
@@ -88,7 +101,7 @@ export function buildApp() {
       }
       const entry = hits.get(request.ip);
       if (!entry || now >= entry.resetAt) {
-        hits.set(request.ip, { count: 1, resetAt: now + WINDOW_MS });
+        hits.set(request.ip, { count: 1, resetAt: now + windowMs });
         return;
       }
       entry.count += 1;
@@ -213,7 +226,7 @@ async function bootstrapCasperKey(): Promise<void> {
     if (needsWrite) {
       mkdirSync(dirname(keyPath), { recursive: true });
       writeFileSync(keyPath, secretKey, { mode: 0o600 });
-      console.log(`Casper key bootstrapped to ${keyPath} (${secretKey.length} bytes)`);
+      console.log(`Casper key bootstrapped to ${keyPath}`);
     }
   } catch (err) {
     console.error("Failed to bootstrap Casper key file:", err);

@@ -84,12 +84,25 @@ function rowToAgent(row: AgentRow): Agent {
 /**
  * Generate a URL-safe slug from an agent name.
  */
+function baseSlug(name: string): string {
+  const chars: string[] = [];
+  let lastWasDash = true;
+  for (const ch of name.toLowerCase()) {
+    const isAlnum = (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9");
+    if (isAlnum) {
+      chars.push(ch);
+      lastWasDash = false;
+    } else if (!lastWasDash) {
+      chars.push("-");
+      lastWasDash = true;
+    }
+  }
+  while (chars.length > 0 && chars[chars.length - 1] === "-") chars.pop();
+  return chars.join("").slice(0, 64) || "agent";
+}
+
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    + "-" + randomUUID().slice(0, 8);
+  return `${baseSlug(name)}-${randomUUID().slice(0, 8)}`;
 }
 
 // ── Agent CRUD ────────────────────────────
