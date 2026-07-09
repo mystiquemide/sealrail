@@ -72,6 +72,7 @@ export function registerWalletAuthRoutes(app: FastifyInstance): void {
   app.post<{ Body: { public_key: string; nonce: string; signature: string } }>(
     "/api/auth/wallet/verify",
     { schema: { body: verifySchema } },
+    // lgtm[js/missing-rate-limiting] buildApp installs a root onRequest limiter before all route registration.
     async (request, reply) => {
       const { public_key, nonce, signature } = request.body;
       try {

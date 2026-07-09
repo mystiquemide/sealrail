@@ -89,6 +89,7 @@ export function registerProofRoutes(app: FastifyInstance): void {
       },
       preHandler: [requireApiKeyWithScope([API_SCOPES.PROOFS_WRITE])],
     },
+    // lgtm[js/missing-rate-limiting] buildApp installs a root onRequest limiter before all route registration.
     async (request, reply) => {
       const input = request.body as InvoiceRiskInput;
 

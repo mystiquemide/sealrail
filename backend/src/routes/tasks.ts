@@ -108,6 +108,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
       schema: { body: createTaskSchema },
       preHandler: config.requireWalletAuth ? [requireApiKey] : [],
     },
+    // lgtm[js/missing-rate-limiting] buildApp installs a root onRequest limiter before all route registration.
     async (request, reply) => {
       const body = request.body;
       try {
@@ -358,6 +359,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
     {
       preHandler: [requireApiKeyWithScope([API_SCOPES.TASKS_WRITE])],
     },
+    // lgtm[js/missing-rate-limiting] buildApp installs a root onRequest limiter before all route registration.
     async (request, reply) => {
       const { taskId } = request.params;
 

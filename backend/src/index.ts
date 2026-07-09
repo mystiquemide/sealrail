@@ -120,6 +120,7 @@ export function buildApp() {
   const startTime = Date.now();
   setStatusStartTime(startTime);
 
+  // lgtm[js/missing-rate-limiting] This startup hook runs during app readiness, not per unauthenticated request.
   app.addHook("onReady", async () => {
     try {
       getDb();
