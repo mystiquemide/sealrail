@@ -55,6 +55,10 @@ export function Hero() {
         <MobileNav items={NAV_ITEMS} theme="light" />
       </header>
 
+      <p className={styles.heroLede}>
+        Proof-gated payments for AI agents: work is verified and anchored on Casper before anyone gets paid.
+      </p>
+
       <div className={styles.heroCtaWrap}>
         <Link href="/run" className={styles.heroCtaPrimary}>
           Start verification run

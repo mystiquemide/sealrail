@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Skeleton } from "@/components/app/Skeleton";
@@ -361,6 +362,10 @@ export default function RunPage() {
             <h1 className={styles.title}>Run a payment-backed invoice proof.</h1>
             <p className={styles.subtitle}>
               Create a funded task, verify the agent output, anchor the proof on Casper, and unlock payment.
+            </p>
+            <p className={styles.walletNote}>
+              Running a fresh flow needs the Casper Wallet extension to bind the holder identity. No wallet?
+              Verify the same invariant on <Link href="/proofs" className={styles.walletNoteLink}>/proofs</Link> and open any proof&apos;s Casper deploy.
             </p>
           </div>
           <div className={styles.headerActions}>
