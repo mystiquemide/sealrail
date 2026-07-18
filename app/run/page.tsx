@@ -338,8 +338,8 @@ export default function RunPage() {
       <div className={styles.workspaceWrap} style={{ paddingBottom: 0 }}>
         <div className={styles.sponsorGrid}>
           <div className={styles.sponsorCard}>
-            <div className={styles.panelLabel}>Casper Innovation Track</div>
-            <p className={styles.sponsorText}>Agentic AI + RWA payment infrastructure: invoice work is verified, anchored, then paid.</p>
+            <div className={styles.panelLabel}>Agentic AI + RWA on Casper</div>
+            <p className={styles.sponsorText}>Payment infrastructure for AI-agent work: invoice work is verified, anchored on Casper, then paid.</p>
           </div>
           <div className={styles.sponsorCard}>
             <div className={styles.panelLabel}>x402-compatible receipt</div>

@@ -388,6 +388,42 @@ export function getProofDetail(proofId: string): Record<string, unknown> | null 
 }
 
 /**
+ * List recent proofs as lightweight rows for the public proof list.
+ * Newest first. Each row carries the proof's hashes, anchor, mode, and
+ * the derived payment state so a caller can see the full proof->payment
+ * story without fetching each task. Caps at 200 rows.
+ */
+export function listProofs(limit = 50): Array<Record<string, unknown>> {
+  const db = getDb();
+  const cap = Math.min(Math.max(Math.trunc(limit) || 50, 1), 200);
+  const rows = db
+    .prepare("SELECT * FROM proofs ORDER BY created_at DESC LIMIT ?")
+    .all(cap) as ProofRow[];
+
+  return rows.map((proof) => {
+    const task = proof.task_id ? getTask(proof.task_id) : null;
+    let payment: Payment | null = null;
+    if (task?.payment_id) {
+      payment = getPaymentById(task.payment_id);
+    }
+    return {
+      proof_id: proof.id,
+      task_id: proof.task_id,
+      invoice_id: task?.title ?? null,
+      agent_id: proof.agent_id,
+      verifier_id: proof.verifier_id,
+      input_hash: proof.input_hash,
+      output_hash: proof.output_hash,
+      casper_anchor_hash: proof.casper_anchor_hash,
+      mode: proof.mode,
+      proof_status: proof.status,
+      payment_state: payment?.status ?? null,
+      created_at: proof.created_at,
+    };
+  });
+}
+
+/**
  * Internal: get a proof by ID (used by existing task trail code).
  */
 function getProof(id: string): ProofRow | null {

@@ -9,7 +9,7 @@ import type { FastifyInstance } from "fastify";
 
 import type { InvoiceRiskInput } from "../types.js";
 import { verify } from "../services/blocky.js";
-import { getProofDetail, getProofById } from "../services/tasks.js";
+import { getProofDetail, getProofById, listProofs } from "../services/tasks.js";
 import { requireApiKeyWithScope } from "../middleware/auth.js";
 import { API_SCOPES } from "../types.js";
 
@@ -66,17 +66,17 @@ export function registerProofRoutes(app: FastifyInstance): void {
   );
 
   // ── GET /api/proofs ─────────────────────
-  // List all proofs (public). Returns lightweight rows.
-  app.get("/api/proofs", async (_request, reply) => {
-    // Reuse the lightweight proof list from getProofById via task trail
-    // For now, return an empty array - proofs are accessible through
-    // /api/tasks/:taskId which includes proof_ids.
-    // A full proof list endpoint can be added later with pagination.
-    return reply.status(200).send({
-      message: "Use GET /api/proofs/:proofId for proof detail, or GET /api/tasks/:taskId for a task's proof trail.",
-      hint: "A paginated proof list is planned for a future release.",
-    });
-  });
+  // List recent proofs (public). Newest first, lightweight rows.
+  // Optional ?limit=N (1-200, default 50).
+  app.get<{ Querystring: { limit?: string } }>(
+    "/api/proofs",
+    async (request, reply) => {
+      const parsed = Number.parseInt(request.query.limit ?? "", 10);
+      const limit = Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
+      const proofs = listProofs(limit);
+      return reply.status(200).send({ proofs, count: proofs.length });
+    }
+  );
 
   // ── POST /api/proofs/verify ────────────
   // Runs full TEE verification: attest + verify + claims validation
