@@ -59,6 +59,30 @@
   margin: 12px 0 0;
 }
 
+.runtimeLiveBadge,
+.runtimePreviewBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.runtimeLiveBadge {
+  color: #64d96b;
+  background: rgba(100, 217, 107, 0.1);
+  border: 1px solid rgba(100, 217, 107, 0.24);
+}
+
+.runtimePreviewBadge {
+  color: #f2b84b;
+  background: rgba(242, 184, 75, 0.1);
+  border: 1px solid rgba(242, 184, 75, 0.24);
+}
+
 .statRow {
   display: flex;
   flex-wrap: wrap;
@@ -202,6 +226,32 @@
   opacity: 0.85;
 }
 
+.createTaskButtonDisabled {
+  composes: createTaskButton;
+  background: transparent;
+  color: #6e6e6c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  cursor: not-allowed;
+}
+
+.previewNotice {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(242, 184, 75, 0.22);
+  background: rgba(242, 184, 75, 0.08);
+  color: #d2d0ca;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.previewLink {
+  display: inline-flex;
+  margin-top: 10px;
+  color: #f6f5f3;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ---------- agent and verifier ---------- */
 
 .infoRows {
@@ -232,6 +282,11 @@
 .infoRowValuePlain {
   font-size: 13px;
   color: #e4e4e2;
+}
+
+.previewStatusValue {
+  font-size: 13px;
+  color: #f2b84b;
 }
 
 .modeBadge {

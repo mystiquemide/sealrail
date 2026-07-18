@@ -12,7 +12,7 @@ const latestProof = {
 };
 
 const judgePath = [
-  "Open /run and click Run full flow to create a funded invoice/RWA task.",
+  "Open /run and click Run full flow to create a funded invoice-risk task.",
   "Watch the AI invoice-risk agent produce structured output that cannot unlock payment by itself.",
   "Verify the schema/hash proof, Casper testnet anchor, and payment unlock state.",
   "Click Run failing proof to see bad output halt the rail with payment blocked and no anchor.",
@@ -27,9 +27,14 @@ const trustBoundaries = [
     proof: "Proof hashes are anchored through the Casper testnet ProofRegistry path before payment unlock.",
   },
   {
-    component: "AI invoice/RWA agent",
+    component: "AI invoice-risk agent",
     state: "Live",
     proof: "The agent returns structured invoice-risk output, but output alone cannot move payment state.",
+  },
+  {
+    component: "RWA compliance listing",
+    state: "Preview",
+    proof: "The marketplace labels RWA compliance as the next vertical until its dedicated runtime is connected; judges should score the live invoice-risk path.",
   },
   {
     component: "Verifier + hashes",
@@ -62,7 +67,7 @@ const criteriaMap = [
   ["Working prototype", "Live /run flow, proof details, proof explorer, and production status page."],
   ["Casper smart contract", "Successful testnet anchor_proof deploys with visible hashes and gas."],
   ["AI / agentic systems", "LLM invoice-risk agent returns structured output that is independently verified."],
-  ["RWA / DeFi fit", "Invoice/RWA risk checks gate payable state before release."],
+  ["RWA / DeFi fit", "Invoice risk is live; RWA compliance is clearly labelled as the next marketplace vertical on the same payment rail."],
   ["Trust and safety", "Fail-closed state machine plus an honest status page for pending TEE/settlement pieces."],
 ];
 

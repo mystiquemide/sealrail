@@ -41,6 +41,7 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters 
                 <span className={styles.listingLiveDot} />
                 {l.status}
               </div>
+              <div className={styles.listingRuntimeTag}>{l.runtimeLabel}</div>
             </div>
             <span className={styles.listingVerifier}>{l.verifier}</span>
             <span className={styles.listingValue}>{l.price}</span>
@@ -52,8 +53,8 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters 
         ))}
       </div>
       <p className={styles.footNote}>
-        DeFi risk and research verification agents are in development and are not shown here as live listings until a
-        verifier and proof record back them.
+        Invoice Risk is the runnable production demo. RWA compliance is shown as a preview marketplace listing until its
+        dedicated runtime is connected; judges should use /run for the live invoice-risk proof path.
       </p>
     </div>
   );
