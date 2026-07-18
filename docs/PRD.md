@@ -10,7 +10,7 @@ Deadline: 2026-07-07 23:59 UTC
 
 Verified Agent Payments on Casper is a Casper-native proof and payment layer for AI-agent work. It lets a user request work from an AI agent, verify the output through a Blocky-compatible attestation flow, anchor the proof hash on Casper, and release or approve payment only when the proof is valid.
 
-The first product vertical is RWA invoice verification. A user submits invoice data, the AI agent produces a risk result, a deterministic verifier function checks the result through Blocky AS local development mode or hosted TEE mode, and Casper stores the proof trail.
+The first product vertical is invoice-risk verification. A user submits invoice data, the AI agent produces a risk result, a deterministic verifier function checks the result through schema + hash verification, and Casper stores the proof trail. Hosted TEE execution remains a pending upgrade until hosted access is configured.
 
 ## 2. Problem
 
@@ -87,7 +87,7 @@ Real market users:
 | Casper proof registry | Stores task ID, agent ID, output hash, attestation hash, status |
 | Backend API | Creates task, verifies attestation, anchors proof, returns status |
 | Dashboard | Shows a full judge-friendly proof trail |
-| Honest mode labels | Clearly distinguishes local Blocky mode from hosted TEE mode |
+| Honest mode labels | Clearly distinguishes schema + hash verification from pending hosted TEE execution |
 | README and product run script | Explains setup, proof flow, and upgrade path |
 
 ### Should have
@@ -209,7 +209,7 @@ A Casper payment and proof layer where AI agents only get paid when their output
 Run story:
 
 ```text
-An RWA invoice verifier agent checks invoice risk. The agent output is verified by a deterministic WASM function through Blocky AS local mode or hosted TEE mode. Casper stores the proof hash. The dashboard shows that payment becomes available only after proof verification.
+An invoice-risk verifier agent checks invoice risk. The agent output is verified by a deterministic WASM function through schema + hash verification. Casper stores the proof hash. The dashboard shows that payment becomes available only after proof verification; RWA compliance remains a preview marketplace vertical until its dedicated runtime is connected.
 ```
 
 ## 12. Approval gate

@@ -85,7 +85,7 @@ export function buildProofBundle(taskTitle: string, detail: TaskDetail, r: Proof
   return {
     task: taskTitle,
     task_id: detail.task.id,
-    mode: "tee_verification_mode",
+    mode: "schema_hash_verification",
     verifier: r.verifierId,
     result: r.result,
     decision: r.decision,

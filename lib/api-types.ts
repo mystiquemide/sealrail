@@ -222,7 +222,8 @@ export type ApiKey = {
 
 export type PublicStatus = {
   status: "ok" | "degraded" | "not_ready";
-  mode: "tee_verification_mode";
+  mode: "schema_hash_verification";
+  mode_label?: string;
   casper_mode: string;
   casper_contract_ready: boolean;
   casper_client_available: boolean;

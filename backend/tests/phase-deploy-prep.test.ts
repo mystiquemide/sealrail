@@ -472,7 +472,8 @@ describe("Status API Routes", () => {
 
     const body = JSON.parse(res.body);
     expect(body.status).toBe("ok");
-    expect(body.mode).toBe("tee_verification_mode");
+    expect(body.mode).toBe("schema_hash_verification");
+    expect(body.mode_label).toBe("Schema + hash verification");
     expect(body).toHaveProperty("timestamp");
     expect(body).toHaveProperty("uptime_seconds");
     expect(body).toHaveProperty("blocky_cli");
@@ -502,7 +503,8 @@ describe("Status API Routes", () => {
 
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty("status");
-    expect(body).toHaveProperty("mode", "tee_verification_mode");
+    expect(body).toHaveProperty("mode", "schema_hash_verification");
+    expect(body).toHaveProperty("mode_label", "Schema + hash verification");
     expect(body).toHaveProperty("casper_mode");
     expect(body).toHaveProperty("casper_contract_ready");
     expect(body).toHaveProperty("blocky_cli_available");

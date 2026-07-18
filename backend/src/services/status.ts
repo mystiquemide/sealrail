@@ -287,7 +287,8 @@ export function getDeploymentReadiness(): DeploymentReadiness {
 
 export interface PublicStatusResponse {
   status: "ok" | "degraded" | "not_ready";
-  mode: "tee_verification_mode";
+  mode: "schema_hash_verification";
+  mode_label: "Schema + hash verification";
   casper_mode: string;
   casper_contract_ready: boolean;
   casper_client_available: boolean;
@@ -333,7 +334,8 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
 
   return {
     status,
-    mode: "tee_verification_mode",
+    mode: "schema_hash_verification",
+    mode_label: "Schema + hash verification",
     casper_mode: casper.mode,
     casper_contract_ready: !!casper.contractHash && casper.accountKeyConfigured,
     casper_client_available: casper.clientInstalled,
@@ -383,7 +385,8 @@ export function getHealth(startTime: number) {
 
   return {
     status: "ok",
-    mode: config.teeVerificationMode,
+    mode: "schema_hash_verification",
+    mode_label: "Schema + hash verification",
     timestamp: new Date().toISOString(),
     uptime_seconds: 0,
     blocky_cli: blocky.cliInstalled ? "available" : "unavailable",

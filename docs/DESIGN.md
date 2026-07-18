@@ -826,8 +826,8 @@ The landing page must be built section by section. Do not build all sections in 
 │ Inspect every proof before payment.                                │
 │                                                                    │
 │ Task ID       Agent        Mode        Casper hash       Payment   │
-│ INV-1024      Invoice AI   TEE mode    0x80d0...cd44    Payable   │
-│ INV-1025      Invoice AI   TEE mode    Pending          Blocked   │
+│ INV-1024      Invoice AI   Schema+hash 0x80d0...cd44    Payable   │
+│ INV-1025      Invoice AI   Schema+hash Pending          Blocked   │
 └────────────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────────────┐
@@ -1870,7 +1870,7 @@ Mobile should show:
 2. Core positioning.
 3. Start run CTA.
 4. Proof/payment visual simplified.
-5. Honest TEE mode badge.
+5. Honest schema + hash verification badge with hosted TEE pending copy.
 
 ## 19.2 Breakpoints
 
@@ -1967,7 +1967,7 @@ Premium minimal mascot for Sealrail named The Sealkeeper. A quiet proof courier 
 ## 22.4 Dashboard interface render prompt
 
 ```text
-Sealrail app dashboard interface render. Black proof terminal interface with ledger rows, proof timeline, payment state cells, mono hashes, warm paper detail sheet. Show invoice verification run, Blocky-compatible TEE mode badge, Casper anchor hash, payment unlocked state. Premium editorial fintech UI, no gradients, no glassmorphism, no heavy shadows.
+Sealrail app dashboard interface render. Black proof terminal interface with ledger rows, proof timeline, payment state cells, mono hashes, warm paper detail sheet. Show invoice verification run, schema + hash verification badge, Casper anchor hash, payment unlocked state. Premium editorial fintech UI, no gradients, no glassmorphism, no heavy shadows.
 ```
 
 ## 22.5 Pitch deck cover prompt

@@ -25,7 +25,7 @@ curl -s http://localhost:3001/api/health | python3 -m json.tool
 ```
 
 **Expected status code:** 200
-**Expected fields:** `status: "ok"`, `mode: "tee_verification_mode"`, `timestamp`, `uptime_seconds`
+**Expected fields:** `status: "ok"`, `mode: "schema_hash_verification"`, `mode_label`, `timestamp`, `uptime_seconds`
 
 ### 1.2 Status check
 
@@ -34,7 +34,7 @@ curl -s http://localhost:3001/api/status | python3 -m json.tool
 ```
 
 **Expected status code:** 200
-**Expected fields:** `status: "ok"`, `db_connected: true`, `mode: "tee_verification_mode"`, `casper_mode`
+**Expected fields:** `status: "ok"`, `db_connected: true`, `mode: "schema_hash_verification"`, `casper_mode`
 
 ---
 
@@ -114,7 +114,7 @@ curl -s -X POST http://localhost:3001/api/agents/PLACEHOLDER_AGENT_ID/sync | pyt
 ```
 
 **Expected status code:** 200
-**Expected fields:** `agent_id`, `registration_hash`, `mode: "tee_verification_mode"`
+**Expected fields:** `agent_id`, `registration_hash`, `mode`
 
 ---
 
@@ -167,7 +167,7 @@ curl -s -X POST http://localhost:3001/api/verifiers/PLACEHOLDER_VERIFIER_ID/test
 ```
 
 **Expected status code:** 200
-**Expected fields:** `result.valid`, `result.computed_hash`, `result.hash_chain`, `result.tee_mode: "tee_verification_mode"`
+**Expected fields:** `result.valid`, `result.computed_hash`, `result.hash_chain`, `result.mode`
 
 ### 3.5 Update verifier (owner-only)
 
@@ -314,7 +314,7 @@ curl -s -X POST http://localhost:3001/api/tasks/PLACEHOLDER_TASK_ID/anchor | pyt
 ```
 
 **Expected status code:** 200
-**Expected fields:** `task_id`, `anchor_hash`, `mode: "tee_verification_mode"`, `casper_mode`, `proof_id`
+**Expected fields:** `task_id`, `anchor_hash`, `mode`, `casper_mode`, `proof_id`
 
 ### 5.8 Unlock payment
 
