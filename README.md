@@ -22,7 +22,7 @@ AI agents should not get paid just because they produced text. SealRail keeps th
 ### Judge quick path
 
 1. Open [`/review`](https://sealrail.xyz/review) for the scoring map and trust boundaries.
-2. Click **Run full flow** on [`/run`](https://sealrail.xyz/run) to create an invoice/RWA task, run the AI invoice-risk agent, verify the output, anchor on Casper testnet, and unlock payment state.
+2. Click **Run full flow** on [`/run`](https://sealrail.xyz/run) to create an invoice-risk task, run the AI invoice-risk agent, verify the output, anchor on Casper testnet, and unlock payment state.
 3. Click **Run failing proof** to see bad output halt the rail: no Casper anchor and payment stays blocked.
 4. Open the generated proof detail or browse [`/proofs`](https://sealrail.xyz/proofs) to inspect persisted proof bundles and x402-compatible receipts.
 5. Check [`/status`](https://sealrail.xyz/status) for live system status and pending trust-boundary items.
@@ -44,8 +44,8 @@ AI agents should not get paid just because they produced text. SealRail keeps th
 |---|---|
 | Working prototype | Production web app, API, proof explorer, proof detail pages, and status board are live. |
 | Casper smart-contract usage | Proof hashes are anchored through the Casper testnet ProofRegistry path; successful deploys resolve on cspr.live. |
-| AI / agentic systems | The Invoice Risk Agent returns structured invoice/RWA risk output, but cannot unlock payment by itself. |
-| Real-world applicability | Invoice/RWA risk checks gate a payable state before release. |
+| AI / agentic systems | The live Invoice Risk Agent returns structured output, but cannot unlock payment by itself. |
+| Real-world applicability | Invoice risk checks gate a payable state before release; RWA compliance is shown as the next marketplace vertical using the same rail. |
 | UX / design | `/review` gives judges one path, `/run` shows the happy path and failing-proof invariant, `/status` discloses live vs pending components. |
 | Long-term ecosystem impact | Proof-gated payment can become a Casper-native primitive for autonomous agents and RWA operations. |
 
@@ -54,7 +54,8 @@ AI agents should not get paid just because they produced text. SealRail keeps th
 | Component | Current state | What is real |
 |---|---|---|
 | Casper ProofRegistry | Live on testnet | Proof hashes are anchored through the Casper testnet path before payment unlock. |
-| AI invoice/RWA agent | Live | LLM-backed agent returns structured invoice-risk output with hash-bound proof data. |
+| AI invoice-risk agent | Live | LLM-backed agent returns structured invoice-risk output with hash-bound proof data. |
+| RWA compliance listing | Preview | Seeded marketplace listing and verifier template are visible, but the dedicated RWA runtime is clearly labelled preview until connected. |
 | Verifier + state machine | Live | Payment unlock fails closed unless a verified proof exists and the Casper anchor is confirmed. |
 | Failing-proof demo | Live | Bad output produces a failed proof state, no anchor, and blocked payment. |
 | x402-compatible receipt | Live format | Proof bundles include payment-required receipt metadata, proof requirement, unlock condition, network, and payment state. |
@@ -115,9 +116,9 @@ sequenceDiagram
 
 - **Proof-gated payments** — tasks fund a payable state that unlocks only after proof verification and confirmed Casper anchoring, with per-recipient splits and claim ownership checks.
 - **First-party Invoice Risk Agent** — sends structured prompts to a configurable LLM and returns hash-bound, schema-validated output: risk score, decision, reasoning, and flags.
-- **RWA Compliance Agent** — a second seeded marketplace agent for real-world asset review, compliance checks, document risk, and finance operations; invoice-risk is the live runtime demonstrated in `/run`.
+- **RWA Compliance Agent** — a second seeded marketplace listing for real-world asset review, compliance checks, document risk, and finance operations; it is labelled preview until its dedicated runtime is connected.
 - **Verifier registry** — templates bound to a WASM artifact hash, with input/output schemas and a test endpoint.
-- **Marketplace** — list live agents, inspect listing details, and create paid tasks against seeded marketplace listings.
+- **Marketplace** — list agents, distinguish runnable invoice-risk listings from preview RWA listings, inspect listing details, and create paid tasks for the live invoice-risk runtime.
 - **Proof explorer and proof details** — `/proofs` and `/proofs/:proofId` resolve live proof data, verification result, task context, hashes, Casper anchor state, and payment state.
 - **Failing-proof demo** — `/run` includes a visible path where rejected output keeps payment blocked and creates no Casper anchor.
 - **x402-compatible receipts** — proof bundles include a payment-required receipt shape with `402`, proof requirement, unlock condition, network, and payment state metadata.

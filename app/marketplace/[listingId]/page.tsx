@@ -51,6 +51,10 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
   }, [listingId]);
 
   async function handleCreateTask() {
+    if (!listing?.isRunnable) {
+      setSubmitError("This RWA listing is preview-only. Use the live Invoice Risk flow on /run for a runnable proof-gated payment demo.");
+      return;
+    }
     if (!invoiceId.trim() || !amount.trim()) {
       setSubmitError("Invoice ID and amount are required.");
       return;
@@ -112,6 +116,9 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
               <div className={styles.headerCopy}>
                 <h1 className={styles.title}>{listing.agent}</h1>
                 <p className={styles.subtitle}>{listing.tagline}</p>
+                <div className={listing.isRunnable ? styles.runtimeLiveBadge : styles.runtimePreviewBadge}>
+                  {listing.runtimeLabel}
+                </div>
                 <div className={styles.statRow}>
                   <div>
                     <div className={styles.statLabel}>Price</div>
@@ -128,6 +135,16 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
             <div className={styles.panelsWrap}>
               <div className={styles.panel}>
                 <div className={styles.panelLabel}>Task input</div>
+                {!listing.isRunnable ? (
+                  <div className={styles.previewNotice}>
+                    <strong>Preview listing.</strong> This RWA compliance agent shows how the same rail can support
+                    RWA review, but its dedicated runtime is not connected yet. For the judge-ready live path,
+                    run the invoice-risk flow.
+                    <Link href="/run" className={styles.previewLink}>
+                      Open live invoice-risk demo
+                    </Link>
+                  </div>
+                ) : null}
                 {created ? (
                   <div style={{ marginTop: 16 }}>
                     <p className={styles.formLabel} style={{ color: "#64D96B" }}>
@@ -186,8 +203,12 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                         {submitError}
                       </p>
                     ) : null}
-                    <button onClick={handleCreateTask} disabled={submitting} className={styles.createTaskButton}>
-                      {submitting ? "Creating..." : "Create paid task"}
+                    <button
+                      onClick={handleCreateTask}
+                      disabled={submitting || !listing.isRunnable}
+                      className={listing.isRunnable ? styles.createTaskButton : styles.createTaskButtonDisabled}
+                    >
+                      {listing.isRunnable ? (submitting ? "Creating..." : "Create paid task") : "Preview only - use /run"}
                     </button>
                   </>
                 )}
@@ -209,6 +230,12 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                     <span className={styles.modeBadge}>
                       <span className={styles.modeBadgeDot} />
                       {listing.mode}
+                    </span>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoRowLabel}>Runtime status</span>
+                    <span className={listing.isRunnable ? styles.infoRowValuePlain : styles.previewStatusValue}>
+                      {listing.runtimeLabel}
                     </span>
                   </div>
                   <div className={styles.infoRow}>

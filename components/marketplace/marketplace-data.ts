@@ -10,6 +10,8 @@ export type Listing = {
   category: string;
   mode: string;
   status: string;
+  isRunnable: boolean;
+  runtimeLabel: string;
   href: string;
 };
 
@@ -26,7 +28,16 @@ function statusLabel(status: string): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+export function listingHasLiveRuntime(category: string): boolean {
+  return category === "invoice";
+}
+
+function runtimeLabelFor(category: string): string {
+  return listingHasLiveRuntime(category) ? "Live runtime" : "Preview listing";
+}
+
 export function toListing(listing: MarketplaceListing, verifierMode?: string): Listing {
+  const isRunnable = listingHasLiveRuntime(listing.category);
   return {
     id: listing.id,
     agent: listing.title,
@@ -35,7 +46,9 @@ export function toListing(listing: MarketplaceListing, verifierMode?: string): L
     reputation: `${listing.reputation_score} / 100`,
     category: categoryLabel(listing.category),
     mode: verifierMode ? formatMode(verifierMode) : "Schema + hash verification",
-    status: statusLabel(listing.status),
+    status: isRunnable ? statusLabel(listing.status) : "Preview",
+    isRunnable,
+    runtimeLabel: runtimeLabelFor(listing.category),
     href: `/marketplace/${listing.id}`,
   };
 }
