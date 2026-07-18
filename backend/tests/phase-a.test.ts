@@ -84,7 +84,7 @@ describe("Phase A: Foundation", () => {
       expect(colNames).toContain("verifier_ids");
     });
 
-    it("proofs table has correct columns including TEE mode", () => {
+    it("proofs table has correct columns including verification mode", () => {
       const db = getDb();
       const cols = db
         .prepare("PRAGMA table_info('proofs')")

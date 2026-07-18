@@ -63,7 +63,7 @@ Build one phase at a time. Each phase gates on passing tests before the next beg
 Verification gate:
 ```bash
 curl http://localhost:3001/health
-# {"status":"ok","mode":"tee_verification_mode"}
+# {"status":"ok","mode":"schema_hash_verification","mode_label":"Schema + hash verification"}
 ```
 
 ### Phase B: Odra proof registry contract

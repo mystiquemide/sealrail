@@ -433,7 +433,8 @@ export interface SystemEvent {
 
 export interface HealthResponse {
   status: "ok";
-  mode: "tee_verification_mode";
+  mode: "schema_hash_verification";
+  mode_label: "Schema + hash verification";
   timestamp: string;
   uptime_seconds: number;
 }

@@ -41,7 +41,7 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters 
                 <span className={styles.listingLiveDot} />
                 {l.status}
               </div>
-              <div className={styles.listingRuntimeTag}>{l.runtimeLabel}</div>
+              {l.isRunnable ? <div className={styles.listingRuntimeTag}>{l.runtimeLabel}</div> : null}
             </div>
             <span className={styles.listingVerifier}>{l.verifier}</span>
             <span className={styles.listingValue}>{l.price}</span>

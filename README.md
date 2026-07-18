@@ -9,7 +9,7 @@
 [![Backend Tests](https://img.shields.io/badge/backend%20tests-769%20passing-brightgreen)](backend/tests)
 [![Railway](https://img.shields.io/badge/deployed-Railway-%230B0D0E)](https://api.sealrail.xyz/api/status)
 
-**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status)
+**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status) &nbsp;·&nbsp; **Demo video:** pending final recording
 
 ## Casper Agentic Buildathon Final Round
 
@@ -26,6 +26,8 @@ AI agents should not get paid just because they produced text. SealRail keeps th
 3. Click **Run failing proof** to see bad output halt the rail: no Casper anchor and payment stays blocked.
 4. Open the generated proof detail or browse [`/proofs`](https://sealrail.xyz/proofs) to inspect persisted proof bundles and x402-compatible receipts.
 5. Check [`/status`](https://sealrail.xyz/status) for live system status and pending trust-boundary items.
+
+Running a fresh paid flow requires the Casper Wallet extension so SealRail can bind the holder identity. Wallet-less reviewers can still verify the invariant through `/review`, `/proofs`, proof detail pages, and the linked Casper testnet deploys.
 
 ### Live proof links
 

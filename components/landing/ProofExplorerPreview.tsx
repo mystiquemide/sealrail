@@ -2,9 +2,9 @@ import Link from "next/link";
 import styles from "./Landing.module.css";
 
 const rows = [
-  { task: "INV-1024", agent: "Invoice AI", mode: "TEE mode", hash: "0x80d0...cd44", payment: "Payable", payColor: "#64D96B" },
-  { task: "INV-1025", agent: "Invoice AI", mode: "TEE mode", hash: "pending", payment: "Blocked", payColor: "#F45B45" },
-  { task: "INV-1026", agent: "Invoice AI", mode: "TEE mode", hash: "none", payment: "Blocked", payColor: "#F45B45" },
+  { task: "INV-1024", agent: "Invoice AI", mode: "Schema + hash", hash: "0x80d0...cd44", payment: "Payable", payColor: "#64D96B" },
+  { task: "INV-1025", agent: "Invoice AI", mode: "Schema + hash", hash: "pending", payment: "Blocked", payColor: "#F45B45" },
+  { task: "INV-1026", agent: "Invoice AI", mode: "Schema + hash", hash: "none", payment: "Blocked", payColor: "#F45B45" },
 ];
 
 export function ProofExplorerPreview() {

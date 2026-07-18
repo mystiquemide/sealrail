@@ -47,6 +47,9 @@ interface ProofRow {
   created_at: string;
 }
 
+const PUBLIC_SCHEMA_HASH_MODE = "schema_hash_verification";
+const PUBLIC_SCHEMA_HASH_MODE_LABEL = "Schema + hash verification";
+
 interface PaymentRow {
   id: string;
   task_id: string | null;
@@ -364,7 +367,8 @@ export function getProofDetail(proofId: string): Record<string, unknown> | null 
     wasm_hash: proof.wasm_hash,
     attestation_hash: proof.attestation_hash,
     casper_anchor_hash: proof.casper_anchor_hash,
-    mode: proof.mode,
+    mode: PUBLIC_SCHEMA_HASH_MODE,
+    mode_label: PUBLIC_SCHEMA_HASH_MODE_LABEL,
     proof_status: proof.status,
     // Task context
     task_status: task?.status ?? null,
@@ -415,7 +419,8 @@ export function listProofs(limit = 50): Array<Record<string, unknown>> {
       input_hash: proof.input_hash,
       output_hash: proof.output_hash,
       casper_anchor_hash: proof.casper_anchor_hash,
-      mode: proof.mode,
+      mode: PUBLIC_SCHEMA_HASH_MODE,
+      mode_label: PUBLIC_SCHEMA_HASH_MODE_LABEL,
       proof_status: proof.status,
       payment_state: payment?.status ?? null,
       created_at: proof.created_at,
