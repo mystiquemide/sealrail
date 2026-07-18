@@ -5,7 +5,7 @@
 // Phase E1/E3: State machine enforcement, payment-backed task creation
 // ────────────────────────────────────────
 
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { getDb } from "../db.js";
 import { anchorProof, getCasperHealth } from "./casper.js";
 import type { AnchorResult, AnchorProofInput } from "./casper.js";
@@ -465,6 +465,61 @@ function isPlaceholderProof(p: ProofRow): boolean {
     /^(input|output)-/.test(p.input_hash) ||
     /^(input|output)-/.test(p.output_hash)
   );
+}
+
+export function createFailedDemoProof(taskId: string, reason = "Demo verification intentionally failed"): {
+  taskId: string;
+  proofId: string;
+  paymentStatus: "blocked";
+  reason: string;
+} {
+  const task = getTask(taskId);
+  if (!task) throw new Error("TASK_NOT_FOUND");
+
+  const db = getDb();
+  const now = new Date().toISOString();
+  const proofId = randomUUID();
+  const basis = JSON.stringify({ task_id: taskId, agent_id: task.agent_id, reason, now });
+  const inputHash = createHash("sha256").update(`failed-demo-input:${basis}`).digest("hex");
+  const outputHash = createHash("sha256").update(`failed-demo-output:${basis}`).digest("hex");
+  const wasmHash = createHash("sha256").update("schema-verifier-v1").digest("hex");
+  const attestationHash = createHash("sha256").update(`failed-attestation:${basis}`).digest("hex");
+
+  db.prepare(`
+    INSERT INTO proofs (id, task_id, agent_id, verifier_id, input_hash, output_hash,
+      wasm_hash, attestation_hash, mode, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'failed', ?)
+  `).run(
+    proofId,
+    taskId,
+    task.agent_id,
+    "schema-verifier-v1",
+    inputHash,
+    outputHash,
+    wasmHash,
+    attestationHash,
+    config.teeVerificationMode,
+    now,
+  );
+
+  db.prepare("UPDATE tasks SET proof_ids = ?, status = 'blocked', updated_at = ? WHERE id = ?").run(
+    JSON.stringify([...task.proof_ids, proofId]),
+    now,
+    taskId,
+  );
+
+  if (task.payment_id) {
+    db.prepare("UPDATE payments SET status = 'blocked', updated_at = ? WHERE id = ?").run(now, task.payment_id);
+    db.prepare("UPDATE payment_recipients SET status = 'blocked' WHERE payment_id = ?").run(task.payment_id);
+  }
+
+  try {
+    recalculateReputation(task.agent_id);
+  } catch {
+    // Reputation should not break the demo failure proof path.
+  }
+
+  return { taskId, proofId, paymentStatus: "blocked", reason };
 }
 
 // ── Anchor integration (D4) ──────────────

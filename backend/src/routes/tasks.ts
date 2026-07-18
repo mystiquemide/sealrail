@@ -18,6 +18,7 @@ import {
   runTaskVerification,
   verifyTaskProof,
   unlockTaskPayment,
+  createFailedDemoProof,
   isValidTaskTransition,
 } from "../services/tasks.js";
 import { getAgentOutput, runTaskWithAgentExecution } from "../services/agent-runtime.js";
@@ -42,6 +43,7 @@ const createTaskSchema = {
     total_amount: { type: "number", minimum: 0 },
     currency: { type: "string", enum: ["CSPR", "USD"] },
     unlock_rule: { type: "string", enum: ["proof_verified", "workflow_verified"] },
+    demo_failure: { type: "boolean" },
   },
 };
 
@@ -101,6 +103,7 @@ export function registerTaskRoutes(app: FastifyInstance): void {
       title?: string;
       task_type?: string;
       input?: Record<string, unknown>;
+      demo_failure?: boolean;
     };
   }>(
     "/api/demo/invoice-proof",
@@ -126,6 +129,44 @@ export function registerTaskRoutes(app: FastifyInstance): void {
           totalAmount: body.total_amount,
           currency: body.currency,
         });
+
+        if (body.demo_failure) {
+          const failed = createFailedDemoProof(
+            task.id,
+            "Schema verification rejected the agent output. Payment remains blocked."
+          );
+          const { proofs } = getTaskWithTrail(task.id);
+          const latestProof = proofs[proofs.length - 1];
+
+          return reply.status(200).send({
+            failed: true,
+            error: "VERIFICATION_FAILED",
+            message: failed.reason,
+            task_id: task.id,
+            payment_id: payment.id,
+            proof_id: failed.proofId,
+            anchor_hash: null,
+            deploy_hash: null,
+            casper_mode: null,
+            payment_status: failed.paymentStatus,
+            proof: latestProof ? {
+              wasm_hash: latestProof.wasm_hash,
+              attestation_hash: latestProof.attestation_hash,
+              status: latestProof.status,
+            } : { wasm_hash: "failed", attestation_hash: "failed", status: "failed" },
+            output: {
+              result: {
+                decision: "blocked",
+                reason_codes: ["schema_verification_failed", "no_proof_no_payment"],
+                recommended_action: "Payment stays blocked because the proof failed.",
+              },
+              input_hash: latestProof?.input_hash ?? null,
+              output_hash: latestProof?.output_hash ?? null,
+              model_metadata: null,
+              duration_ms: 0,
+            },
+          });
+        }
 
         const runRes = await runTaskWithAgentExecution(task.id);
         verifyTaskProof(task.id);

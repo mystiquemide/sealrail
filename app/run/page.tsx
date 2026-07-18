@@ -127,7 +127,7 @@ export default function RunPage() {
     setFields((f) => ({ ...f, [key]: value }));
   }
 
-  const runFullFlow = useCallback(async () => {
+  const runFullFlow = useCallback(async (demoFailure = false) => {
     if (!agent) return;
     setFullFlowRunning(true);
     setFailedStep(null);
@@ -141,6 +141,7 @@ export default function RunPage() {
         currency: "USD",
         title: fields.invoiceId,
         task_type: agent.supported_task_types[0] ?? "invoice_risk",
+        demo_failure: demoFailure,
         input: {
           invoice_id: fields.invoiceId,
           vendor: fields.vendor,
@@ -170,14 +171,30 @@ export default function RunPage() {
         decision: result.decision ?? "-",
         reason: result.reasoning ?? "No reasoning returned.",
         flags: result.flags ?? [],
-        outputHash: demo.output.output_hash,
+        outputHash: demo.output.output_hash ?? "verification-failed",
       });
+
+      if (demo.failed) {
+        setStage(3);
+        setFailedStep(3);
+        setBusyStep(null);
+        setAnchHash("not anchored");
+        setDeployHash(null);
+        setCasperMode("not_anchored");
+        setWasmHash(demo.proof.wasm_hash);
+        setAttHash(demo.proof.attestation_hash);
+        setPaymentStatusRaw(demo.payment_status);
+        setPaymentState(formatPaymentState(demo.payment_status));
+        setErrorMessage("Proof failed. No Casper anchor was created and payment stayed blocked.");
+        return;
+      }
+
       setStage(3);
       setBusyStep(3);
 
-      setAnchHash(demo.anchor_hash);
+      setAnchHash(demo.anchor_hash ?? "pending");
       setDeployHash(demo.deploy_hash || "live");
-      setCasperMode(demo.casper_mode);
+      setCasperMode(demo.casper_mode ?? "testnet");
       setWasmHash(demo.proof.wasm_hash);
       setAttHash(demo.proof.attestation_hash);
       setStage(5);
@@ -315,7 +332,7 @@ export default function RunPage() {
           <div className={styles.headerActions}>
             <span className={styles.modeBadge}>
               <span className={styles.modeBadgeDot} />
-              TEE Verification Mode
+              Schema + hash verification
             </span>
             <div className={styles.headerButtons}>
               {stage === 0 || fullFlowRunning ? (
@@ -325,6 +342,15 @@ export default function RunPage() {
                   disabled={busyStep !== null || fullFlowRunning}
                 >
                   {fullFlowRunning ? "Running full flow..." : "Run full flow"}
+                </button>
+              ) : null}
+              {stage === 0 && !fullFlowRunning ? (
+                <button
+                  className={styles.btnReset}
+                  onClick={() => void runFullFlow(true)}
+                  disabled={busyStep !== null || fullFlowRunning}
+                >
+                  Run failing proof
                 </button>
               ) : null}
               <button className={styles.btnReset} onClick={reset}>

@@ -11,6 +11,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import pkg from "casper-js-sdk";
 import { buildApp } from "../src/index.js";
 import { closeDb } from "../src/db.js";
+import { createAgent } from "../src/services/agents.js";
 import type { FastifyInstance } from "fastify";
 
 const { PrivateKey, KeyAlgorithm } = pkg as unknown as {
@@ -242,5 +243,39 @@ describe("wallet auth gates the public demo endpoint", () => {
     // Not gated by auth - a nonexistent agent id fails downstream (404), a
     // distinct failure mode from "you never proved wallet ownership" (401).
     expect(res.statusCode).not.toBe(401);
+  });
+
+  it("can run a demo failure scenario that leaves payment blocked", async () => {
+    const { verifyRes } = await fullLogin(KeyAlgorithm.ED25519);
+    const secret = (verifyRes.json() as { secret: string }).secret;
+    const ownerAddress = (verifyRes.json() as { owner_address: string }).owner_address;
+    const agent = createAgent({
+      ownerAddress,
+      name: "Failure Demo Invoice Agent",
+      category: "invoice",
+      endpointUrl: "https://example.com/agent",
+      supportedTaskTypes: ["invoice_risk"],
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/demo/invoice-proof",
+      headers: { authorization: `Bearer ${secret}` },
+      payload: {
+        agent_id: agent.id,
+        buyer_address: ownerAddress,
+        total_amount: 100,
+        currency: "USD",
+        demo_failure: true,
+        input: { invoice_id: "INV-FAIL-001", amount_usd: 100 },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { failed: boolean; payment_status: string; proof: { status: string }; anchor_hash: string | null };
+    expect(body.failed).toBe(true);
+    expect(body.payment_status).toBe("blocked");
+    expect(body.proof.status).toBe("failed");
+    expect(body.anchor_hash).toBeNull();
   });
 });

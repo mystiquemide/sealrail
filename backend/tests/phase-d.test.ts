@@ -19,6 +19,9 @@ import {
   getCasperClientVersion,
   getCasperHealth,
   __setCasperExecAsync,
+  __setCasperSubmitDeployAsync,
+  __setCasperClientAvailableForTest,
+  __setCasperDeployConfirmationAsync,
 } from "../src/services/casper.js";
 
 import {
@@ -189,6 +192,45 @@ describe("Phase D: Casper Anchoring Adapter", () => {
 
       // C2: Error indicates what's missing (client or account key)
       expect(result.error).toMatch(/CASPER_/);
+    });
+
+    it("does not mark testnet anchor successful until deploy execution is confirmed", async () => {
+      __setCasperClientAvailableForTest(true);
+      __setCasperSubmitDeployAsync(async () => ({ deployHash: "a".repeat(64) }));
+      __setCasperDeployConfirmationAsync(async () => ({
+        confirmed: false,
+        error: "execution reverted",
+      }));
+
+      const result = await createTestnetAnchor(sampleAnchorInput());
+
+      expect(result.success).toBe(false);
+      expect(result.deployHash).toBe("a".repeat(64));
+      expect(result.error).toContain("CASPER_DEPLOY_NOT_CONFIRMED");
+
+      __setCasperClientAvailableForTest();
+      __setCasperSubmitDeployAsync();
+      __setCasperExecAsync();
+      __setCasperDeployConfirmationAsync();
+    });
+
+    it("returns success only after the deploy execution is confirmed", async () => {
+      __setCasperClientAvailableForTest(true);
+      __setCasperSubmitDeployAsync(async () => ({ deployHash: "b".repeat(64) }));
+      __setCasperDeployConfirmationAsync(async () => ({
+        confirmed: true,
+      }));
+
+      const result = await createTestnetAnchor(sampleAnchorInput());
+
+      expect(result.success).toBe(true);
+      expect(result.anchorHash).toBe("b".repeat(64));
+      expect(result.deployHash).toBe("b".repeat(64));
+
+      __setCasperClientAvailableForTest();
+      __setCasperSubmitDeployAsync();
+      __setCasperExecAsync();
+      __setCasperDeployConfirmationAsync();
     });
   });
 
