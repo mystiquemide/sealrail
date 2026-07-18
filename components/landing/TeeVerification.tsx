@@ -9,14 +9,14 @@ export function TeeVerification() {
             <div className={styles.eyebrow}>Honest mode</div>
             <h2 className={styles.verticalTitle}>Verification before settlement.</h2>
             <p className={styles.verticalBody}>
-              The run uses a TEE verification layer to check agent output before payment can unlock.
+              The live run uses schema checks and hash binding to verify agent output before payment can unlock.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "30px" }}>
               <span className={`${styles.teeBadge} ${styles.teeBadgeAmber}`}>
                 <span className={styles.teeDot} style={{ background: "#F2B84B" }} />
-                TEE Verification Mode
+                Schema + hash verification
               </span>
-              <span className={`${styles.teeBadge} ${styles.teeBadgeNeutral}`}>TEE Verification</span>
+              <span className={`${styles.teeBadge} ${styles.teeBadgeNeutral}`}>Hosted TEE pending</span>
               <span className={`${styles.teeBadge} ${styles.teeBadgeGreen}`}>
                 <span className={styles.teeDot} style={{ background: "#64D96B" }} />
                 Casper Anchored

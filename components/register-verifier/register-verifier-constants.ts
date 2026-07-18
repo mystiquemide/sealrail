@@ -17,7 +17,7 @@ export const INITIAL_VERIFIER_FORM_STATE: RegisterVerifierFormState = {
   inputSchema: "",
   outputSchema: "",
   wasmHash: "",
-  mode: "TEE Verification Mode",
+  mode: "Schema + hash verification",
 };
 
 export function validateVerifierForm(form: RegisterVerifierFormState): string | null {

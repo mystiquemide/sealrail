@@ -14,7 +14,7 @@ export type Listing = {
 };
 
 export const CATEGORY_OPTIONS = ["All", "Invoice", "DeFi", "Research", "Compliance", "Custom"] as const;
-export const MODE_OPTIONS = ["All", "TEE Verification Mode", "TEE Verification"] as const;
+export const MODE_OPTIONS = ["All", "Schema + hash verification", "Hosted TEE (pending)"] as const;
 export const STATUS_OPTIONS = ["Live", "Paused", "All"] as const;
 
 function categoryLabel(category: string): string {
@@ -34,7 +34,7 @@ export function toListing(listing: MarketplaceListing, verifierMode?: string): L
     price: `${listing.price_amount} ${listing.currency}`,
     reputation: `${listing.reputation_score} / 100`,
     category: categoryLabel(listing.category),
-    mode: verifierMode ? formatMode(verifierMode) : "TEE Verification Mode",
+    mode: verifierMode ? formatMode(verifierMode) : "Schema + hash verification",
     status: statusLabel(listing.status),
     href: `/marketplace/${listing.id}`,
   };

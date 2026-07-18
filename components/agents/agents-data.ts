@@ -29,8 +29,8 @@ const STATUS_COLOR: Record<Agent["status"], string> = {
 };
 
 export function formatMode(mode: string): string {
-  if (mode === "tee_verification_mode") return "TEE Verification Mode";
-  if (mode === "hosted_tee") return "Hosted TEE";
+  if (mode === "tee_verification_mode") return "Schema + hash verification";
+  if (mode === "hosted_tee") return "Hosted TEE (pending)";
   return mode;
 }
 

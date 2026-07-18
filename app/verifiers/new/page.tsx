@@ -183,8 +183,8 @@ export default function RegisterVerifierPage() {
                 <div>
                   <label htmlFor="verifier-mode" className={styles.formLabel}>Mode support</label>
                   <select id="verifier-mode" value={form.mode} onChange={(e) => update("mode", e.target.value)} className={styles.formSelect}>
-                    <option value="TEE Verification Mode">TEE Verification Mode</option>
-                    <option value="TEE Verification">TEE Verification</option>
+                    <option value="Schema + hash verification">Schema + hash verification</option>
+                    <option value="Hosted TEE (pending)">Hosted TEE (pending)</option>
                   </select>
                 </div>
               </div>

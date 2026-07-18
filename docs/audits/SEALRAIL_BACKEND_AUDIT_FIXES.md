@@ -90,7 +90,7 @@ Fixed all Critical (C1-C3) and High (H1-H5) findings from the audit report. The 
 
 2. **Dual-state JSON/rows (L3)**: Payment recipients duplicated in both `payments.recipients` JSON and `payment_recipients` rows. The service syncs them on write but divergence risk remains. Structural change deferred.
 
-3. **Blocky TEE in dry-run**: When bky-as CLI is available, `runTaskVerification` attempts real TEE verification. In demo/testing scenarios, this is gated by a 2-second timeout to avoid test hangs.
+3. **Blocky TEE in dry-run**: When bky-as CLI is available, `runTaskVerification` attempts local Blocky-compatible verification. In demo/testing scenarios, this is gated by a 2-second timeout to avoid test hangs.
 
 4. **API key bootstrap**: `POST /api/api-keys` remains unauthenticated for bootstrapping. This is acceptable for hackathon but production should require an admin setup flow.
 

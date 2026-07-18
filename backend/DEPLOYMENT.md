@@ -46,7 +46,7 @@ This document covers deploying the Sealrail backend in three modes:
   cargo odra deploy --network casper-test
   # Record the contract hash from the output
   ```
-- **Blocky hosted access** (for real TEE verification) - Contact info@blocky.rocks.
+- **Blocky hosted access** (for hosted TEE execution) - Contact info@blocky.rocks.
   Currently **PENDING** - no response received yet.
 
 ## Quick Start (dry_run)

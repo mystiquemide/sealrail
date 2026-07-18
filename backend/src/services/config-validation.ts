@@ -35,14 +35,15 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
   // Blocky CLI is always recommended but only required for non-dry-run
   if (!isCliAvailable()) {
     if (mode !== "dry_run") {
-      // In testnet mode, bky-as CLI is optional (TEE verification can be simulated).
+      // In testnet mode, bky-as CLI is optional; live payment gating still uses
+      // schema checks, hash binding, and Casper anchoring.
       // In production/mainnet, it's a hard requirement.
       const severity = mode === "testnet" ? "warning" : "error";
       issues.push({
         key: "bky-as CLI",
         severity,
         message:
-          "bky-as CLI is required for TEE verification in non-dry_run mode. " +
+          "bky-as CLI is required for hosted/local TEE execution in non-dry_run mode. " +
           "Install from https://github.com/blocky/blocky-as or switch to CASPER_MODE=dry_run.",
       });
     } else {
@@ -50,8 +51,8 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
         key: "bky-as CLI",
         severity: "warning",
         message:
-          "bky-as CLI is not installed. Dry-run mode can simulate verification, " +
-          "but real TEE attestation requires the CLI. Install from https://github.com/blocky/blocky-as",
+          "bky-as CLI is not installed. Dry-run mode remains local-only; hosted/local TEE execution requires the CLI. " +
+          "Install from https://github.com/blocky/blocky-as",
       });
     }
   }
@@ -69,7 +70,7 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
         key: "BLOCKY_AS_HOST",
         severity: "warning",
         message:
-          `Hosted Blocky access is not configured. ${mode} mode will use the local Blocky adapter for TEE verification. ` +
+          `Hosted Blocky access is not configured. ${mode} mode uses schema checks, hash binding, and Casper anchoring while hosted TEE remains pending. ` +
           `Missing: ${missing.join(", ")}. Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for hosted TEE when available. ` +
           `Contact info@blocky.rocks for an API key.`,
       });
@@ -80,8 +81,8 @@ function validateBlockyConfig(issues: ValidationIssue[]): void {
         key: "BLOCKY_AS_HOST",
         severity: "warning",
         message:
-          "Hosted Blocky access is not configured. Dry-run mode will simulate TEE verification. " +
-          "Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for real TEE verification.",
+          "Hosted Blocky access is not configured. Dry-run mode is local-only. " +
+          "Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for hosted TEE execution when available.",
       });
     }
   }

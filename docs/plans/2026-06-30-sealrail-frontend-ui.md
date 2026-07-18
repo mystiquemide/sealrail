@@ -48,8 +48,8 @@ memory.md
 
 - No user-facing sample-app language.
 - No user-facing implementation-mode language.
-- Judge-facing UI can say TEE, TEE verification, or TEE Verification Mode.
-- No claim of real enclave execution unless real hosted TEE is connected later.
+- Judge-facing UI can say TEE, TEE verification, or Schema + hash verification.
+- No claim of hosted TEE execution unless hosted Blocky access is connected later.
 - No green dots, online dots, or status dots on landing.
 - No SR-71 wording.
 - No internal skill references.
@@ -310,7 +310,7 @@ memory.md
 **Acceptance:**
 
 - Payment state and proof state are separate.
-- TEE Verification Mode is visible.
+- Schema + hash verification is visible.
 - UI reads as real product flow, not a presentation mock.
 
 ---

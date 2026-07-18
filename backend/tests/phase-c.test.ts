@@ -112,7 +112,7 @@ function mockVerifyOutput(): string {
 
 // ── Test Suite ───────────────────────────
 
-describe("Phase C: Blocky TEE Verification Adapter", () => {
+describe("Phase C: Blocky-compatible verification adapter", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();

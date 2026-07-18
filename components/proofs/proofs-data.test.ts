@@ -25,7 +25,7 @@ function makeRow(overrides: Partial<ProofRow>): ProofRow {
     payState: "Payable",
     payColor: "",
     hash: "anchor-1",
-    mode: "TEE Verification Mode",
+    mode: "Schema + hash verification",
     href: "/proofs/INV-1030",
     ...overrides,
   };
@@ -85,8 +85,8 @@ describe("filterProofRows", () => {
   });
 
   it("filters by verification mode", () => {
-    expect(filterProofRows(rows, "", "All", "TEE Verification Mode")).toHaveLength(2);
-    expect(filterProofRows(rows, "", "All", "TEE Verification")).toHaveLength(0);
+    expect(filterProofRows(rows, "", "All", "Schema + hash verification")).toHaveLength(2);
+    expect(filterProofRows(rows, "", "All", "Hosted TEE (pending)")).toHaveLength(0);
   });
 });
 

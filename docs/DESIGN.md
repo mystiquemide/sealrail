@@ -222,7 +222,7 @@ The run uses invoice risk analysis because it is easy for judges to understand:
 Allowed wording:
 
 ```text
-TEE-compatible attestation
+Schema + hash verification
 Verified through the attestation verifier
 Built for TEE verification
 Proof hash anchored on Casper
@@ -624,7 +624,7 @@ Payment unlocked
 Public-facing UI should say:
 
 ```text
-TEE Verification Mode
+Schema + hash verification
 TEE-backed verification path
 Attestation verifier passed
 Payment unlocked after proof
@@ -645,7 +645,7 @@ Do not expose implementation-mode wording on judge-facing screens.
 | Payable | Payment can be claimed | Proof green | Payment unlocked |
 | Paid | Payment completed | Proof green | Agent paid |
 | Blocked | Verification failed | Risk red | Payment blocked |
-| TEE verification | Proof verification path | Warning amber | TEE Verification Mode |
+| TEE verification | Proof verification path | Warning amber | Schema + hash verification |
 
 ---
 
@@ -837,7 +837,7 @@ The landing page must be built section by section. Do not build all sections in 
 │ The run uses a TEE verification layer to check agent output before │
 │ payment can unlock.                                                │
 │                                                                    │
-│ [TEE Verification Mode] [TEE Verification] [Casper Anchored]       │
+│ [Schema + hash verification] [Hosted TEE pending] [Casper Anchored]       │
 └────────────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────────────┐
@@ -888,7 +888,7 @@ Purpose: Run the main product proof/payment flow.
 │ Run a payment-backed invoice proof.                                │
 │ Create a funded task, verify the agent output, anchor the proof,   │
 │ and unlock payment.                                                │
-│ Mode badge: TEE Verification Mode                                  │
+│ Mode badge: Schema + hash verification                                  │
 └────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────┬─────────────────────────────────────┐
@@ -956,7 +956,7 @@ Purpose: Browse proof records.
 │ FILTER BAR                                                         │
 │ Search task ID                                                     │
 │ Status: All | Verified | Pending | Blocked | Paid                  │
-│ Mode: All | TEE Verification Mode | TEE Verification               │
+│ Mode: All | Schema + hash verification | Hosted TEE pending               │
 └────────────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────────────┐
@@ -1002,7 +1002,7 @@ Purpose: Inspect one full proof and payment trail.
 
 ┌────────────────────────────────────────────────────────────────────┐
 │ BLOCKY-COMPATIBLE VERIFICATION                                     │
-│ Mode: TEE Verification Mode                                        │
+│ Mode: Schema + hash verification                                        │
 │ Verifier: verifyInvoiceRisk                                        │
 │ WASM hash: b94f...bb69f                                            │
 │ Attestation hash: 80d0...cd44                                      │
@@ -1044,7 +1044,7 @@ Purpose: Show verifier agents and what each can prove.
 │ Invoice Risk Agent                                                 │
 │ Task: RWA invoice verification                                     │
 │ Verifier: verifyInvoiceRisk                                        │
-│ Mode: TEE Verification Mode                                        │
+│ Mode: Schema + hash verification                                        │
 │ Status: Active                                                     │
 │ [Start run] [View proofs]                                           │
 │                                                                    │
@@ -1076,7 +1076,7 @@ Purpose: Browse live proof-backed agents. Listings must come from real Marketpla
 ┌────────────────────────────────────────────────────────────────────┐
 │ FILTERS                                                            │
 │ Category: All | Invoice | DeFi | Research | Compliance | Custom    │
-│ Proof mode: TEE Verification Mode | TEE Verification               │
+│ Proof mode: Schema + hash verification | Hosted TEE pending               │
 │ Status: Live | Paused                                              │
 └────────────────────────────────────────────────────────────────────┘
 
@@ -1125,7 +1125,7 @@ Purpose: Inspect one agent listing and start a paid task.
 │ TASK INPUT                   │ AGENT AND VERIFIER                  │
 │ Invoice ID                   │ Agent owner: wallet address         │
 │ Amount                       │ Verifier: verifyInvoiceRisk         │
-│ Vendor                       │ Mode: TEE Verification Mode         │
+│ Vendor                       │ Mode: Schema + hash verification         │
 │ Buyer                        │ Reputation: 92 / 100                │
 │ Due date                     │ Verified runs: 21                   │
 │ [Create paid task]           │ Failed proofs: 1                    │
@@ -1608,8 +1608,8 @@ Must appear anywhere TEE could be assumed.
 Copy:
 
 ```text
-TEE Verification Mode
-This run uses TEE-compatible attestation. Hosted Blocky AS can replace this adapter when access is live.
+Schema + hash verification
+This run uses Schema + hash verification. Hosted Blocky AS can replace this adapter when access is live.
 ```
 
 ---
@@ -1670,7 +1670,7 @@ The invoice agent can produce an answer, but the payment stays blocked until the
 TEE verification explanation:
 
 ```text
-This run uses TEE Verification Mode. Hosted Blocky AS can replace the adapter when access is live.
+This run uses Schema + hash verification. Hosted Blocky AS can replace the adapter when access is live.
 ```
 
 Final CTA:
@@ -1684,8 +1684,8 @@ Pay agents only after proof.
 Do not use:
 
 ```text
-production TEE proof, unless the hosted service is live
-real enclave verified, unless the hosted service is live
+hosted TEE proof, unless the hosted service is live
+hosted TEE verified, unless the hosted service is live
 fully trustless
 revolutionary AI settlement
 magical autonomous payments
@@ -1928,7 +1928,7 @@ The pitch deck should look like a premium proof report.
 | 5 | Live run | Three screenshots: run, proof detail, explorer |
 | 6 | Architecture | Clean rail diagram with backend, Blocky adapter, Casper registry |
 | 7 | Why Casper | Casper as proof anchor and registry layer |
-| 8 | Honest TEE path | TEE Verification Mode now, TEE verification service ready |
+| 8 | Honest TEE path | Schema + hash verification now, TEE verification service ready |
 | 9 | Expansion | Invoice checks, DeFi risk, agent marketplaces |
 | 10 | Final wow | Payment unlocks only after proof |
 
@@ -1987,7 +1987,7 @@ The design is ready only when:
 - [ ] The logo is a sealed rail concept, not a generic shield or cube.
 - [ ] Landing page has all 10 planned sections.
 - [ ] App screens exist for run, marketplace, listing detail, agents, agent profile, owner dashboard, workflows, verifiers, API keys, proofs, proof detail, docs, privacy, terms, and status.
-- [ ] TEE Verification Mode is honestly labelled.
+- [ ] Schema + hash verification is honestly labelled.
 - [ ] Payment state and proof state are visually separate.
 - [ ] Casper anchor is visible as a concrete proof object.
 - [ ] A judge can complete the main invoice verification run in under 90 seconds.
