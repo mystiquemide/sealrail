@@ -11,6 +11,7 @@ interface CasperWalletProviderInstance {
   isConnected(): Promise<boolean>;
   getActivePublicKey(): Promise<string>;
   sign(transactionJson: string, signingPublicKeyHex: string): Promise<WalletSignatureResponse>;
+  disconnectFromSite?(): Promise<boolean>;
 }
 
 declare global {
@@ -44,6 +45,21 @@ export function clearSession() {
 
 export function getSession(): StoredSession | null {
   return readStored();
+}
+
+/**
+ * Disconnect the wallet: clear the Sealrail session (the app's source of
+ * truth for identity) and best-effort tell the Casper Wallet extension to
+ * drop this site, so a reconnect prompts a fresh account choice.
+ */
+export async function disconnectWallet(): Promise<void> {
+  clearSession();
+  if (typeof window === "undefined" || !window.CasperWalletProvider) return;
+  try {
+    await window.CasperWalletProvider().disconnectFromSite?.();
+  } catch {
+    // Best-effort: clearing the Sealrail session already logs the user out.
+  }
 }
 
 async function isSessionValid(session: StoredSession): Promise<boolean> {
