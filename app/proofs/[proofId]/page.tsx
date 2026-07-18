@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
+import { Skeleton } from "@/components/app/Skeleton";
 import { buildProofBundle, buildProofDetailRecord, type ProofDetailRecord } from "@/components/proof-detail/proof-detail-data";
 import { getAgent, getProofDetail, getTaskDetail, listTasks } from "@/lib/api";
 import type { TaskDetail } from "@/lib/api-types";
@@ -101,8 +102,15 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
               <span className={styles.backArrow}>{"<-"}</span>
               Back to proofs
             </Link>
-            <div style={{ marginTop: 40 }}>
-              <div className={styles.title}>Loading...</div>
+            <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 16 }} role="status" aria-label="Loading proof">
+              <Skeleton width={110} height={11} />
+              <Skeleton width="55%" height={30} />
+              <div style={{ height: 180, marginTop: 12 }}>
+                <Skeleton block />
+              </div>
+              <div style={{ height: 140 }}>
+                <Skeleton block />
+              </div>
             </div>
           </>
         ) : !detail || !record ? (

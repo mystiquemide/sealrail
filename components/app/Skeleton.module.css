@@ -1,0 +1,51 @@
+/* Shared skeleton placeholders. Purely presentational: non-interactive,
+   aria-hidden, and never focusable. Shown while real data loads so a screen
+   is never blank. */
+
+.bar,
+.block {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bar {
+  height: 12px;
+  display: block;
+}
+
+.block {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+/* Shimmer sweep. Respects reduced-motion. */
+.bar::after,
+.block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: skeletonSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonSweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar::after,
+  .block::after {
+    animation: none;
+  }
+}
