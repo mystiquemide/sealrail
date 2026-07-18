@@ -91,11 +91,7 @@ export default function MarketplacePage() {
           </div>
         </div>
       ) : allListings === null ? (
-        <div className={styles.listingsWrap}>
-          <div className={styles.emptyState}>
-            <div className={styles.emptyTitle}>Loading listings...</div>
-          </div>
-        </div>
+        <MarketplaceListingTable listings={[]} emptyReason={emptyReason} onClearFilters={clearFilters} showLoading />
       ) : (
         <MarketplaceListingTable listings={listings} emptyReason={emptyReason} onClearFilters={clearFilters} />
       )}

@@ -1,14 +1,44 @@
 import Link from "next/link";
 import type { Listing } from "./marketplace-data";
+import { Skeleton } from "@/components/app/Skeleton";
 import styles from "./Marketplace.module.css";
 
 type MarketplaceListingTableProps = {
   listings: Listing[];
   emptyReason: string;
   onClearFilters: () => void;
+  showLoading?: boolean;
 };
 
-export function MarketplaceListingTable({ listings, emptyReason, onClearFilters }: MarketplaceListingTableProps) {
+export function MarketplaceListingTable({ listings, emptyReason, onClearFilters, showLoading = false }: MarketplaceListingTableProps) {
+  if (showLoading) {
+    return (
+      <div className={styles.listingsWrap}>
+        <div className={styles.listingsTable}>
+          <div className={`${styles.listingHead} ${styles.listingGridCols}`}>
+            <span>Agent</span>
+            <span>Proof requirement</span>
+            <span>Price</span>
+            <span>Reputation</span>
+            <span style={{ textAlign: "right" }}>Action</span>
+          </div>
+          {[0, 1].map((i) => (
+            <div key={i} className={`${styles.listingRow} ${styles.listingGridCols}`}>
+              <div>
+                <Skeleton width="60%" height={14} />
+                <Skeleton width={90} height={10} style={{ marginTop: 8 }} />
+              </div>
+              <Skeleton width="70%" />
+              <Skeleton width="45%" />
+              <Skeleton width="40%" />
+              <Skeleton width={70} style={{ justifySelf: "end" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (listings.length === 0) {
     return (
       <div className={styles.listingsWrap}>
@@ -39,9 +69,8 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters 
               <div className={styles.listingAgent}>{l.agent}</div>
               <div className={styles.listingLiveTag}>
                 <span className={styles.listingLiveDot} />
-                {l.status}
+                {l.runtimeLabel}
               </div>
-              {l.isRunnable ? <div className={styles.listingRuntimeTag}>{l.runtimeLabel}</div> : null}
             </div>
             <span className={styles.listingVerifier}>{l.verifier}</span>
             <span className={styles.listingValue}>{l.price}</span>

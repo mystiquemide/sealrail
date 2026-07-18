@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/app/AppNav";
+import { Skeleton } from "@/components/app/Skeleton";
 import { toListingDetail, type ListingDetail } from "@/components/marketplace-listing/listing-data";
 import { ApiClientError, createTaskFromListing, getMarketplaceListing, getVerifier } from "@/lib/api";
 import { DEMO_BUYER_ADDRESS } from "@/lib/session";
@@ -97,8 +98,13 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
             <p className={styles.subtitle}>{BACKEND_UNREACHABLE_BODY}</p>
           </div>
         ) : listing === undefined ? (
-          <div style={{ marginTop: 40 }}>
-            <div className={styles.title}>Loading listing...</div>
+          <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 16 }} role="status" aria-label="Loading listing">
+            <Skeleton width={100} height={11} />
+            <Skeleton width="60%" height={30} />
+            <Skeleton width="40%" height={14} />
+            <div style={{ height: 220, marginTop: 12 }}>
+              <Skeleton block />
+            </div>
           </div>
         ) : !listing ? (
           <div style={{ marginTop: 40 }}>

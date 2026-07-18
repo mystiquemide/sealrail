@@ -1,233 +1,153 @@
 # SealRail
 
-**Proof-gated payment rail for invoice and RWA agents on Casper. No Proof without a Payment.**
+**A proof-gated payment rail for AI agents on Casper. An agent gets paid only after its work is independently verified and the proof is anchored on-chain.**
 
 [![CI](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Anchoring%20Live-red)](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d)
 [![Backend Tests](https://img.shields.io/badge/backend%20tests-769%20passing-brightgreen)](backend/tests)
-[![Railway](https://img.shields.io/badge/deployed-Railway-%230B0D0E)](https://api.sealrail.xyz/api/status)
 
-**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status) &nbsp;·&nbsp; **Demo video:** pending final recording
+**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **Demo video:** [youtu.be/K8tqyrEmRzM](https://youtu.be/K8tqyrEmRzM) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status)
 
-## Casper Agentic Buildathon Final Round
+> A payment cannot unlock on Casper unless a verified proof exists and a Casper deploy has been confirmed on-chain. No proof, no payment. Enforced, not promised.
 
-SealRail qualified for the Casper Agentic Buildathon 2026 Final Round. The final-round story is one loop:
+Qualified for the **Casper Agentic Buildathon 2026 Final Round**. You can verify the core claim in 30 seconds: open [`/run`](https://sealrail.xyz/run), click **Run failing proof**, and watch the rail refuse to pay for output that fails verification.
 
-> Invoice/RWA work enters the rail. An AI agent produces structured output. A verifier proves the output. Casper anchors the proof. Payment becomes unlockable only after proof exists.
+## The problem
 
-AI agents should not get paid just because they produced text. SealRail keeps the payment state locked until the work is independently verified and the proof trail is anchored on Casper. The live demo also shows the negative case: a failed proof creates no anchor and keeps payment blocked.
+An AI agent reviews a $12,400 invoice (INV-1030) and returns "approve." It gets paid for that call. But nobody checked the agent's output before the money moved. If the output was hallucinated, malformed, or wrong, the payer already lost twice: once on the bad invoice the agent waved through, once on the agent that waved it through.
 
-### Judge quick path
+This is the default for agent-to-agent commerce today: **output is trusted because it looks like output.** There is no independent gate between "the agent produced text" and "the agent gets paid." As soon as agents pay other agents at machine speed, that gap becomes the attack surface.
 
-1. Open [`/review`](https://sealrail.xyz/review) for the scoring map and trust boundaries.
-2. Click **Run full flow** on [`/run`](https://sealrail.xyz/run) to create an invoice-risk task, run the AI invoice-risk agent, verify the output, anchor on Casper testnet, and unlock payment state.
-3. Click **Run failing proof** to see bad output halt the rail: no Casper anchor and payment stays blocked.
-4. Open the generated proof detail or browse [`/proofs`](https://sealrail.xyz/proofs) to inspect persisted proof bundles and x402-compatible receipts.
-5. Check [`/status`](https://sealrail.xyz/status) for live system status and pending trust-boundary items.
+## The solution
 
-Running a fresh paid flow requires the Casper Wallet extension so SealRail can bind the holder identity. Wallet-less reviewers can still verify the invariant through `/review`, `/proofs`, proof detail pages, and the linked Casper testnet deploys.
+SealRail puts a verification gate between agent output and payment. Work enters the rail, an agent produces structured output with content-addressed hashes, a verifier checks that output against a schema and a WASM artifact hash, the proof is anchored on Casper testnet, and only a **confirmed** on-chain anchor moves the payment state to payable.
 
-### Live proof links
-
-| Surface | Link |
-|---|---|
-| Reviewer entrypoint | [`https://sealrail.xyz/review`](https://sealrail.xyz/review) |
-| Demo runner | [`https://sealrail.xyz/run`](https://sealrail.xyz/run) |
-| Proof explorer | [`https://sealrail.xyz/proofs`](https://sealrail.xyz/proofs) |
-| Latest production proof | [`0b9bad2e-3fe8-4ab5-80fb-4fa12de95f77`](https://sealrail.xyz/proofs/0b9bad2e-3fe8-4ab5-80fb-4fa12de95f77) |
-| Casper anchor from latest production proof | [`9a708f9e…c72edd6d`](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d) |
-| System status | [`https://sealrail.xyz/status`](https://sealrail.xyz/status) |
-
-### Criteria map
-
-| Casper final-round criterion | SealRail proof |
-|---|---|
-| Working prototype | Production web app, API, proof explorer, proof detail pages, and status board are live. |
-| Casper smart-contract usage | Proof hashes are anchored through the Casper testnet ProofRegistry path; successful deploys resolve on cspr.live. |
-| AI / agentic systems | The live Invoice Risk Agent returns structured output, but cannot unlock payment by itself. |
-| Real-world applicability | Invoice risk checks gate a payable state before release; RWA compliance is shown as the next marketplace vertical using the same rail. |
-| UX / design | `/review` gives judges one path, `/run` shows the happy path and failing-proof invariant, `/status` discloses live vs pending components. |
-| Long-term ecosystem impact | Proof-gated payment can become a Casper-native primitive for autonomous agents and RWA operations. |
-
-### Trust boundaries: live vs pending
-
-| Component | Current state | What is real |
-|---|---|---|
-| Casper ProofRegistry | Live on testnet | Proof hashes are anchored through the Casper testnet path before payment unlock. |
-| AI invoice-risk agent | Live | LLM-backed agent returns structured invoice-risk output with hash-bound proof data. |
-| RWA compliance listing | Preview | Seeded marketplace listing and verifier template are visible, but the dedicated RWA runtime is clearly labelled preview until connected. |
-| Verifier + state machine | Live | Payment unlock fails closed unless a verified proof exists and the Casper anchor is confirmed. |
-| Failing-proof demo | Live | Bad output produces a failed proof state, no anchor, and blocked payment. |
-| x402-compatible receipt | Live format | Proof bundles include payment-required receipt metadata, proof requirement, unlock condition, network, and payment state. |
-| CSPR.cloud | Partially live | Deploy confirmation and node checks are wired; external facilitator/rate signals can be unavailable and are not required for the proof-gated payment loop. |
-| Hosted TEE / Blocky AS | Pending hosted access | The adapter and configuration gate are present, but the live demo does not claim hosted enclave attestation until access is configured. |
-| CSPR settlement | Roadmap | Current build proves proof-gated payment state plus Casper anchoring; wallet-bound CSPR settlement is next. |
-
-![The Sealkeeper carrying a sealed ledger tag along the payment rail](public/hero-sealkeeper.jpg)
+**The hard rule, enforced by the backend state machine and covered by tests: a placeholder, simulated, or unverified proof can never advance a task to payable.** Payment fails closed. The negative path is a first-class demo, not a hidden branch.
 
 ## Product screens
 
-| Home | Run flow |
-|---|---|
-| ![SealRail homepage hero](public/screenshots/01-homepage.png) | ![SealRail verification run flow](public/screenshots/02-run-flow.png) |
+Real screens from the live app. Every number on them is produced by the running engine, not mocked up.
 
-| Marketplace | Reviewer quickstart |
+| Run flow (the rail, live) | Proof detail with x402-compatible receipt |
 |---|---|
-| ![SealRail agent marketplace](public/screenshots/03-marketplace.png) | ![SealRail reviewer quickstart page](public/screenshots/04-reviewer-quickstart.png) |
+| ![SealRail verification run flow: task input, live proof rail, verified output, and Casper anchor](public/screenshots/02-run-flow.png) | ![SealRail proof detail showing hashes, Casper anchor, payment state, and x402-compatible receipt](public/screenshots/06-proof-detail.png) |
 
-| Status | Proof detail |
+| Proof explorer / marketplace | Status board (honest live vs pending) |
 |---|---|
-| ![SealRail status dashboard](public/screenshots/05-status.png) | ![SealRail proof detail with x402-compatible receipt](public/screenshots/06-proof-detail.png) |
+| ![SealRail agent marketplace listing runnable and preview agents](public/screenshots/03-marketplace.png) | ![SealRail status dashboard showing live components and pending trust-boundary items](public/screenshots/05-status.png) |
+
+| Home | Reviewer quickstart |
+|---|---|
+| ![SealRail homepage hero](public/screenshots/01-homepage.png) | ![SealRail reviewer quickstart with judge path, live proof links, and trust boundaries](public/screenshots/04-reviewer-quickstart.png) |
+
+## Try it (real UI, real chain)
+
+Open [`/run`](https://sealrail.xyz/run) and:
+
+1. **Run full flow** — funds a task, runs the live invoice-risk agent, verifies the output, anchors the proof on Casper testnet, and unlocks the payment state. The anchor is a real, freshly-minted deploy you can open on cspr.live.
+2. **Run failing proof** — the agent output fails schema verification. The rail halts: **Blocky check FAILED → Casper anchor NONE → payment BLOCKED.**
+
+Running a fresh paid flow requires the Casper Wallet extension, so SealRail can bind the holder identity to a wallet-controlled key. Wallet-less reviewers can still verify the whole invariant through [`/review`](https://sealrail.xyz/review), [`/proofs`](https://sealrail.xyz/proofs), the proof detail pages, and the linked on-chain deploys.
 
 ## How it works
 
-Every task follows one rule, enforced by the backend state machine and covered by tests: no payment unlocks without a verified proof. Placeholder or simulated proofs can never advance a task.
-
-```mermaid
-flowchart LR
-  Buyer([Buyer]) -->|fund task| API[SealRail API]
-  API -->|dispatch| Agent[Agent runtime<br/>LLM worker]
-  Agent -->|hash-bound output| Verifier[Verifier<br/>schema + WASM hash]
-  Verifier -->|verified proof| Casper[(Casper<br/>ProofRegistry)]
-  Casper -->|confirmed anchor| Payment[Payment unlock]
-  Verifier -.->|failed proof| Blocked[Payment stays blocked]
+```
+ Buyer ── fund task ──▶ SealRail API ── dispatch ──▶ Agent runtime (LLM)
+                                                          │
+                                          hash-bound structured output
+                                                          ▼
+                             Verifier (schema + WASM hash binding)
+                            /                                      \
+                 verified proof                                failed proof
+                        │                                            │
+              Casper ProofRegistry                        no anchor, rail halts
+              (anchor_proof deploy)                                  │
+                        │                                            ▼
+              confirmed on-chain?                          payment stays BLOCKED
+                        │
+                        ▼
+              payment becomes payable
 ```
 
-```mermaid
-sequenceDiagram
-  participant B as Buyer
-  participant S as SealRail API
-  participant A as Agent (LLM)
-  participant V as Verifier
-  participant C as Casper
+1. **Fund.** `POST /api/tasks` creates a task and a locked payment intent.
+2. **Run.** The agent runtime sends a structured prompt to an LLM and returns output with input/output hashes.
+3. **Verify.** The verifier checks the output against the registered schema and the verifier's WASM artifact hash. Failure ends the rail here.
+4. **Anchor.** The proof hash is submitted to the Casper ProofRegistry contract via `anchor_proof`.
+5. **Confirm.** SealRail polls the deploy through CSPR.cloud and only accepts the anchor once execution is `processed` with no error. A submitted-but-reverted deploy is treated as a failure.
+6. **Unlock.** Payment becomes payable only if steps 3 and 5 both succeeded.
 
-  B->>S: POST /api/tasks (funds payment intent)
-  S->>A: POST /api/tasks/:id/run
-  A-->>S: structured output, input/output hashes
-  S->>V: verify against schema + WASM hash
-  V-->>S: proof verified (or failed)
-  S->>C: anchor proof hash
-  C-->>S: confirmed anchor transaction
-  B->>S: POST /api/tasks/:id/unlock-payment
-  S-->>B: payment payable (only if proof verified and anchor confirmed)
-```
+## Key features
 
-## What is in the box
-
-- **Proof-gated payments** — tasks fund a payable state that unlocks only after proof verification and confirmed Casper anchoring, with per-recipient splits and claim ownership checks.
-- **First-party Invoice Risk Agent** — sends structured prompts to a configurable LLM and returns hash-bound, schema-validated output: risk score, decision, reasoning, and flags.
-- **RWA Compliance Agent** — a second seeded marketplace listing for real-world asset review, compliance checks, document risk, and finance operations; it is labelled preview until its dedicated runtime is connected.
-- **Verifier registry** — templates bound to a WASM artifact hash, with input/output schemas and a test endpoint.
-- **Marketplace** — list agents, distinguish runnable invoice-risk listings from preview RWA listings, inspect listing details, and create paid tasks for the live invoice-risk runtime.
-- **Proof explorer and proof details** — `/proofs` and `/proofs/:proofId` resolve live proof data, verification result, task context, hashes, Casper anchor state, and payment state.
-- **Failing-proof demo** — `/run` includes a visible path where rejected output keeps payment blocked and creates no Casper anchor.
-- **x402-compatible receipts** — proof bundles include a payment-required receipt shape with `402`, proof requirement, unlock condition, network, and payment state metadata.
-- **Casper/CSPR proof metadata** — proof screens and status surfaces show anchor status, CSPR.cloud-backed deploy confirmation, explorer links, and testnet contract metadata.
-- **Casper Wallet sign-in** — users connect Casper Wallet, sign a nonce-carrying challenge, and receive a wallet-scoped API key for owner-sensitive actions.
-- **MCP server** — real `@modelcontextprotocol/sdk` stdio server with 5 tools: status, manifest, proof listing, proof detail, and payment-backed task creation.
-- **CSPR.cloud integration** — deploy confirmation, CSPR/USD rate lookup, x402 facilitator status, and Casper node health are exposed through dedicated API endpoints; external availability is shown honestly.
-- **Reviewer quickstart** — `/review` gives evaluators a direct judge path, live proof links, criteria map, and trust boundaries.
-- **Workflows and reputation** — multi-step runs with ordered execution, progressive payment splits, and reputation computed from proof/payment history.
-- **Casper contract** — Odra-based ProofRegistry deployed to testnet: agent registry, proof anchoring, and payment state transitions.
-
-## Latest product upgrades
-
-| Upgrade | Why it matters |
-|---|---|
-| **Confirmed Casper anchors before payment unlock** | SealRail now treats a Casper anchor as successful only after deploy execution is confirmed, preventing reverted deploys from unlocking payment. |
-| **Failing-proof demo** | Judges can click one button to see the invariant: bad output creates no anchor and payment remains blocked. |
-| **Reviewer judge page** | `/review` now gives one clean scoring surface with live proof links, CTAs, criteria map, and trust boundaries. |
-| **Railway deployment** | Backend runs on Railway with automatic deploys from GitHub, persistent volume storage, and health monitoring. |
-| **CSPR.cloud integration** | Deploy confirmation, rate lookup, x402 facilitator status, and node health are wired via `/api/integrations/cspr-cloud/*`, with external availability reported honestly. |
-| **Casper Wallet integration** | Connect Casper Wallet, sign a nonce-carrying challenge, and bind SealRail sessions/API keys to a wallet-controlled Casper public key. |
-| **MCP server (real SDK)** | `@modelcontextprotocol/sdk` stdio server with 5 callable tools — any MCP client can read SealRail status, inspect proofs, and create payment-backed tasks. |
-| **x402-compatible receipt panel** | Makes the payment-required/proof-required settlement story visible in the UI and API bundle. |
-
-## Ecosystem integrations
-
-SealRail exposes a real integration surface for external agents and Casper ecosystem builders. CSPR.cloud and MCP are live, with further ecosystem surfaces planned.
-
-### Implemented
-
-| Integration | Surface | Status |
+| Feature | What it does | Why it matters |
 |---|---|---|
-| **Casper testnet** | Live status reports `casper_mode: testnet`, deployed ProofRegistry config, Casper client 5.0.1 availability, chain readiness | ✅ Live |
-| **CSPR.cloud API** | Deploy confirmation, CSPR/USD rate, x402 facilitator status, node health — 4 dedicated endpoints | ✅ Live |
-| **MCP server** | `@modelcontextprotocol/sdk` stdio server, 5 tools (status, manifest, proofs, task creation) | ✅ Live |
-| **Odra ProofRegistry** | Contract deployed on Casper testnet, linked from README/testnet explorer | ✅ Live |
-| **x402-compatible receipts** | Proof bundles include payment-required receipt metadata, proof requirement, unlock condition, network, and payment state | ✅ Live |
-| **Casper Wallet authentication** | Wallet connection + signed challenge flow via `/api/auth/wallet/challenge` and `/api/auth/wallet/verify` | ✅ Live |
-| **Agent integration manifest** | `GET /api/integrations/agent-manifest` exposes capabilities, endpoints, MCP tools, trust boundaries | ✅ Live |
+| Proof-gated payment state machine | Unlocks a payable state only after verified proof + confirmed anchor | The one invariant the whole product defends |
+| Live Invoice Risk Agent | LLM-backed agent returns risk score, decision, reasoning, flags, all hash-bound | Real agentic output, not a canned string |
+| Failing-proof path | A one-click demo where bad output creates no anchor and blocks payment | Proves the invariant instead of asserting it |
+| Casper anchoring with execution confirmation | Anchors proof hashes and confirms the deploy actually executed | "Anchored" means executed on-chain, not just submitted |
+| Verifier registry | Schema + WASM-hash-bound templates with a test endpoint | Verification is content-addressed, not vibes |
+| Proof explorer | `/proofs` and `/proofs/:id` resolve live proof, hashes, anchor, payment state | A judge can inspect any proof independently |
+| x402-compatible receipts | Proof bundles carry a 402-style payment-required receipt shape | Machine-readable settlement story for agents |
+| Casper Wallet sign-in | Connect wallet, sign a nonce challenge, receive a wallet-scoped API key | Owner-sensitive actions are bound to a real key |
+| MCP server | Real `@modelcontextprotocol/sdk` stdio server, 5 tools | Any MCP client can read proofs and create tasks |
 
-### Planned
+## Why it is different
 
-| Integration | What it unlocks |
-|---|---|
-| Casper AI Toolkit | Agent-prompted contract interactions and Casper-native tool invocation from the runtime |
-| Wallet-bound reputation | Deeper reputation and marketplace stats tied to wallet-owned agent/verifier history |
-| External agent frameworks | Adapters so autonomous agent runtimes can call SealRail as a proof-gated payment rail |
+The naive version of this is an escrow that releases on "done," where "done" is whatever the agent or the operator asserts. That moves the trust, it does not remove it: the party holding the escrow can still release on unverified work.
 
-The manifest is intentionally public and secret-free. It gives other builders a stable way to discover how to create payment-backed tasks, run agent verification, anchor proof, inspect receipts, and unlock payment only after proof.
+Two things make SealRail different:
 
-### MCP server
+- **Verification sits between output and payment, and it fails closed.** The payment state machine has no path to payable that skips proof. This is enforced in code and asserted by tests, not left to operator discretion.
+- **The proof is anchored on a public chain and the anchor is execution-confirmed.** A third party can open the deploy on cspr.live and see the `anchor_proof` call succeeded. "Trust us, it verified" becomes "here is the transaction."
 
-```bash
-cd backend
-npm run mcp
+Remove either and you are back to a database row that says "paid" and a promise that someone checked.
+
+## Architecture
+
+- **Frontend** (`app/`, `components/`, `lib/`) — Next.js App Router, 19 routes, a typed API client, and an in-memory session bootstrap. No secret ever reaches the browser.
+- **Backend** (`backend/src/`) — Fastify API. `routes/` are thin; `services/` hold the domain logic: the task and payment state machines, the verifier, the agent runtime, the Casper anchoring service, reputation, and API-key management.
+- **Contract** (`contracts/verified-agent-payments/`) — an Odra ProofRegistry deployed to Casper testnet: agent registry, proof anchoring, and payment state transitions.
+- **Deliberate constraint:** the LLM sits in the work path, never in the authorization path. A model can produce output, but only the deterministic verifier and the confirmed on-chain anchor can move money. The intelligence is replaceable; the invariant is not.
+
+## Sponsor and ecosystem integrations
+
+| Integration | What it provides | What SealRail does with it |
+|---|---|---|
+| **Casper testnet** | Public, tamper-evident ledger | Anchors every proof hash via the Odra ProofRegistry `anchor_proof` entry point before payment can unlock |
+| **CSPR.cloud** | Casper node and deploy data | Confirms a deploy actually executed (`processed`, no error) before an anchor is accepted; also exposes rate and node-health endpoints |
+| **LLM provider (Groq in production, any OpenAI-compatible)** | Agent intelligence | Runs the invoice-risk agent that produces the structured output being verified |
+| **MCP (`@modelcontextprotocol/sdk`)** | Agent tool protocol | A stdio server exposes SealRail status, proofs, and task creation to any MCP client |
+
+**The delete test.** If you remove **Casper**, SealRail can no longer prove anything to a third party: payment unlock would rest on the app's own database claim, which the operator could forge. Casper is what turns "we verified it" into "verify it yourself." If you remove **CSPR.cloud**, the anchor degrades to submitted-but-unconfirmed, which is exactly the reverted-deploy failure mode SealRail was built to reject. If you remove the **LLM**, agent runs return an honest 503 instead of fabricating output. None of these are decorative.
+
+## Live deployment and proof
+
+Frontend on Vercel ([sealrail.xyz](https://sealrail.xyz)), backend on Railway ([api.sealrail.xyz](https://api.sealrail.xyz)), contract on Casper testnet.
+
+**A failing proof, taken live from `GET /api/proofs` just now.** Verification failed, so there is no anchor and payment is blocked, exactly as the invariant requires:
+
+```json
+{
+  "proof_id": "6d809aec-c67d-44aa-938d-e75c2867bd4c",
+  "task_id": "669b4ed1-356f-4f2f-af5c-2d135adc8cc7",
+  "invoice_id": "INV-1030",
+  "input_hash": "95fdb566d8252117a27cda9b396aa06587489cb6bfb7d7b5b333ba15983e5261",
+  "output_hash": "81e446db361128fd0ae6139339ab8f1aee2c1f485eef7857be8f1b47b8deaae1",
+  "casper_anchor_hash": null,
+  "mode_label": "Schema + hash verification",
+  "proof_status": "failed",
+  "payment_state": "blocked",
+  "created_at": "2026-07-18T17:44:43.646Z"
+}
 ```
 
-The stdio MCP server exposes these tools:
+**A confirmed anchor on Casper testnet**, the deploy behind the badge above:
 
-| Tool | Purpose |
-|---|---|
-| `sealrail_status` | Read backend, Casper, verifier, CSPR.cloud, and trust-boundary status |
-| `sealrail_agent_manifest` | Read the machine-readable integration manifest |
-| `sealrail_list_proofs` | List proof bundles and payment states |
-| `sealrail_get_proof` | Fetch a specific proof bundle by proof id |
-| `sealrail_create_payment_task` | Create a payment-backed task using a caller-supplied SealRail API key |
+- Deploy [`9a708f9e…c72edd6d`](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d) — status `processed`, `error_message: null`
+- ProofRegistry package `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`
+- Entry point `anchor_proof`, ~0.99 CSPR gas consumed
 
-### CSPR.cloud endpoints
-
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/integrations/cspr-cloud/status` | CSPR.cloud API reachability, x402 facilitator, CSPR rate, node health |
-| `GET /api/integrations/cspr-cloud/deploys/:deployHash` | Confirm deploy status on Casper testnet |
-| `GET /api/integrations/cspr-cloud/rates/cspr/latest` | Current CSPR/USD rate |
-
-## Deployment
-
-SealRail backend is deployed on **Railway** with automatic deploys from the `master` branch on GitHub. The deployment includes:
-
-- **Persistent volume** at `/data` for SQLite database storage
-- **Automatic health checks** against `/api/health`
-- **Environment-configured** via Railway's dashboard (Casper mode, LLM provider, CSPR.cloud token, Blocky AS config)
-
-Local development and VPS deployment runbooks remain at [backend/DEPLOYMENT.md](backend/DEPLOYMENT.md).
-
-Startup validates configuration and reports readiness at `GET /api/status` — misconfigured testnet/mainnet deployments refuse to pretend they're anchoring.
-
-## Roadmap
-
-| Next | State today |
-|---|---|
-| Wallet-bound agent earnings and reputation | Casper Wallet sign-in is live; next step is deeper earnings/reputation history per wallet |
-| Hosted TEE attestation via Blocky AS | Adapter is built and config-gated; hosted access is not yet provisioned |
-| Seeded workflow templates for multi-step split payments | Workflow engine and endpoints are live; no template is seeded yet |
-| Mainnet anchoring | `CASPER_MODE=mainnet` path exists and fails closed if misconfigured |
-
-## Verification status
-
-Claims below are current at the linked commit and enforced in CI.
-
-| Surface | Status |
-|---|---|
-| Backend suite | 769 tests across 17 files, passing with no external services |
-| Contract suite | 23/23 (`cargo odra test`) |
-| Contract deployment | ProofRegistry package live on Casper testnet — package `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`; latest confirmed production anchor [`9a708f9e…c72edd6d`](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d) |
-| TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
-| Trust boundary | Production API is configured for Casper testnet anchoring with confirmed deploy hashes. Hosted TEE access is pending/configuration-gated and never silently simulated. |
+Confirm any deploy yourself: `GET /api/integrations/cspr-cloud/deploys/:deployHash`.
 
 ## Tech stack
 
@@ -236,93 +156,77 @@ Claims below are current at the linked commit and enforced in CI.
 | Frontend | Next.js 16 (App Router), React 19, Tailwind 4, CSS Modules |
 | Backend | Node 20+, TypeScript 5 (strict), Fastify 5, better-sqlite3 |
 | Contract | Rust, Odra 2.8, Casper testnet |
-| Verification | Schema + WASM hash binding, Blocky-compatible adapter, hosted TEE access pending |
-| Deployment | Railway (backend), Vercel (frontend) |
-| Integrations | CSPR.cloud API, MCP (`@modelcontextprotocol/sdk`), x402-compatible receipts |
-| Tests | Vitest (backend), cargo-odra (contract) |
+| Verification | Schema + WASM hash binding (Blocky-compatible adapter; hosted TEE access pending) |
+| Integrations | CSPR.cloud, MCP (`@modelcontextprotocol/sdk`), x402-compatible receipts |
 
-## Quick start
+## Installation
 
-Requires Node 20+. On Windows, run the backend under WSL (better-sqlite3 needs a prebuilt binary or a C toolchain).
+Runs on a clean clone with no credentials. Requires Node 20+. On Windows, run the backend under WSL (better-sqlite3 needs a prebuilt binary or a C toolchain).
 
 ```bash
-# 1. Backend
+# Backend
 cd backend
 npm install
-cp .env.example .env      # defaults work locally
+cp .env.example .env      # defaults work locally (dry_run Casper, no LLM)
 npm run seed              # registers the first-party verifier, agent, and listing
 npm run dev               # http://localhost:3001
 
-# 2. Frontend (repo root, separate terminal)
+# Frontend (repo root, separate terminal)
 npm install
 echo NEXT_PUBLIC_API_URL=http://localhost:3001 > .env.local
 npm run dev               # http://localhost:3000
 ```
 
-Then open http://localhost:3000/run. Task creation, verification, anchoring, and payment unlock all run against the local API. Agent execution calls a real LLM: set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint works). Without a provider configured, runs fail honestly with a 503 rather than fabricating output.
+Then open http://localhost:3000/run. Task creation, verification, anchoring, and payment unlock all run locally. Agent execution calls a real LLM: set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint, Groq included). **Without a provider configured, runs fail honestly with a 503 rather than fabricating output.** Casper anchoring defaults to `dry_run`; set `CASPER_MODE=testnet` with a contract hash to anchor on-chain.
 
-For the hosted review path, start with:
+## Testing
 
-| Page | Purpose |
+```bash
+cd backend && npm test        # 769 tests across 17 suites, no external services
+cargo odra test               # 23/23 contract tests
+```
+
+The suite is not padded. Its center of gravity is the invariant: tests assert that the payment state machine has no path to payable without a verified proof, that a failed proof produces no anchor and a blocked payment, and that a submitted-but-unconfirmed Casper deploy is treated as a failure rather than a success. The page can never show a payout the engine did not authorize.
+
+## Challenges and lessons
+
+Three bugs that only appeared under real conditions, and what they taught us:
+
+- **"Anchored" used to mean "submitted," not "executed."** The anchoring service returned success the moment it parsed a deploy hash. A hand-crafted test deploy that reverted on-chain (`User error: 6`) still read as a successful anchor. That is the difference between a demo and a lie, so anchoring now polls the deploy through CSPR.cloud and only accepts it once execution is confirmed. This is the single most important correctness fix in the project.
+- **The paid flow worked without a wallet and broke with one.** Once a Casper Wallet was connected, the run routed through wallet-scoped auth and returned a 401, so a judge who connected their wallet first hit a dead end. Auth is now a deliberate, consistent gate: owner-sensitive actions require a wallet-verified key, and the flow no longer half-authenticates.
+- **The Casper Wallet signs with an extra algorithm-tag byte.** Verifying real wallet signatures failed until we accounted for the wallet prepending an algorithm tag that `casper-js-sdk`'s verifier did not expect. Signing a real (never-broadcast) transaction turned out to be more verifiable than the wallet's plain message-signing API, which has no documented byte convention.
+
+Nothing here went smoothly the first time. The honest status board at [`/status`](https://sealrail.xyz/status) exists because we would rather show a judge exactly what is live and what is pending than get caught overclaiming.
+
+## Roadmap
+
+| Next | State today |
 |---|---|
-| [`/review`](https://sealrail.xyz/review) | Reviewer quickstart, live links, product fit, and operational caveats |
-| [`/run`](https://sealrail.xyz/run) | One-click proof-gated payment flow |
-| [`/marketplace`](https://sealrail.xyz/marketplace) | Seeded Invoice Risk and RWA Compliance agents |
-| [`/status`](https://sealrail.xyz/status) | Backend, LLM, verifier, Casper, CSPR.cloud, and trust-boundary status |
-| [`/proofs`](https://sealrail.xyz/proofs) | Proof trail and proof detail links |
+| Wallet-bound CSPR settlement | Proof-gated payment **state** plus Casper anchoring is live; wallet-bound value settlement is the next step |
+| Hosted TEE attestation via Blocky AS | Adapter is built and config-gated; hosted access is not yet provisioned, and the UI never claims enclave attestation until it is |
+| Second live agent runtime (RWA compliance) | Seeded as a marketplace listing, clearly labelled **preview**; only the invoice-risk agent has a live runtime today |
+| Mainnet anchoring | `CASPER_MODE=mainnet` path exists and fails closed if misconfigured; out of scope for this build |
 
-## Environment variables
+## Scope and honesty
 
-Frontend (`.env.local`):
-
-| Var | Purpose |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend base URL (`http://localhost:3001` locally) |
-
-Backend (`backend/.env`, see [backend/.env.example](backend/.env.example) for the full annotated list):
-
-| Var | Purpose |
-|---|---|
-| `LLM_API_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI-compatible provider for agent execution |
-| `CASPER_MODE` | `dry_run` (default), `testnet`, or `mainnet` — testnet/mainnet fail closed if misconfigured |
-| `CASPER_CONTRACT_HASH` | Deployed ProofRegistry contract hash |
-| `BLOCKY_MODE`, `BLOCKY_AS_API_KEY`, `BLOCKY_AS_HOST` | Blocky-compatible/hosted TEE adapter configuration |
-| `CSPR_CLOUD_TOKEN` | CSPR.cloud API token for Casper data, rates, and node status |
-| `ALLOW_BOOTSTRAP_KEYS` | `true` (default) permits self-serve API key creation; `false` requires an authenticated key |
-| `FRONTEND_ORIGIN` | CORS allowlist for the web app |
-
-## Scripts
-
-| Where | Command | What |
-|---|---|---|
-| root | `npm run dev` / `build` / `lint` | Next.js dev server, production build, ESLint |
-| backend | `npm run dev` / `test` / `build` | API server, 769-test suite, typecheck |
-| backend | `npm run seed` | Idempotent first-party verifier + agent + listing setup |
-| backend | `npm run mcp` | MCP stdio server (5 tools for AI-agent integration) |
-| contracts | `cargo odra test` | Contract test suite |
+- The RWA compliance agent is a **preview** marketplace listing, labelled as such in the UI. Only the invoice-risk agent has a live runtime.
+- Hosted TEE attestation is **not** running in production. Verification is deterministic schema + WASM-hash binding plus the LLM. `/status` shows this in amber; the app never claims enclave attestation.
+- Demo tasks use seeded input, but the engine, the verification, the on-chain anchor, and the decision are real.
+- Every number in this README is reproducible by running the project or opening the linked deploys.
 
 ## Repository layout
 
 ```
-app/                          19 Next.js routes (run, proofs, marketplace, agents, owner, workflows, ...)
-components/                   Screen components + shared primitives
+app/                          Next.js routes (run, proofs, marketplace, agents, owner, workflows, review, status)
+components/                   Screen components and shared primitives
 lib/                          Typed API client, API types, session bootstrap
-backend/src/routes/           Fastify route modules (tasks, payments, proofs, agents, integrations, ...)
-backend/src/services/         Domain services (state machines, verification, reputation, keys)
+backend/src/routes/           Fastify route modules (tasks, payments, proofs, agents, integrations)
+backend/src/services/         Domain services (state machines, verification, Casper anchoring, reputation, keys)
 backend/tests/                17 suites, 769 tests
-backend/scripts/seed.ts       First-party record setup
-contracts/verified-agent-payments/   Odra contract + tests + livenet CLI
+contracts/verified-agent-payments/   Odra ProofRegistry contract, tests, livenet CLI
 docs/                         Architecture, design, API docs, audit reports
 ```
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). The one hard rule: nothing may fake verification. Placeholder proofs never advance state, and the tests that enforce that are not negotiable.
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for reporting. API key secrets are scrypt-hashed with per-key salts, shown once, and never persisted in plain text.
-
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Contributions welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). The one hard rule: nothing may fake verification.

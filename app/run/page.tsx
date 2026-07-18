@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/app/AppNav";
 import { EmptyState } from "@/components/app/EmptyState";
+import { Skeleton } from "@/components/app/Skeleton";
 import { TaskForm, type TaskFormFields } from "@/components/run/TaskForm";
 import { LiveProofRail } from "@/components/run/LiveProofRail";
 import { VerifiedOutputPanel } from "@/components/run/VerifiedOutputPanel";
@@ -283,8 +284,41 @@ export default function RunPage() {
     return (
       <div className={styles.page}>
         <AppNav />
-        <main id="main" tabIndex={-1} className={styles.headerWrap}>
-          <p className={styles.subtitle}>Loading...</p>
+        <main id="main" tabIndex={-1}>
+          <div className={styles.headerWrap}>
+            <div className={styles.headerCopy}>
+              <Skeleton width={90} height={11} />
+              <Skeleton width="70%" height={34} style={{ marginTop: 14 }} />
+              <Skeleton width="55%" height={16} style={{ marginTop: 12 }} />
+            </div>
+          </div>
+          <div className={styles.workspaceWrap} style={{ paddingBottom: 0 }}>
+            <div className={styles.sponsorGrid}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className={styles.sponsorCard}>
+                  <Skeleton width={140} height={11} />
+                  <Skeleton width="100%" height={12} style={{ marginTop: 12 }} />
+                  <Skeleton width="80%" height={12} style={{ marginTop: 8 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={styles.workspaceWrap}>
+            <div className={styles.workspaceGrid}>
+              <div style={{ height: 320 }}>
+                <Skeleton block />
+              </div>
+              <div style={{ height: 320 }}>
+                <Skeleton block />
+              </div>
+            </div>
+          </div>
+          <span
+            role="status"
+            style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}
+          >
+            Loading task runner...
+          </span>
         </main>
       </div>
     );
