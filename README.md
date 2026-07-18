@@ -111,26 +111,20 @@ Remove either and you are back to a database row that says "paid" and a promise 
 
 ## Sponsor and ecosystem integrations
 
-| Integration | What it provides | What SealRail does with it |
+SealRail is built as an integration surface for the Casper ecosystem. Every integration below is live, and each is load-bearing rather than decorative.
+
+| Integration | What SealRail does with it | Status |
 |---|---|---|
-| **Casper testnet** | Public, tamper-evident ledger | Anchors every proof hash via the Odra ProofRegistry `anchor_proof` entry point before payment can unlock |
-| **CSPR.cloud** | Casper node and deploy data | Confirms a deploy actually executed (`processed`, no error) before an anchor is accepted; also exposes rate and node-health endpoints |
-| **LLM provider (Groq in production, any OpenAI-compatible)** | Agent intelligence | Runs the invoice-risk agent that produces the structured output being verified |
-| **MCP (`@modelcontextprotocol/sdk`)** | Agent tool protocol | A stdio server exposes SealRail status, proofs, and task creation to any MCP client |
+| **Casper testnet** | Anchors every proof hash via the Odra ProofRegistry `anchor_proof` entry point before payment can unlock; live status reports `casper_mode: testnet`, contract config, and chain readiness | Live |
+| **CSPR.cloud** | Confirms a deploy actually executed (`processed`, no error) before an anchor is accepted; also exposes deploy, rate, x402-facilitator, and node-health endpoints | Live |
+| **LLM provider (Groq in production, any OpenAI-compatible)** | Runs the invoice-risk agent that produces the structured output being verified | Live |
+| **Odra ProofRegistry** | Contract deployed on Casper testnet, linked from this README and the testnet explorer | Live |
+| **MCP server** | `@modelcontextprotocol/sdk` stdio server, 5 tools (status, manifest, proofs, task creation) any MCP client can call | Live |
+| **x402-compatible receipts** | Proof bundles carry payment-required receipt metadata: proof requirement, unlock condition, network, payment state | Live |
+| **Casper Wallet authentication** | Wallet connection + signed-challenge flow via `/api/auth/wallet/challenge` and `/api/auth/wallet/verify` | Live |
+| **Agent integration manifest** | `GET /api/integrations/agent-manifest` exposes capabilities, endpoints, MCP tools, and trust boundaries | Live |
 
 **The delete test.** If you remove **Casper**, SealRail can no longer prove anything to a third party: payment unlock would rest on the app's own database claim, which the operator could forge. Casper is what turns "we verified it" into "verify it yourself." If you remove **CSPR.cloud**, the anchor degrades to submitted-but-unconfirmed, which is exactly the reverted-deploy failure mode SealRail was built to reject. If you remove the **LLM**, agent runs return an honest 503 instead of fabricating output. None of these are decorative.
-
-### Implemented
-
-| Integration | Surface | Status |
-|---|---|---|
-| **Casper testnet** | Live status reports `casper_mode: testnet`, deployed ProofRegistry config, Casper client 5.0.1 availability, chain readiness | Live |
-| **CSPR.cloud API** | Deploy confirmation, CSPR/USD rate, x402 facilitator status, node health — 4 dedicated endpoints | Live |
-| **MCP server** | `@modelcontextprotocol/sdk` stdio server, 5 tools (status, manifest, proofs, task creation) | Live |
-| **Odra ProofRegistry** | Contract deployed on Casper testnet, linked from README and the testnet explorer | Live |
-| **x402-compatible receipts** | Proof bundles include payment-required receipt metadata: proof requirement, unlock condition, network, payment state | Live |
-| **Casper Wallet authentication** | Wallet connection + signed-challenge flow via `/api/auth/wallet/challenge` and `/api/auth/wallet/verify` | Live |
-| **Agent integration manifest** | `GET /api/integrations/agent-manifest` exposes capabilities, endpoints, MCP tools, trust boundaries | Live |
 
 ### Planned
 
