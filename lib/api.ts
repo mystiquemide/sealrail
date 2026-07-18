@@ -147,20 +147,22 @@ export const runDemoInvoiceProof = (body: {
   title?: string;
   task_type?: string;
   input?: Record<string, unknown>;
+  demo_failure?: boolean;
 }) =>
   request<{
     task_id: string;
     payment_id: string;
     proof_id: string;
-    anchor_hash: string;
+    anchor_hash: string | null;
     deploy_hash: string | null;
-    casper_mode: string;
+    casper_mode: string | null;
     payment_status: string;
-    proof: { wasm_hash: string; attestation_hash: string };
+    failed?: boolean;
+    proof: { wasm_hash: string; attestation_hash: string; status?: string };
     output: {
       result: Record<string, unknown>;
-      input_hash: string;
-      output_hash: string;
+      input_hash: string | null;
+      output_hash: string | null;
       model_metadata: { provider: string; model: string } | null;
       duration_ms: number;
     };

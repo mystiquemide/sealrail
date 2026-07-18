@@ -53,10 +53,10 @@ export function LiveProofRail({ steps, taskTitle }: { steps: RailStep[]; taskTit
       <div className={styles.teeNote}>
         <div className={styles.teeNoteHeader}>
           <span className={styles.teeNoteDot} />
-          TEE verification mode
+          Schema + hash verification
         </div>
         <p className={styles.teeNoteBody}>
-          This run uses TEE-compatible attestation. Hosted Blocky AS can replace this adapter when access is live.
+          This run checks the agent output against the verifier schema, binds hashes into the proof trail, and keeps hosted TEE attestation pending until Blocky access is live.
         </p>
       </div>
     </div>

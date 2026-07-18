@@ -10,6 +10,7 @@ import { promisify } from "util";
 import { createHash, randomUUID } from "crypto";
 
 import { config } from "../config.js";
+import { getDeployConfirmation } from "./cspr-cloud.js";
 
 // ── Types ────────────────────────────────
 
@@ -39,8 +40,42 @@ export interface AnchorResult {
 
 type ExecResult = { stdout: string; stderr: string };
 type ExecFn = (cmd: string, args: string[], opts: Record<string, unknown>) => Promise<ExecResult>;
+type DeployConfirmationResult = { confirmed: boolean; error?: string };
+type DeployConfirmationFn = (deployHash: string) => Promise<DeployConfirmationResult>;
+type SubmitDeployResult = { deployHash: string };
+type SubmitDeployFn = (input: AnchorProofInput) => Promise<SubmitDeployResult>;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function defaultConfirmDeployExecution(deployHash: string): Promise<DeployConfirmationResult> {
+  const attempts = Number(process.env.CASPER_DEPLOY_CONFIRM_ATTEMPTS ?? "12");
+  const delayMs = Number(process.env.CASPER_DEPLOY_CONFIRM_DELAY_MS ?? "5000");
+  let lastError = "deploy was not confirmed before timeout";
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const confirmation = await getDeployConfirmation(deployHash);
+    const raw = confirmation.raw as Record<string, unknown> | null;
+    const executionError =
+      typeof raw?.error_message === "string" && raw.error_message.length > 0
+        ? raw.error_message
+        : null;
+
+    if (confirmation.found && confirmation.status === "processed" && !executionError) {
+      return { confirmed: true };
+    }
+
+    lastError = confirmation.error || executionError || `status=${confirmation.status ?? "unknown"}`;
+    if (executionError) break;
+    if (attempt < attempts) await sleep(delayMs);
+  }
+
+  return { confirmed: false, error: lastError };
+}
 
 let _execAsync: ExecFn = promisify(execFile) as unknown as ExecFn;
+let _submitCasperDeploy: SubmitDeployFn = submitCasperDeploy;
+let _confirmDeployExecution: DeployConfirmationFn = defaultConfirmDeployExecution;
+let _clientAvailableOverride: boolean | undefined;
 
 /**
  * Override the exec function for testing.
@@ -54,11 +89,24 @@ export function __setCasperExecAsync(fn?: ExecFn): void {
   }
 }
 
+export function __setCasperClientAvailableForTest(value?: boolean): void {
+  _clientAvailableOverride = value;
+}
+
+export function __setCasperSubmitDeployAsync(fn?: SubmitDeployFn): void {
+  _submitCasperDeploy = fn ?? submitCasperDeploy;
+}
+
+export function __setCasperDeployConfirmationAsync(fn?: DeployConfirmationFn): void {
+  _confirmDeployExecution = fn ?? defaultConfirmDeployExecution;
+}
+
 // ── CLI path ─────────────────────────────
 
 const CASPER_CLIENT_BIN = "casper-client";
 
 export function isCasperClientAvailable(): boolean {
+  if (_clientAvailableOverride !== undefined) return _clientAvailableOverride;
   try {
     execSync(`which ${CASPER_CLIENT_BIN}`, { stdio: "pipe" });
     return true;
@@ -326,7 +374,19 @@ export async function createTestnetAnchor(
   }
 
   try {
-    const { deployHash } = await submitCasperDeploy(input);
+    const { deployHash } = await _submitCasperDeploy(input);
+    const confirmation = await _confirmDeployExecution(deployHash);
+
+    if (!confirmation.confirmed) {
+      return {
+        success: false,
+        anchorHash: "",
+        deployHash,
+        mode: "testnet",
+        simulated: false,
+        error: `CASPER_DEPLOY_NOT_CONFIRMED: ${confirmation.error ?? "deploy execution was not confirmed"}`,
+      };
+    }
 
     return {
       success: true,
