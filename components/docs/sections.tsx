@@ -336,12 +336,12 @@ export function DeploymentSection() {
       <div className={styles.subLabel}>Deployment checks before launch</div>
       <BulletList items={DEPLOYMENT_CHECKS} />
 
-      <div className={styles.subLabel}>Blocky / TEE status</div>
+      <div className={styles.subLabel}>Blocky / hosted TEE status</div>
       <BulletList items={BLOCKY_STATUS} dotColor="#F2B84B" />
       <p className={styles.bodyText}>
-        Sealrail uses a TEE verification layer to check agent output before payment can unlock. Hosted Blocky AS can replace this
-        adapter when access is live. Public runs are labelled honestly and never claim production enclave execution before the
-        service is connected.
+        SealRail uses schema checks and hash binding to verify agent output before payment can unlock. Hosted Blocky AS remains
+        a pending, configuration-gated upgrade. Public runs are labelled honestly and never claim hosted TEE execution
+        before the service is connected.
       </p>
     </section>
   );

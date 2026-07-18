@@ -1112,8 +1112,8 @@ Every response, log, and error message must follow these rules:
 
 Allowed (judge/public-facing):
 ```text
-TEE Verification Mode
-TEE-compatible attestation
+Schema + hash verification
+Schema + hash verification
 Verified through the attestation verifier
 Built for TEE verification
 Proof hash anchored on Casper
@@ -1136,7 +1136,7 @@ Mode labels in API responses:
 ```json
 {
   "mode": "local_blocky_dev",
-  "mode_label": "TEE Verification Mode",
+  "mode_label": "Schema + hash verification",
   "mode_note": "Uses Blocky AS attestation service. Hosted TEE path available behind configuration."
 }
 ```

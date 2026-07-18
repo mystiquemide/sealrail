@@ -1,7 +1,7 @@
 # SealRail Final UX Audit Report
 
 Date: 2026-07-03
-Site: https://sealrail.vercel.app
+Site: https://sealrail.xyz
 Backend: https://api-production-7409.up.railway.app
 Repo: https://github.com/mystiquemide/sealrail
 
@@ -165,7 +165,7 @@ Results:
 Final live audit command targeted:
 
 ```bash
-AUDIT_BASE=https://sealrail.vercel.app node /tmp/ux-audit-fast.cjs
+AUDIT_BASE=https://sealrail.xyz node /tmp/ux-audit-fast.cjs
 ```
 
 Final result summary:
@@ -202,4 +202,4 @@ Note: `status=degraded` is expected while hosted TEE / Blocky CLI pieces are not
 
 SealRail passed the requested UX audit across desktop, pad/tablet, wide screen, and mobile.
 
-The live app at `https://sealrail.vercel.app` has no detected route failures, no horizontal overflow issues, no mobile menu failures, and no browser console error routes in the final audit pass.
+The live app at `https://sealrail.xyz` has no detected route failures, no horizontal overflow issues, no mobile menu failures, and no browser console error routes in the final audit pass.

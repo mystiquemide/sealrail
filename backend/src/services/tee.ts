@@ -1,5 +1,5 @@
 // ────────────────────────────────────────
-// Sealrail TEE Verification Adapter
+// SealRail Blocky-compatible verification adapter
 // Blocky AS CLI client - attest + verify flow
 // Phase C: Real CLI path with typed results
 // ────────────────────────────────────────

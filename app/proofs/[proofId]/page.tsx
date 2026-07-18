@@ -189,10 +189,10 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
 
             <div className={styles.cardBlock}>
               <div className={styles.cardHeaderRow}>
-                <div className={styles.panelLabel}>Blocky-compatible verification</div>
+                <div className={styles.panelLabel}>Schema + hash verification</div>
                 <span className={styles.modeBadge}>
                   <span className={styles.modeBadgeDot} />
-                  TEE Verification Mode
+                  Hosted TEE pending
                 </span>
               </div>
               <div className={styles.infoRows}>

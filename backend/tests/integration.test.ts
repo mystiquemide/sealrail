@@ -505,7 +505,7 @@ describe("Phase M: Backend Integration Gates", () => {
         const { task } = createTaskWithPayment({
           buyerAddress: "0xBuyerA",
           agentId: "agent-tee-001",
-          title: "TEE Verification Task",
+          title: "Schema Verification Task",
           totalAmount: 100,
           currency: "USD",
         });

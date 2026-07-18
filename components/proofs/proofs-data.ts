@@ -13,7 +13,7 @@ export type ProofRow = {
 };
 
 export const STATUS_OPTIONS = ["All", "Verified", "Pending", "Blocked", "Paid"] as const;
-export const MODE_OPTIONS = ["All", "TEE Verification Mode", "TEE Verification"] as const;
+export const MODE_OPTIONS = ["All", "Schema + hash verification", "Hosted TEE (pending)"] as const;
 
 const GREEN = "#64D96B";
 const AMBER = "#F2B84B";
@@ -48,7 +48,7 @@ export function toProofRow(detail: TaskDetail, agentName: string): ProofRow {
     payState: payState.label,
     payColor: payState.color,
     hash: proof?.casper_anchor_hash ?? (proof ? "pending" : "none"),
-    mode: "TEE Verification Mode",
+    mode: "Schema + hash verification",
     href: `/proofs/${encodeURIComponent(proof?.id ?? detail.task.id)}`,
   };
 }

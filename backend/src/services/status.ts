@@ -28,9 +28,9 @@ export interface BlockyReadiness {
   hostedHostPresent: boolean;
   /** true when config path is set */
   hostedConfigPathPresent: boolean;
-  /** Whether the real TEE hookup is blocked by missing hosted access */
+  /** Whether hosted TEE execution is blocked by missing hosted access */
   teeHookupBlocked: boolean;
-  /** Human-readable reason if TEE hookup is blocked */
+  /** Human-readable reason if hosted TEE execution is blocked */
   teeHookupBlockedReason: string | null;
 }
 
@@ -50,7 +50,7 @@ export function getBlockyReadiness(): BlockyReadiness {
     const missing: string[] = [];
     if (!hostedApiKeyPresent) missing.push("BLOCKY_AS_API_KEY");
     if (!hostedHostPresent) missing.push("BLOCKY_AS_HOST");
-    teeHookupBlockedReason = `Real TEE verification blocked: hosted Blocky access not configured. Missing: ${missing.join(", ") || "all fields"}. Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for hosted TEE. Contact info@blocky.rocks for API key.`;
+    teeHookupBlockedReason = `Hosted TEE execution pending: hosted Blocky access is not configured. Missing: ${missing.join(", ") || "all fields"}. Set BLOCKY_AS_API_KEY and BLOCKY_AS_HOST for hosted TEE when available. Contact info@blocky.rocks for API key.`;
   }
 
   return {
@@ -193,7 +193,7 @@ export interface DeploymentReadiness {
     host: string;
     nodeEnv: string;
   };
-  /** Blocky TEE readiness */
+  /** Blocky / hosted TEE readiness */
   blocky: BlockyReadiness;
   /** Casper chain readiness */
   casper: CasperReadiness;
@@ -227,18 +227,18 @@ export function getDeploymentReadiness(): DeploymentReadiness {
   // Blocky blockers
   if (blocky.teeHookupBlocked) {
     if (config.casperMode === "mainnet") {
-      blockers.push("Real TEE verification is unavailable in mainnet mode. Hosted Blocky access is not configured.");
+      blockers.push("Hosted TEE execution is unavailable in mainnet mode because hosted Blocky access is not configured.");
     } else if (config.casperMode === "testnet") {
-      warnings.push("Real hosted TEE verification is unavailable. Testnet Casper anchoring is active; TEE verification uses the local Blocky adapter. Hosted Blocky API key pending from info@blocky.rocks.");
+      warnings.push("Hosted TEE execution is pending. Testnet Casper anchoring is active; live payment gating uses schema checks, hash binding, and confirmed Casper anchors.");
     } else {
-      warnings.push("Real TEE verification is unavailable. Hosted Blocky API key pending from info@blocky.rocks. Dry-run TEE path uses local CLI only.");
+      warnings.push("Hosted TEE execution is pending. Dry-run mode should be treated as local verification only.");
     }
   }
   if (!blocky.cliInstalled) {
     if (config.casperMode === "mainnet") {
       blockers.push("bky-as CLI not found. Install Blocky AS CLI from https://github.com/blocky/blocky-as");
     } else {
-      warnings.push("bky-as CLI not found. Hosted/local TEE attestation is unavailable; LLM-backed agent execution and Casper testnet anchoring remain operational.");
+      warnings.push("bky-as CLI not found. Hosted/local TEE execution is unavailable; LLM-backed agent execution and Casper testnet anchoring remain operational.");
     }
   }
 

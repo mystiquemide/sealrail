@@ -657,7 +657,7 @@ Improve:
 
 ### What feels confusing
 
-- "TEE Verification Mode" vs "TEE Verification" is not explained well enough in the UI.
+- "Schema + hash verification" vs "Hosted TEE pending" is not explained well enough in the UI.
 - The user has to understand agents, verifiers, WASM hash, listings, tasks, proofs, payment splits, Casper anchoring, and API keys before seeing value.
 - "Start run" sounds like a user-facing CTA, but it lands on an operator setup problem.
 

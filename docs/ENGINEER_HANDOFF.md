@@ -12,7 +12,7 @@ After `docs/DESIGN.md` is approved, the next phase can turn the approved design 
 
 ## One-line brief
 
-Design the Sealrail frontend UI for a Casper-native proof and payment rail for AI-agent work where payment unlocks only after TEE-compatible verification and Casper proof anchoring.
+Design the Sealrail frontend UI for a Casper-native proof and payment rail for AI-agent work where payment unlocks only after schema + hash verification and Casper proof anchoring.
 
 ## Product truth for design
 
@@ -21,7 +21,7 @@ Design the Sealrail frontend UI for a Casper-native proof and payment rail for A
 - Product category: Proof and payment rail for AI agents
 - Primary product loop: task funded -> agent runs -> proof verified -> Casper anchor recorded -> payment unlocks
 - Design must make the product feel ecosystem-ready, not like a small one-screen concept.
-- Judge-facing language can say TEE, TEE verification, or TEE Verification Mode.
+- Judge-facing language can say TEE, TEE verification, or Schema + hash verification.
 - Do not expose implementation-mode language in public UI.
 
 ## What the design handoff must cover
@@ -137,8 +137,8 @@ Design these routes and states:
 
 - No user-facing page says demo.
 - No user-facing page says local.
-- Judge-facing UI can say TEE, TEE verification, or TEE Verification Mode.
-- Do not claim real enclave execution unless the hosted TEE service is fully connected.
+- Judge-facing UI can say TEE, TEE verification, or Schema + hash verification.
+- Do not claim hosted TEE execution unless the hosted TEE service is fully connected.
 - No green dots, online dots, or status dots on landing.
 - No SR-71 wording in product or handoff.
 - No internal skill references in user-facing docs.
@@ -249,8 +249,8 @@ The UI design must cover the full ecosystem:
 Rules:
 - No user-facing demo language.
 - No user-facing local language.
-- Judge-facing UI can say TEE, TEE verification, or TEE Verification Mode.
-- Do not claim real enclave execution unless the hosted TEE service is fully connected.
+- Judge-facing UI can say TEE, TEE verification, or Schema + hash verification.
+- Do not claim hosted TEE execution unless the hosted TEE service is fully connected.
 - No green dots, online dots, or status dots on landing.
 - No SR-71 wording or internal skill references.
 - No em dashes.

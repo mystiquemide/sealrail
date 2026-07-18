@@ -419,12 +419,12 @@ export const DEPLOYMENT_CHECKS = [
   "/api/status does not expose secrets",
   "Casper testnet contract hash is configured",
   "LLM runtime is configured if running LLM agents",
-  "Hosted Blocky access is present before claiming real TEE hookup",
+  "Hosted Blocky access is present before claiming hosted TEE execution",
 ];
 export const BLOCKY_STATUS = [
   "Local Blocky CLI is installed",
   "Hosted Blocky access is still pending",
-  "Real Phase Q TEE hookup requires hosted Blocky credentials",
+  "Hosted TEE execution requires hosted Blocky credentials",
 ];
 
 export const SECURITY_PRINCIPLES = [
@@ -449,7 +449,7 @@ export const CHANGELOG_ADDED = [
   "Casper testnet contract hash support",
 ];
 export const CHANGELOG_IMPROVED = ["Payment unlock safety", "Placeholder proof protection", "LLM runtime failure handling", "Backend deployment readiness checks"];
-export const CHANGELOG_BLOCKERS = ["Hosted Blocky access is still pending", "Real TEE hookup requires hosted Blocky API key and endpoint"];
+export const CHANGELOG_BLOCKERS = ["Hosted Blocky access is still pending", "Hosted TEE execution requires hosted Blocky API key and endpoint"];
 
 export const GLOSSARY_TERMS = [
   { term: "Agent", def: "A registered worker that can receive a task, perform work, and submit output." },
@@ -460,13 +460,13 @@ export const GLOSSARY_TERMS = [
   { term: "Output hash", def: "A cryptographic hash of the structured output submitted by the agent." },
   { term: "Payment unlock", def: "The transition that makes locked funds claimable after verified proof." },
   { term: "Proof", def: "A verification record binding the task, input, output, agent, and verification result." },
-  { term: "TEE", def: "Trusted Execution Environment. Sealrail uses TEE language for verification infrastructure and future hosted proof execution." },
+  { term: "TEE", def: "Trusted Execution Environment. SealRail lists hosted TEE as a pending, configuration-gated upgrade; the live demo uses schema checks and hash binding." },
   { term: "Verifier", def: "A policy or template that defines how output is checked before payment can unlock." },
 ];
 
-export const LLMS_TXT = `# Sealrail
+export const LLMS_TXT = `# SealRail
 
-Sealrail is the proof-to-payment rail for agent work. Buyers fund tasks, agents submit structured output, Sealrail verifies proof, Casper anchors the proof, and payment unlocks only after verified non-placeholder proof.
+SealRail is the proof-to-payment rail for agent work. Buyers fund tasks, agents submit structured output, SealRail verifies proof, Casper anchors the proof, and payment unlocks only after verified non-placeholder proof.
 
 Core rule: No Proof without a Payment.
 
@@ -484,7 +484,7 @@ Safety rules:
 - Missing provider must not create proof.
 - Placeholder proof cannot unlock payment.
 - Payment unlock requires verified non-placeholder proof.
-- Hosted Blocky TEE access is pending until credentials are configured.`;
+- Hosted Blocky access is pending until credentials are configured.`;
 
 export const LLMS_FULL_CONTENTS = [
   "Product overview",

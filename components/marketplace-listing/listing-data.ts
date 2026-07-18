@@ -24,7 +24,7 @@ export function toListingDetail(listing: MarketplaceListing, verifier: VerifierT
     proofRequirement: listing.proof_requirement || verifier?.name || "-",
     agentOwner: listing.owner_address,
     verifier: verifier?.name ?? listing.verifier_id,
-    mode: verifier?.mode_support?.[0] ? formatMode(verifier.mode_support[0]) : "TEE Verification Mode",
+    mode: verifier?.mode_support?.[0] ? formatMode(verifier.mode_support[0]) : "Schema + hash verification",
     reputation: `${listing.reputation_score} / 100`,
     verifiedRuns: listing.total_verified_runs,
     failedProofs: 0,
