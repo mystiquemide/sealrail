@@ -59,6 +59,23 @@
   margin: 16px 0 0;
 }
 
+.walletNote {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6e6e6c;
+  margin: 12px 0 0;
+  max-width: 52ch;
+}
+
+.walletNoteLink {
+  color: #a8a8a6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.walletNoteLink:hover {
+  color: #f6f5f3;
+}
+
 .headerActions {
   display: flex;
   flex-direction: column;

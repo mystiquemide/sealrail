@@ -12,11 +12,11 @@ const latestProof = {
 };
 
 const judgePath = [
-  "Open /run and click Run full flow to create a funded invoice-risk task.",
+  "Open /run and click Run full flow to create a funded invoice-risk task. Running a fresh flow needs the Casper Wallet extension; no wallet? Skip to step 05 and verify any existing proof on-chain instead.",
   "Watch the AI invoice-risk agent produce structured output that cannot unlock payment by itself.",
   "Verify the schema/hash proof, Casper testnet anchor, and payment unlock state.",
   "Click Run failing proof to see bad output halt the rail with payment blocked and no anchor.",
-  "Open /proofs or the proof detail link below to inspect the persisted proof bundle.",
+  "Open /proofs or the proof detail link below to inspect the persisted proof bundle, then open its Casper deploy on cspr.live.",
   "Open /status to confirm what is live and what is still pending.",
 ];
 

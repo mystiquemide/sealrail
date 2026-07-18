@@ -56,12 +56,17 @@ export function Hero() {
       </header>
 
       <div className={styles.heroCtaWrap}>
-        <Link href="/run" className={styles.heroCtaPrimary}>
-          Start verification run
-        </Link>
-        <a href="#proofs" className={styles.heroCtaSecondary}>
-          View proof trail
-        </a>
+        <p className={styles.heroTagline}>
+          Proof-gated payments for AI agents: work is verified and anchored on Casper before anyone gets paid.
+        </p>
+        <div className={styles.heroCtaRow}>
+          <Link href="/run" className={styles.heroCtaPrimary}>
+            Start verification run
+          </Link>
+          <a href="#proofs" className={styles.heroCtaSecondary}>
+            View proof trail
+          </a>
+        </div>
       </div>
     </section>
   );

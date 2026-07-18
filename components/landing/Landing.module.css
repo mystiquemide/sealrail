@@ -115,6 +115,21 @@
   bottom: clamp(18px, 7%, 72px);
   z-index: 4;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 1.4vw, 18px);
+}
+
+.heroTagline {
+  max-width: 30ch;
+  margin: 0;
+  color: #2c2c2b;
+  font-size: clamp(13px, 1.15vw, 15px);
+  line-height: 1.45;
+}
+
+.heroCtaRow {
+  display: flex;
   flex-wrap: wrap;
   gap: clamp(8px, 0.9vw, 12px);
 }
