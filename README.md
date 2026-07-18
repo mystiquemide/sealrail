@@ -120,6 +120,53 @@ Remove either and you are back to a database row that says "paid" and a promise 
 
 **The delete test.** If you remove **Casper**, SealRail can no longer prove anything to a third party: payment unlock would rest on the app's own database claim, which the operator could forge. Casper is what turns "we verified it" into "verify it yourself." If you remove **CSPR.cloud**, the anchor degrades to submitted-but-unconfirmed, which is exactly the reverted-deploy failure mode SealRail was built to reject. If you remove the **LLM**, agent runs return an honest 503 instead of fabricating output. None of these are decorative.
 
+### Implemented
+
+| Integration | Surface | Status |
+|---|---|---|
+| **Casper testnet** | Live status reports `casper_mode: testnet`, deployed ProofRegistry config, Casper client 5.0.1 availability, chain readiness | Live |
+| **CSPR.cloud API** | Deploy confirmation, CSPR/USD rate, x402 facilitator status, node health — 4 dedicated endpoints | Live |
+| **MCP server** | `@modelcontextprotocol/sdk` stdio server, 5 tools (status, manifest, proofs, task creation) | Live |
+| **Odra ProofRegistry** | Contract deployed on Casper testnet, linked from README and the testnet explorer | Live |
+| **x402-compatible receipts** | Proof bundles include payment-required receipt metadata: proof requirement, unlock condition, network, payment state | Live |
+| **Casper Wallet authentication** | Wallet connection + signed-challenge flow via `/api/auth/wallet/challenge` and `/api/auth/wallet/verify` | Live |
+| **Agent integration manifest** | `GET /api/integrations/agent-manifest` exposes capabilities, endpoints, MCP tools, trust boundaries | Live |
+
+### Planned
+
+| Integration | What it unlocks |
+|---|---|
+| Casper AI Toolkit | Agent-prompted contract interactions and Casper-native tool invocation from the runtime |
+| Wallet-bound reputation | Deeper reputation and marketplace stats tied to wallet-owned agent/verifier history |
+| External agent frameworks | Adapters so autonomous agent runtimes can call SealRail as a proof-gated payment rail |
+
+The manifest is intentionally public and secret-free. It gives other builders a stable way to discover how to create payment-backed tasks, run agent verification, anchor proof, inspect receipts, and unlock payment only after proof.
+
+### MCP server
+
+```bash
+cd backend
+npm run mcp
+```
+
+The stdio MCP server exposes five tools, so any MCP client can read SealRail state and create payment-backed tasks:
+
+| Tool | Purpose |
+|---|---|
+| `sealrail_status` | Read backend, Casper, verifier, CSPR.cloud, and trust-boundary status |
+| `sealrail_agent_manifest` | Read the machine-readable integration manifest |
+| `sealrail_list_proofs` | List proof bundles and payment states |
+| `sealrail_get_proof` | Fetch a specific proof bundle by proof id |
+| `sealrail_create_payment_task` | Create a payment-backed task using a caller-supplied SealRail API key |
+
+### CSPR.cloud endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/integrations/cspr-cloud/status` | CSPR.cloud reachability, x402 facilitator, CSPR rate, node health |
+| `GET /api/integrations/cspr-cloud/deploys/:deployHash` | Confirm deploy execution status on Casper testnet |
+| `GET /api/integrations/cspr-cloud/rates/cspr/latest` | Current CSPR/USD rate |
+
 ## Live deployment and proof
 
 Frontend on Vercel ([sealrail.xyz](https://sealrail.xyz)), backend on Railway ([api.sealrail.xyz](https://api.sealrail.xyz)), contract on Casper testnet.
@@ -148,6 +195,28 @@ Frontend on Vercel ([sealrail.xyz](https://sealrail.xyz)), backend on Railway ([
 - Entry point `anchor_proof`, ~0.99 CSPR gas consumed
 
 Confirm any deploy yourself: `GET /api/integrations/cspr-cloud/deploys/:deployHash`.
+
+## Deployment
+
+The backend runs on **Railway** with automatic deploys from the `master` branch:
+
+- **Persistent volume** at `/data` for SQLite storage
+- **Automatic health checks** against `/api/health`
+- **Environment-configured** through Railway (Casper mode, LLM provider, CSPR.cloud token, Blocky AS config)
+
+Startup validates configuration and reports readiness at `GET /api/status`. A misconfigured testnet or mainnet deployment refuses to pretend it is anchoring rather than silently simulating. Local development and VPS runbooks live in [backend/DEPLOYMENT.md](backend/DEPLOYMENT.md).
+
+## Verification status
+
+Claims below are current at the linked commit and enforced in CI.
+
+| Surface | Status |
+|---|---|
+| Backend suite | 769 tests across 17 files, passing with no external services |
+| Contract suite | 23/23 (`cargo odra test`) |
+| Contract deployment | ProofRegistry package live on Casper testnet — `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`; latest confirmed anchor [`9a708f9e…c72edd6d`](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d) |
+| TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
+| Trust boundary | Production API is configured for Casper testnet anchoring with confirmed deploy hashes. Hosted TEE access is pending/config-gated and never silently simulated. |
 
 ## Tech stack
 
@@ -178,6 +247,38 @@ npm run dev               # http://localhost:3000
 ```
 
 Then open http://localhost:3000/run. Task creation, verification, anchoring, and payment unlock all run locally. Agent execution calls a real LLM: set `LLM_API_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL` in `backend/.env` (any OpenAI-compatible endpoint, Groq included). **Without a provider configured, runs fail honestly with a 503 rather than fabricating output.** Casper anchoring defaults to `dry_run`; set `CASPER_MODE=testnet` with a contract hash to anchor on-chain.
+
+### Environment variables
+
+Frontend (`.env.local`):
+
+| Var | Purpose |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend base URL (`http://localhost:3001` locally) |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL for absolute Open Graph / Twitter card image links |
+
+Backend (`backend/.env`, see [backend/.env.example](backend/.env.example) for the full annotated list):
+
+| Var | Purpose |
+|---|---|
+| `LLM_API_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | OpenAI-compatible provider for agent execution (Groq in production) |
+| `CASPER_MODE` | `dry_run` (default), `testnet`, or `mainnet` — testnet/mainnet fail closed if misconfigured |
+| `CASPER_CONTRACT_HASH` | Deployed ProofRegistry contract hash |
+| `BLOCKY_MODE`, `BLOCKY_AS_API_KEY`, `BLOCKY_AS_HOST` | Blocky-compatible / hosted TEE adapter configuration |
+| `CSPR_CLOUD_TOKEN` | CSPR.cloud API token for Casper data, rates, and node status |
+| `ALLOW_BOOTSTRAP_KEYS` | `true` permits self-serve API key creation; `false` (production default) requires an authenticated key |
+| `REQUIRE_WALLET_AUTH` | `true` (default) gates payment-backed actions behind a wallet-verified key |
+| `FRONTEND_ORIGIN` | CORS allowlist for the web app |
+
+### Scripts
+
+| Where | Command | What |
+|---|---|---|
+| root | `npm run dev` / `build` / `lint` | Next.js dev server, production build, ESLint |
+| backend | `npm run dev` / `test` / `build` | API server, 769-test suite, typecheck |
+| backend | `npm run seed` | Idempotent first-party verifier + agent + listing setup |
+| backend | `npm run mcp` | MCP stdio server (5 tools for AI-agent integration) |
+| contracts | `cargo odra test` | Contract test suite |
 
 ## Testing
 
