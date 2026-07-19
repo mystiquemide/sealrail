@@ -8,6 +8,11 @@ const AMBER = "#F2B84B";
 const RED = "#F45B45";
 const GRAY = "#6E6E6C";
 
+function formatCsprRate(rate: number | null) {
+  if (rate === null || rate <= 0) return "rate unavailable";
+  return `$${rate.toFixed(6)}/CSPR`;
+}
+
 function buildRows(s: PublicStatus) {
   const chainName = s.casper_chain_name || "casper-test";
   const explorerBase = chainName.includes("mainnet")
@@ -55,6 +60,24 @@ function buildRows(s: PublicStatus) {
       name: "ProofRegistry contract",
       state: s.casper_contract_ready ? "Deployed — Casper testnet anchoring live" : "Not configured",
       color: s.casper_contract_ready ? GREEN : AMBER,
+    },
+    {
+      name: "CSPR.cloud API + rates",
+      state: s.cspr_cloud_configured
+        ? s.cspr_cloud_api_reachable
+          ? `Live — ${formatCsprRate(s.cspr_cloud_latest_rate)}`
+          : "Configured but currently unreachable"
+        : "Not configured",
+      color: s.cspr_cloud_configured && s.cspr_cloud_api_reachable ? GREEN : AMBER,
+    },
+    {
+      name: "CSPR.cloud x402/node checks",
+      state: s.cspr_cloud_x402_ready
+        ? "Ready"
+        : s.cspr_cloud_status === "live"
+          ? "Partial — API/rates live; facilitator or node health may be rate-limited"
+          : s.cspr_cloud_note ?? "Partial / unavailable",
+      color: s.cspr_cloud_x402_ready ? GREEN : AMBER,
     },
     {
       name: "MCP server",

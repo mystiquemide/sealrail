@@ -32,6 +32,7 @@ import {
 } from "../src/services/config-validation.js";
 
 import { createApiKey } from "../src/services/api-keys.js";
+import { setCachedCsprCloudHealthForTest } from "../src/services/cspr-health-cache.js";
 
 // ── Use in-memory DB ─────────────────────
 process.env.DATABASE_PATH = ":memory:";
@@ -278,6 +279,8 @@ describe("Public Status", () => {
     expect(s).toHaveProperty("cspr_cloud_api_reachable");
     expect(s).toHaveProperty("cspr_cloud_x402_ready");
     expect(s).toHaveProperty("cspr_cloud_latest_rate");
+    expect(s).toHaveProperty("cspr_cloud_status");
+    expect(s).toHaveProperty("cspr_cloud_note");
     expect(s).toHaveProperty("node_env");
     expect(s).toHaveProperty("timestamp");
     expect(s).toHaveProperty("uptime_seconds");
@@ -312,6 +315,20 @@ describe("Public Status", () => {
   it("csp_cloud_configured is a boolean", () => {
     const s = getPublicStatus(Date.now());
     expect(typeof s.cspr_cloud_configured).toBe("boolean");
+  });
+
+  it("reports the cached CSPR.cloud rate instead of flattening live rates to zero", () => {
+    setCachedCsprCloudHealthForTest({
+      apiReachable: true,
+      x402Ready: false,
+      latestRate: 0.00187672,
+      lastProbeTime: Date.now(),
+    });
+
+    const s = getPublicStatus(Date.now());
+    expect(s.cspr_cloud_latest_rate).toBe(0.00187672);
+    expect(["live", "pending"]).toContain(s.cspr_cloud_status);
+    expect(s.cspr_cloud_note).toContain("CSPR.cloud");
   });
 
   it("uptime is non-negative", () => {

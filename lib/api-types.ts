@@ -234,6 +234,12 @@ export type PublicStatus = {
   tee_hookup_blocked: boolean;
   llm_configured: boolean;
   db_connected: boolean;
+  cspr_cloud_configured: boolean;
+  cspr_cloud_api_reachable: boolean;
+  cspr_cloud_x402_ready: boolean;
+  cspr_cloud_latest_rate: number | null;
+  cspr_cloud_status?: "live" | "partial" | "pending";
+  cspr_cloud_note?: string;
   node_env: string;
   timestamp: string;
   uptime_seconds: number;
