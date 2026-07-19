@@ -401,7 +401,7 @@ export default function RunPage() {
             </p>
             <div className={styles.readOnlyCallout}>
               <div>
-                <div className={styles.readOnlyLabel}>Judge-safe path</div>
+                <div className={styles.readOnlyLabel}>Safe path</div>
                 <p className={styles.readOnlyBody}>No wallet approval or live mutation needed. Inspect the completed and failed proof paths directly.</p>
               </div>
               <div className={styles.readOnlyActions}>
