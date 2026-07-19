@@ -15,7 +15,7 @@
     "seed": "node dist/scripts/seed.js"
   },
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
+    "@fastify/cors": "^11.3.0",
     "@fastify/rate-limit": "^10.3.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^11.7.0",
