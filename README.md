@@ -222,7 +222,7 @@ Claims below are current at the linked commit and enforced in CI.
 
 | Surface | Status |
 |---|---|
-| Backend suite | 769 tests across 17 files, passing with no external services |
+| Backend suite | 770 tests across 17 files, passing with no external services |
 | Contract suite | 23/23 (`cargo odra test`) |
 | Contract deployment | ProofRegistry package live on Casper testnet — `hash-02f9771e9cd4d91c40705563074bc323d45a341a11987464367ac909cc845846`; latest confirmed anchor [`9a708f9e…c72edd6d`](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d) |
 | TypeScript | Strict mode, `tsc --noEmit` clean on both packages |
@@ -293,7 +293,7 @@ Backend (`backend/.env`, see [backend/.env.example](backend/.env.example) for th
 ## Testing
 
 ```bash
-cd backend && npm test        # 769 tests across 17 suites, no external services
+cd backend && npm test        # 770 tests across 17 suites, no external services
 cargo odra test               # 23/23 contract tests
 ```
 
@@ -333,7 +333,7 @@ components/                   Screen components and shared primitives
 lib/                          Typed API client, API types, session bootstrap
 backend/src/routes/           Fastify route modules (tasks, payments, proofs, agents, integrations)
 backend/src/services/         Domain services (state machines, verification, Casper anchoring, reputation, keys)
-backend/tests/                17 suites, 769 tests
+backend/tests/                17 suites, 770 tests
 contracts/verified-agent-payments/   Odra ProofRegistry contract, tests, livenet CLI
 docs/                         Architecture, design, API docs, audit reports
 ```
