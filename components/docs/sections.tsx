@@ -155,10 +155,10 @@ export function ApiReferenceSection() {
 
       <div className={styles.subLabel}>Authentication</div>
       <p style={{ fontSize: 14, color: "#5C5A55", margin: "10px 0 0" }}>
-        Most write operations require an API key. Never expose API keys in frontend client code. Use server-side calls or scoped
-        keys where appropriate.
+        Most write operations require an API key from a private operator session. Public users should use /run for the wallet-gated
+        demo flow and /proofs for read-only verification. Never expose API keys in frontend client code.
       </p>
-      <CodeBlock label="" text="Authorization: Bearer YOUR_API_KEY" />
+      <CodeBlock label="" text="Authorization: Bearer OPERATOR_API_KEY" />
 
       <div className={styles.subLabel}>Endpoint groups</div>
       <div className={styles.kvRows}>
