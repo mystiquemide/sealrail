@@ -144,7 +144,7 @@ export default function MarketplaceListingPage({ params }: ListingPageProps) {
                 {!listing.isRunnable ? (
                   <div className={styles.previewNotice}>
                     <strong>Preview listing.</strong> This RWA compliance agent shows how the same rail can support
-                    RWA review, but its dedicated runtime is not connected yet. For the judge-ready live path,
+                    RWA review, but its dedicated runtime is not connected yet. For the review-ready live path,
                     run the invoice-risk flow.
                     <Link href="/run" className={styles.previewLink}>
                       Open live invoice-risk demo

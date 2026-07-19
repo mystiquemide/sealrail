@@ -2,7 +2,7 @@
 
 Date: 2026-07-02
 Audited commit: b83bc12
-Companion report: SEALRAIL_ELITE_HACKATHON_AUDIT.md (judge-facing view; this one is engineering-facing)
+Companion report: SEALRAIL_ELITE_HACKATHON_AUDIT.md (reviewer-facing view; this one is engineering-facing)
 
 ---
 
@@ -12,7 +12,7 @@ Overall health: B+. The core engineering is unusually strong for a hackathon rep
 
 Top 3 risks:
 
-1. The repo is private with a boilerplate README and no LICENSE, so judges can't evaluate it at all.
+1. The repo is private with a boilerplate README and no LICENSE, so reviewers can't evaluate it at all.
 2. `POST /api/api-keys` is unauthenticated and trusts caller-supplied `owner_address`, undermining the ownership model every other route enforces.
 3. The test suite is environment-dependent (12 failures on any machine without the `bky-as` CLI), so the repo's strongest evidence of quality looks broken to a fresh cloner.
 
@@ -39,14 +39,14 @@ Surprises: `memory.md` (64KB of internal agent build memory) is committed at the
 
 ### Security
 
-- Critical (for the trust model, moderate in demo context): `POST /api/api-keys` has no `preHandler`, so `request.apiKey` is always undefined and owner attribution comes from the request body or defaults to the literal string `"bootstrap"` (`backend/src/routes/api-keys.ts:85-89`). Anyone who can reach the API can mint keys for any owner address, including scoped-admin keys for someone else's identity. Every other mutating route enforces ownership (e.g. `:129`, `:176` use `requireApiKeyWithScope`), which makes this the one hole in an otherwise consistent model. Fact, verified in source. (Post-audit decision: kept frictionless for judge demo; harden with an env flag per Task 1.2.)
+- Critical (for the trust model, moderate in demo context): `POST /api/api-keys` has no `preHandler`, so `request.apiKey` is always undefined and owner attribution comes from the request body or defaults to the literal string `"bootstrap"` (`backend/src/routes/api-keys.ts:85-89`). Anyone who can reach the API can mint keys for any owner address, including scoped-admin keys for someone else's identity. Every other mutating route enforces ownership (e.g. `:129`, `:176` use `requireApiKeyWithScope`), which makes this the one hole in an otherwise consistent model. Fact, verified in source. (Post-audit decision: kept frictionless for reviewer demo; harden with an env flag per Task 1.2.)
 - Medium: no rate limiting and no security headers on the backend (`@fastify/rate-limit` and `@fastify/helmet` absent from `backend/package.json`). Matters once deployed publicly in Phase R, since key creation and LLM-invoking task runs are both unmetered.
 - Low: CORS origin comes from a single `FRONTEND_ORIGIN` env var (`backend/src/index.ts`), fine, just remember to set it in Phase R.
 - Healthy: no secrets in tracked files (scanned), `.gitignore` correctly covers `.env*`, DB files, and key material. API secrets are scrypt-hashed with per-key salt and timing-safe comparison (`backend/src/services/api-keys.ts`).
 
 ### Testing
 
-- High: the suite is environment-dependent. 11 phase-c tests fail without the `bky-as` CLI installed, and `phase-deploy-prep.test.ts:420` fails because the CLI-missing warning legitimately contains `https://github.com/blocky/blocky-as` while the test bans all URLs in validation messages. Verified by running the suite on 2026-07-02 (739/751 on WSL Node 24). Consequence: a judge running `npm test` on a clean clone sees 12 red tests on the repo's flagship claim. Judgment: the URL test should assert on secret patterns, not all URLs, and phase-c should skip-with-reason when the CLI is absent.
+- High: the suite is environment-dependent. 11 phase-c tests fail without the `bky-as` CLI installed, and `phase-deploy-prep.test.ts:420` fails because the CLI-missing warning legitimately contains `https://github.com/blocky/blocky-as` while the test bans all URLs in validation messages. Verified by running the suite on 2026-07-02 (739/751 on WSL Node 24). Consequence: a reviewer running `npm test` on a clean clone sees 12 red tests on the repo's flagship claim. Judgment: the URL test should assert on secret patterns, not all URLs, and phase-c should skip-with-reason when the CLI is absent.
 - Medium: zero frontend tests (no test runner in root `package.json`). The pure state modules (`components/run/run-state.ts`, `components/workflow-detail/workflow-detail-state.ts`, `components/proofs/proofs-data.ts`) are exactly the kind of logic that's cheap to unit test and already extracted for it. Calibrated to maturity: acceptable to skip for the hackathon, listed for honesty.
 - Strength: backend tests assert behavior (state transitions, error codes, secret non-exposure), not just execution, and each phase suite re-verifies prior phases.
 
@@ -135,11 +135,11 @@ Frontend unit tests for the pure state modules, `useCopyFeedback()` hook, bulk p
 
 1.1 Tests: in `phase-c.test.ts`, detect CLI presence once (`which bky-as`) and `describe.skipIf` the dependent blocks with a message. In `phase-deploy-prep.test.ts:418-422`, replace the blanket `not.toContain("https://")` with assertions that no message matches key-like patterns (`/sk-[a-zA-Z0-9]/`, hex-of-length-N) and allowlist the known install-docs URL. Gotcha: keep the secret-leak intent, don't just delete the test.
 
-1.2 Key creation: add `optionalApiKey` preHandler so authenticated attribution actually works, then branch: if no key and not development, require `ALLOW_BOOTSTRAP_KEYS=true` (set it in the deployed judge demo per Mide's frictionless decision, default off elsewhere). Gotcha: `http-auth.test.ts` and phase-k tests exercise this route, update expectations.
+1.2 Key creation: add `optionalApiKey` preHandler so authenticated attribution actually works, then branch: if no key and not development, require `ALLOW_BOOTSTRAP_KEYS=true` (set it in the deployed reviewer demo per Mide's frictionless decision, default off elsewhere). Gotcha: `http-auth.test.ts` and phase-k tests exercise this route, update expectations.
 
 ## 6. Open Questions - RESOLVED (Mide, 2026-07-02)
 
-1. Deployed demo key bootstrap: frictionless (open bootstrap stays on for judges).
+1. Deployed demo key bootstrap: frictionless (open bootstrap stays on for reviewers).
 2. LLM provider/key for the deployed backend: undecided - this blocks Phase R and the demo video.
 3. memory.md / .docx pruning: deferred until later.
 4. Testnet anchoring in demo: showcase anchor (one real anchor linked in the UI, not per-run).

@@ -208,7 +208,7 @@
   color: #f6f5f3;
 }
 
-/* ---------- sponsor/judge alignment cards ---------- */
+/* ---------- sponsor/reviewer alignment cards ---------- */
 .sponsorGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

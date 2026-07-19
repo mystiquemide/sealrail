@@ -590,7 +590,7 @@ export interface TestVerifierResult {
  * Returns a deterministic test result with hashes and a verification
  * token. This uses the TEE verification mode approach: the input is
  * validated, output is produced deterministically, and hashes are
- * chained to form a verification token suitable for judge evaluation.
+ * chained to form a verification token suitable for reviewer evaluation.
  *
  * Note: In a hosted TEE deployment, this would route through the
  * bky-as attestation pipeline. The current path uses deterministic

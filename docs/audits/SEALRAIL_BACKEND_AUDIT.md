@@ -21,7 +21,7 @@ Top 3 risks:
 
 Top 3 opportunities:
 1. Wire the existing API key middleware into all mutation routes and remove owner identity from trusted request bodies.
-2. Split demo/dry-run modes from production/testnet success semantics so judges and users can see exactly what is real.
+2. Split demo/dry-run modes from production/testnet success semantics so reviewers and users can see exactly what is real.
 3. Add HTTP-level integration tests and CI gates for lint, build, tests, and audit.
 
 Launch-readiness verdict: NEEDS FIXES before frontend/deploy. Safe for local demo with explicit dry-run language; not safe to present as production-grade payment/proof infrastructure yet.
@@ -304,7 +304,7 @@ Evidence:
 - Anchoring can create a synthetic proof if none exists: `backend/src/services/tasks.ts:397-430`.
 
 Why it matters:
-The central product loop can advance to `proof_verified` and `anchored` without actual TEE verification. That is false confidence and weakens the hackathon demo if a judge follows the task route instead of the standalone proof route.
+The central product loop can advance to `proof_verified` and `anchored` without actual TEE verification. That is false confidence and weakens the hackathon demo if a reviewer follows the task route instead of the standalone proof route.
 
 Exact fix:
 - Make `runTaskVerification` call `verify()` with the task input and persist real `claims.hash_of_code`, `hash_of_input`, output hash, attestation hash, wasm hash, and status.
@@ -508,7 +508,7 @@ Evidence:
 - Project-specific docs exist elsewhere, e.g. `docs/DESIGN.md:58-72`, `docs/ARCHITECTURE.md:8-17`, `docs/plans/VERIFICATION_GATES.md:1-15`.
 
 Why it matters:
-Judges or collaborators landing on GitHub see a generic scaffold README instead of setup commands, backend status, demo flow, and caveats.
+Reviewers or collaborators landing on GitHub see a generic scaffold README instead of setup commands, backend status, demo flow, and caveats.
 
 Exact fix:
 - Replace README with Sealrail-specific overview, setup, backend commands, verification gates, env vars, demo limitations, and launch status.
@@ -716,7 +716,7 @@ Do not build enterprise auth, OAuth, or multi-tenant RBAC before the hackathon. 
 ## 8. Open Questions
 
 1. Should Sealrail use API keys only for the hackathon, or wallet signatures for owner-sensitive actions?
-2. Is `dry_run` the only intended judging mode, or must the demo prove a real Casper testnet deploy before submission?
+2. Is `dry_run` the only intended evaluation mode, or must the demo prove a real Casper testnet deploy before submission?
 3. Should zero-amount payments be allowed for demo/test flows, or should all payment amounts be positive?
 4. Should verifier WASM content be stored, uploaded to object storage, or intentionally hash-only for v1?
 5. Does the frontend need to present API key management at launch, or can it be hidden until auth is hardened?

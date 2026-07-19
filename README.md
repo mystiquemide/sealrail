@@ -7,7 +7,7 @@
 [![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Anchoring%20Live-red)](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d)
 [![Backend Tests](https://img.shields.io/badge/backend%20tests-770%20passing-brightgreen)](backend/tests)
 
-**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **Demo video:** [youtu.be/K8tqyrEmRzM](https://youtu.be/K8tqyrEmRzM) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status)
+**Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Review path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **Demo video:** [youtu.be/K8tqyrEmRzM](https://youtu.be/K8tqyrEmRzM) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status)
 
 > A payment cannot unlock on Casper unless a verified proof exists and a Casper deploy has been confirmed on-chain. No proof, no payment. Enforced, not promised.
 
@@ -55,7 +55,7 @@ Real screens from the live app. Every number on them is produced by the running 
 
 | Home | Reviewer quickstart |
 |---|---|
-| ![SealRail homepage hero](public/screenshots/01-homepage.png) | ![SealRail reviewer quickstart with judge path, live proof links, and trust boundaries](public/screenshots/04-reviewer-quickstart.png) |
+| ![SealRail homepage hero](public/screenshots/01-homepage.png) | ![SealRail reviewer quickstart with review path, live proof links, and trust boundaries](public/screenshots/04-reviewer-quickstart.png) |
 
 ## Try it (real UI, real chain)
 
@@ -102,7 +102,7 @@ Running a fresh paid flow requires the Casper Wallet extension, so SealRail can 
 | Failing-proof path | A one-click demo where bad output creates no anchor and blocks payment | Proves the invariant instead of asserting it |
 | Casper anchoring with execution confirmation | Anchors proof hashes and confirms the deploy actually executed | "Anchored" means executed on-chain, not just submitted |
 | Verifier registry | Schema + WASM-hash-bound templates with a test endpoint | Verification is content-addressed, not vibes |
-| Proof explorer | `/proofs` and `/proofs/:id` resolve live proof, hashes, anchor, payment state | A judge can inspect any proof independently |
+| Proof explorer | `/proofs` and `/proofs/:id` resolve live proof, hashes, anchor, payment state | A reviewer can inspect any proof independently |
 | x402-compatible receipts | Proof bundles carry a 402-style payment-required receipt shape | Machine-readable settlement story for agents |
 | Casper Wallet sign-in | Connect wallet, sign a nonce challenge, receive a wallet-scoped API key | Owner-sensitive actions are bound to a real key |
 | MCP server | Real `@modelcontextprotocol/sdk` stdio server, 5 tools | Any MCP client can read proofs and create tasks |
@@ -304,10 +304,10 @@ The suite is not padded. Its center of gravity is the invariant: tests assert th
 Three bugs that only appeared under real conditions, and what they taught us:
 
 - **"Anchored" used to mean "submitted," not "executed."** The anchoring service returned success the moment it parsed a deploy hash. A hand-crafted test deploy that reverted on-chain (`User error: 6`) still read as a successful anchor. That is the difference between a demo and a lie, so anchoring now polls the deploy through CSPR.cloud and only accepts it once execution is confirmed. This is the single most important correctness fix in the project.
-- **The paid flow worked without a wallet and broke with one.** Once a Casper Wallet was connected, the run routed through wallet-scoped auth and returned a 401, so a judge who connected their wallet first hit a dead end. Auth is now a deliberate, consistent gate: owner-sensitive actions require a wallet-verified key, and the flow no longer half-authenticates.
+- **The paid flow worked without a wallet and broke with one.** Once a Casper Wallet was connected, the run routed through wallet-scoped auth and returned a 401, so a reviewer who connected their wallet first hit a dead end. Auth is now a deliberate, consistent gate: owner-sensitive actions require a wallet-verified key, and the flow no longer half-authenticates.
 - **The Casper Wallet signs with an extra algorithm-tag byte.** Verifying real wallet signatures failed until we accounted for the wallet prepending an algorithm tag that `casper-js-sdk`'s verifier did not expect. Signing a real (never-broadcast) transaction turned out to be more verifiable than the wallet's plain message-signing API, which has no documented byte convention.
 
-Nothing here went smoothly the first time. The honest status board at [`/status`](https://sealrail.xyz/status) exists because we would rather show a judge exactly what is live and what is pending than get caught overclaiming.
+Nothing here went smoothly the first time. The honest status board at [`/status`](https://sealrail.xyz/status) exists because we would rather show a reviewer exactly what is live and what is pending than get caught overclaiming.
 
 ## Roadmap
 

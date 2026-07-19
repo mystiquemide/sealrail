@@ -83,7 +83,7 @@ export function MarketplaceListingTable({ listings, emptyReason, onClearFilters,
       </div>
       <p className={styles.footNote}>
         Invoice Risk is the runnable production demo. RWA compliance is shown as a preview marketplace listing until its
-        dedicated runtime is connected; judges should use /run for the live invoice-risk proof path.
+        dedicated runtime is connected; reviewers should use /run for the live invoice-risk proof path.
       </p>
     </div>
   );
