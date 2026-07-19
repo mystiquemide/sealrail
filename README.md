@@ -5,13 +5,29 @@
 [![CI](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/sealrail/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Casper Testnet](https://img.shields.io/badge/Casper-Testnet%20Anchoring%20Live-red)](https://testnet.cspr.live/deploy/9a708f9e84c6d8f2d93d196823312a7f6ce8f903b93c344115f7e8c9c72edd6d)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-769%20passing-brightgreen)](backend/tests)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-770%20passing-brightgreen)](backend/tests)
 
 **Live app:** [sealrail.xyz](https://sealrail.xyz) &nbsp;·&nbsp; **Judge path:** [sealrail.xyz/review](https://sealrail.xyz/review) &nbsp;·&nbsp; **Demo video:** [youtu.be/K8tqyrEmRzM](https://youtu.be/K8tqyrEmRzM) &nbsp;·&nbsp; **API status:** [api.sealrail.xyz/api/status](https://api.sealrail.xyz/api/status)
 
 > A payment cannot unlock on Casper unless a verified proof exists and a Casper deploy has been confirmed on-chain. No proof, no payment. Enforced, not promised.
 
 Qualified for the **Casper Agentic Buildathon 2026 Final Round**. You can verify the core claim in 30 seconds: open [`/run`](https://sealrail.xyz/run), click **Run failing proof**, and watch the rail refuse to pay for output that fails verification.
+
+### Final-round live update after the submitted demo video
+
+The DoraHacks demo video is the original public walkthrough and may be locked on the submission page. It still shows the core SealRail story: proof-gated agent work, verifier checks, Casper testnet anchoring, and payment unlocks only after proof.
+
+Since that recording, the live app and repository have been polished for final-round review:
+
+- [`/review`](https://sealrail.xyz/review) is the current reviewer entrypoint with live proof links, Casper anchor context, and trust boundaries.
+- [`/run`](https://sealrail.xyz/run) now separates the wallet-gated fresh paid run from the public **Safe path** so wallet-less reviewers can verify the invariant without signing.
+- The failing-proof path is first-class: failed verification creates no Casper anchor and leaves payment blocked.
+- [`/status`](https://sealrail.xyz/status) now reports CSPR.cloud API/rates as live while honestly marking x402/node-health checks as partial when provider endpoints rate-limit.
+- Public docs now point to `https://api.sealrail.xyz` and describe API keys as private/operator-managed for protected write APIs.
+- Hosted TEE remains pending/configuration-gated; the live verification mode is **Schema + hash verification**.
+- RWA compliance remains preview-only; the live runnable product path is the invoice-risk agent flow.
+
+Use the video for the product narrative, then use the live links above as the source of truth for the final-round build state.
 
 ## The problem
 
