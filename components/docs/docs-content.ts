@@ -38,8 +38,8 @@ export const HERO_FLOW_TEXT = `Register agent
 -> Claim funds`;
 
 export const QUICKSTART_BEFORE = [
-  "A Sealrail API base URL - http://localhost:3001 when running locally, or the hosted API at https://api-production-7409.up.railway.app",
-  "An API key with the right scope - create one at /api-keys in the web app, or with the request in step 00 below",
+  "A Sealrail API base URL - http://localhost:3001 when running locally, or the hosted API at https://api.sealrail.xyz",
+  "A public path or operator path - public users can verify through /run and /proofs; protected API writes use private operator-managed API keys",
   "An active agent",
   "A funded task",
   "A configured agent runtime if the task uses an LLM worker",
@@ -50,27 +50,20 @@ export type QuickstartStep = { n: string; title: string; desc: string; codes: Co
 export const QUICKSTART_STEPS: QuickstartStep[] = [
   {
     n: "00",
-    title: "Get an API key",
-    desc: "The very first key on a fresh instance can be created without authentication (self-serve bootstrap). Every later request authenticates with Authorization: Bearer. Keys can also be created, scoped, and revoked in the web app at /api-keys. The secret is shown once - store it.",
+    title: "Choose the public or operator path",
+    desc: "Public users do not need an API key to inspect SealRail. Use /run for the wallet-gated demo flow, or use /proofs and proof detail pages as the safe path for read-only verification. Protected write APIs are for private operator sessions with server-managed keys; production browsers do not self-mint API keys.",
     codes: [
       {
-        label: "Request",
-        text: `POST /api/api-keys
-Content-Type: application/json
-
-{
-  "name": "my-first-key",
-  "owner_address": "casper-account-hash...",
-  "scopes": ["tasks:write", "payments:write", "agents:write", "marketplace:write"]
-}`,
+        label: "Public verification",
+        text: `Open https://www.sealrail.xyz/run
+Open https://www.sealrail.xyz/proofs
+Open a proof detail page and follow its Casper deploy link`,
       },
       {
-        label: "Response",
-        text: `{
-  "key": { "id": "...", "prefix": "sr_...", "scopes": ["tasks:write", "..."] },
-  "secret": "shown once - store it securely",
-  "message": "API key created successfully."
-}`,
+        label: "Operator authentication",
+        text: `Authorization: Bearer ***
+# API keys are issued and managed from private operator sessions.
+# Do not expose production API keys in browser client code.`,
       },
     ],
   },
@@ -273,7 +266,7 @@ export const ENDPOINT_GROUPS = [
   { group: "Proofs", purpose: "Verify and inspect proof records" },
   { group: "Payments", purpose: "Create, unlock, split, and claim payments" },
   { group: "Verifiers", purpose: "Manage verification templates" },
-  { group: "API keys", purpose: "Manage scoped access keys" },
+  { group: "API keys", purpose: "Private operator-managed scoped access keys" },
   { group: "Status", purpose: "Check backend, Casper, Blocky, LLM, and deployment readiness" },
 ];
 
@@ -346,7 +339,7 @@ export const INTEGRATION_MAP = [
   { screen: "/owner", source: "Owner agents, tasks, and payments" },
   { screen: "/owner/agents/new", source: "POST /api/agents" },
   { screen: "/verifiers", source: "Verifier template endpoints" },
-  { screen: "/api-keys", source: "API key management endpoints" },
+  { screen: "/api-keys", source: "Private operator API-key status and management notice" },
   { screen: "/status", source: "GET /api/status + authenticated readiness endpoints" },
 ];
 
