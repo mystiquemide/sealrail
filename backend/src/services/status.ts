@@ -303,6 +303,8 @@ export interface PublicStatusResponse {
   cspr_cloud_api_reachable: boolean;
   cspr_cloud_x402_ready: boolean;
   cspr_cloud_latest_rate: number | null;
+  cspr_cloud_status: "live" | "partial" | "pending";
+  cspr_cloud_note: string;
   node_env: string;
   timestamp: string;
   uptime_seconds: number;
@@ -332,6 +334,23 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     status = "ok";
   }
 
+  const csprCloudStatus: PublicStatusResponse["cspr_cloud_status"] = !csprCloudConfigured
+    ? "pending"
+    : csprHealth.apiReachable && csprHealth.latestRate !== null
+      ? "live"
+      : csprHealth.apiReachable || csprHealth.x402Ready
+        ? "partial"
+        : "pending";
+  const csprCloudNote = !csprCloudConfigured
+    ? "CSPR.cloud credentials are not configured."
+    : csprCloudStatus === "live" && csprHealth.x402Ready
+      ? "CSPR.cloud API, rates, and x402 facilitator checks are reachable."
+      : csprCloudStatus === "live"
+        ? "CSPR.cloud API and rates are live; x402 facilitator or node-health checks may be rate-limited."
+        : csprCloudStatus === "partial"
+          ? "CSPR.cloud is partially reachable; rate, x402, or node-health checks may be unavailable or rate-limited."
+          : "CSPR.cloud is configured but currently unreachable from the health cache.";
+
   return {
     status,
     mode: "schema_hash_verification",
@@ -349,7 +368,9 @@ export function getPublicStatus(startTime: number): PublicStatusResponse {
     cspr_cloud_configured: csprCloudConfigured,
     cspr_cloud_api_reachable: csprHealth.apiReachable,
     cspr_cloud_x402_ready: csprHealth.x402Ready,
-    cspr_cloud_latest_rate: csprHealth.latestRate === null ? null : 0,
+    cspr_cloud_latest_rate: csprHealth.latestRate,
+    cspr_cloud_status: csprCloudStatus,
+    cspr_cloud_note: csprCloudNote,
     node_env: config.nodeEnv === "production" ? "production" : "non-production",
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),

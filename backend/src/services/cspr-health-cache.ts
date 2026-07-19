@@ -24,6 +24,11 @@ export function getCachedCsprCloudHealth(): CachedHealth {
   return _cached;
 }
 
+export function setCachedCsprCloudHealthForTest(next: CachedHealth): void {
+  if (process.env.NODE_ENV === "production") return;
+  _cached = next;
+}
+
 export function startCsprCloudHealthProbe(intervalMs = 30000): void {
   if (!isCsprCloudConfigured()) return;
 
