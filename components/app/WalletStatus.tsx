@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ensureSession, getSession, disconnectWallet } from "@/lib/session";
 
 function truncate(hex: string): string {
@@ -139,7 +140,13 @@ export function WalletStatus() {
         {connecting ? "Connecting…" : "Connect Casper Wallet"}
       </button>
       {error ? (
-        <span style={{ fontSize: 11, color: "#F45B45", maxWidth: 220, textAlign: "right" }}>{error}</span>
+        <span style={{ fontSize: 11, color: "#F45B45", maxWidth: 260, textAlign: "right", lineHeight: 1.35 }}>
+          {error}{" "}
+          <a href="https://www.casperwallet.io/" target="_blank" rel="noreferrer" style={{ color: "#F6F5F3", textDecoration: "underline", textUnderlineOffset: 2 }}>
+            Install wallet
+          </a>{" "}
+          or <Link href="/proofs" style={{ color: "#F6F5F3", textDecoration: "underline", textUnderlineOffset: 2 }}>view proofs</Link>.
+        </span>
       ) : null}
     </span>
   );

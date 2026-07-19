@@ -22,7 +22,7 @@ import {
   listAgents,
   runDemoInvoiceProof,
 } from "@/lib/api";
-import { DEMO_BUYER_ADDRESS } from "@/lib/session";
+import { DEMO_BUYER_ADDRESS, getSession, hasCasperWalletExtension } from "@/lib/session";
 import { BACKEND_UNREACHABLE_BODY } from "@/lib/copy";
 import type { Agent } from "@/lib/api-types";
 import styles from "@/components/run/Run.module.css";
@@ -74,6 +74,24 @@ const INITIAL_FIELDS: TaskFormFields = {
   terms: "Net 30",
   notes: "Recurring vendor. Due-date variance flagged on prior cycle.",
 };
+
+const READ_ONLY_PROOF_LINKS = [
+  {
+    href: "/proofs/0b9bad2e-3fe8-4ab5-80fb-4fa12de95f77",
+    label: "View completed proof",
+    body: "Verified invoice-risk run with Casper testnet anchor and payable state.",
+  },
+  {
+    href: "/proofs/6d809aec-c67d-44aa-938d-e75c2867bd4c",
+    label: "View failed proof",
+    body: "Rejected proof with no Casper anchor and payment blocked.",
+  },
+  {
+    href: "/proofs",
+    label: "Open proof explorer",
+    body: "Browse persisted proof rows and open their on-chain deploys.",
+  },
+];
 
 type OutputState = {
   riskScore: string;
@@ -131,6 +149,15 @@ export default function RunPage() {
 
   const runFullFlow = useCallback(async (demoFailure = false) => {
     if (!agent) return;
+    if (!getSession() && !hasCasperWalletExtension()) {
+      setFailedStep(null);
+      setBusyStep(null);
+      setFullFlowRunning(false);
+      setErrorMessage(
+        "Casper Wallet extension not detected. Fresh runs need wallet approval to bind holder identity. Use a read-only proof below, or install Casper Wallet and refresh."
+      );
+      return;
+    }
     setFullFlowRunning(true);
     setFailedStep(null);
     setErrorMessage(null);
@@ -206,7 +233,12 @@ export default function RunPage() {
       setPaymentState(formatPaymentState(demo.payment_status));
       setStage(6);
     } catch (err) {
-      setErrorMessage(err instanceof ApiClientError ? err.message : "Demo flow failed.");
+      const message = err instanceof ApiClientError ? err.message : err instanceof Error ? err.message : "Demo flow failed.";
+      setErrorMessage(
+        message.includes("Casper Wallet") || message.includes("Wallet")
+          ? `${message} You can still verify the invariant with the read-only proof links below.`
+          : message
+      );
       setFailedStep(2);
     } finally {
       setBusyStep(null);
@@ -367,6 +399,20 @@ export default function RunPage() {
               Running a fresh flow needs the Casper Wallet extension to bind the holder identity. No wallet?
               Verify the same invariant on <Link href="/proofs" className={styles.walletNoteLink}>/proofs</Link> and open any proof&apos;s Casper deploy.
             </p>
+            <div className={styles.readOnlyCallout}>
+              <div>
+                <div className={styles.readOnlyLabel}>Judge-safe path</div>
+                <p className={styles.readOnlyBody}>No wallet approval or live mutation needed. Inspect the completed and failed proof paths directly.</p>
+              </div>
+              <div className={styles.readOnlyActions}>
+                {READ_ONLY_PROOF_LINKS.map((link) => (
+                  <Link key={link.href} href={link.href} className={styles.readOnlyLink}>
+                    <span>{link.label}</span>
+                    <small>{link.body}</small>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
           <div className={styles.headerActions}>
             <span className={styles.modeBadge}>

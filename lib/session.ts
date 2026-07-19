@@ -47,6 +47,10 @@ export function getSession(): StoredSession | null {
   return readStored();
 }
 
+export function hasCasperWalletExtension(): boolean {
+  return typeof window !== "undefined" && Boolean(window.CasperWalletProvider);
+}
+
 /**
  * Disconnect the wallet: clear the Sealrail session (the app's source of
  * truth for identity) and best-effort tell the Casper Wallet extension to
