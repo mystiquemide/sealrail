@@ -1,7 +1,7 @@
 # Sealrail Backend Verification Gates
 
 Runbook for Phase M integration gates. All commands are copy-paste ready.
-No secrets. Judge-safe TEE wording only.
+No secrets. Reviewer-safe TEE wording only.
 
 ## Prerequisites
 

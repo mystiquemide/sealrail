@@ -97,7 +97,7 @@ sequenceDiagram
 | Agent owner | `/owner` | Agent management dashboard |
 | Workflows | `/workflows` | Multi-step workflow templates |
 | Status | `/status` | Backend, LLM, verifier, Casper, CSPR.cloud status |
-| Reviewer quickstart | `/review` | Judge-friendly evaluation path |
+| Reviewer quickstart | `/review` | Reviewer-friendly evaluation path |
 | Docs | `/docs` | Architecture, API, trust boundaries |
 | Terms | `/terms` | Terms of service |
 | Privacy | `/privacy` | Privacy policy |

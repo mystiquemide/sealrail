@@ -29,7 +29,7 @@ export default function ProofDetailPage({ params }: ProofDetailPageProps) {
         let taskId: string | null = null;
 
         // Canonical route: /proofs/:proofId. Resolve the proof first, then load
-        // the linked task so judges see the verified/unlocked state from /run.
+        // the linked task so reviewers see the verified/unlocked state from /run.
         try {
           const proof = await getProofDetail(proofId);
           taskId = proof.task_id;

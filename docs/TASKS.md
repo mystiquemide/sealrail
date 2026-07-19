@@ -220,7 +220,7 @@ Components:
 
 Acceptance criteria:
 
-- Judge can run task run from UI.
+- Reviewer can run task run from UI.
 - UI shows proof and payment states.
 - Local Blocky mode is honest and clear.
 - Hash copy buttons work.

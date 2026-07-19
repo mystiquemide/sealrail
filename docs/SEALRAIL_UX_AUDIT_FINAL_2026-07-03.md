@@ -50,7 +50,7 @@ Core routes:
 - `/agents`
 - `/api-keys`
 - `/docs`
-- `/judge`
+- `/reviewer`
 - `/marketplace`
 - `/owner`
 - `/owner/agents/new`

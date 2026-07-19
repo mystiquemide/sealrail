@@ -16,7 +16,7 @@ Do not:
 - Deploy to any environment
 - Expose secrets, API keys, or wallet credentials
 - Overstate hosted enclave execution before the hosted service is fully connected
-- Use implementation-mode language in public/judge-facing output
+- Use implementation-mode language in public/reviewer-facing output
 
 Do:
 - Build every backend service, route, and data model
@@ -41,7 +41,7 @@ Package manager:    npm
 ```
 
 Why SQLite and not PostgreSQL for this phase:
-1. Zero external dependency for hackathon judging.
+1. Zero external dependency for hackathon evaluation.
 2. better-sqlite3 is synchronous and fast enough for single-server workloads.
 3. Schema migration is built into the startup path (no external migration tool).
 4. Upgrade path to PostgreSQL is documented but not built now.
@@ -1110,7 +1110,7 @@ Before any phase is considered complete, these gates must pass:
 
 Every response, log, and error message must follow these rules:
 
-Allowed (judge/public-facing):
+Allowed (reviewer/public-facing):
 ```text
 Schema + hash verification
 Schema + hash verification

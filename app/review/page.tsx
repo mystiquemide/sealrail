@@ -11,7 +11,7 @@ const latestProof = {
   createdAt: "2026-07-18 12:57 UTC",
 };
 
-const judgePath = [
+const reviewerPath = [
   "Open /run and click Run full flow to create a funded invoice-risk task. Running a fresh flow needs the Casper Wallet extension; no wallet? Skip to step 05 and verify any existing proof on-chain instead.",
   "Watch the AI invoice-risk agent produce structured output that cannot unlock payment by itself.",
   "Verify the schema/hash proof, Casper testnet anchor, and payment unlock state.",
@@ -34,7 +34,7 @@ const trustBoundaries = [
   {
     component: "RWA compliance listing",
     state: "Preview",
-    proof: "The marketplace labels RWA compliance as the next vertical until its dedicated runtime is connected; judges should score the live invoice-risk path.",
+    proof: "The marketplace labels RWA compliance as the next vertical until its dedicated runtime is connected; reviewers should score the live invoice-risk path.",
   },
   {
     component: "Verifier + hashes",
@@ -104,10 +104,10 @@ export default function ReviewPage() {
         </div>
 
         <section className={styles.docSection}>
-          <div className={styles.sectionLabel}>Judge path</div>
+          <div className={styles.sectionLabel}>Review path</div>
           <h2 className={styles.sectionHeading}>Score the core loop in under two minutes.</h2>
           <div className={styles.coreLoopList}>
-            {judgePath.map((step, index) => (
+            {reviewerPath.map((step, index) => (
               <div className={styles.coreLoopRow} key={step}>
                 <span className={styles.coreLoopN}>{String(index + 1).padStart(2, "0")}</span>
                 <span className={styles.coreLoopLabel}>{step}</span>

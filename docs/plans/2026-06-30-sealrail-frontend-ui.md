@@ -48,7 +48,7 @@ memory.md
 
 - No user-facing sample-app language.
 - No user-facing implementation-mode language.
-- Judge-facing UI can say TEE, TEE verification, or Schema + hash verification.
+- Reviewer-facing UI can say TEE, TEE verification, or Schema + hash verification.
 - No claim of hosted TEE execution unless hosted Blocky access is connected later.
 - No green dots, online dots, or status dots on landing.
 - No SR-71 wording.

@@ -107,7 +107,7 @@ AI agents should not get paid for work nobody can verify.
 
 Primary:
 
-- Hackathon judges evaluating Casper utility
+- Hackathon reviewers evaluating Casper utility
 - Developers building paid AI agents
 - Web3 teams experimenting with agent marketplaces
 - Operators who need verifiable agent output
@@ -209,7 +209,7 @@ Paid agent work needs a proof rail, not just a chat box.
 RWA invoice verification agent
 ```
 
-The run uses invoice risk analysis because it is easy for judges to understand:
+The run uses invoice risk analysis because it is easy for reviewers to understand:
 
 - User submits invoice details.
 - Agent proposes a risk result.
@@ -605,9 +605,9 @@ Never make users guess whether something is:
 - Paid
 - Failed
 
-## 10.2 Judge run rule
+## 10.2 Reviewer run rule
 
-A judge must understand the run in 10 seconds and complete the loop in 90 seconds.
+A reviewer must understand the run in 10 seconds and complete the loop in 90 seconds.
 
 The run must show:
 
@@ -630,7 +630,7 @@ Attestation verifier passed
 Payment unlocked after proof
 ```
 
-Do not expose implementation-mode wording on judge-facing screens.
+Do not expose implementation-mode wording on reviewer-facing screens.
 
 ## 10.4 Product state model
 
@@ -674,8 +674,8 @@ Do not expose implementation-mode wording on judge-facing screens.
 | `/api-keys` | API key management | Create, scope, copy once, and revoke API keys |
 | `/docs` | Developer docs | Explain architecture, API, TEE verification mode |
 | `/status` | System status | Show Casper, Blocky adapter, and backend health |
-| `/privacy` | Privacy policy | Concise privacy policy for users and judges |
-| `/terms` | Terms of use | Concise terms for users and judges |
+| `/privacy` | Privacy policy | Concise privacy policy for users and reviewers |
+| `/terms` | Terms of use | Concise terms for users and reviewers |
 
 ## 11.2 Navigation
 
@@ -1397,7 +1397,7 @@ Required behavior:
 
 ## 13.14 `/docs` screen
 
-Purpose: Concise developer and judge explanation. The documentation page must be short enough to scan in under two minutes.
+Purpose: Concise developer and reviewer explanation. The documentation page must be short enough to scan in under two minutes.
 
 ```text
 /docs
@@ -1990,7 +1990,7 @@ The design is ready only when:
 - [ ] Schema + hash verification is honestly labelled.
 - [ ] Payment state and proof state are visually separate.
 - [ ] Casper anchor is visible as a concrete proof object.
-- [ ] A judge can complete the main invoice verification run in under 90 seconds.
+- [ ] A reviewer can complete the main invoice verification run in under 90 seconds.
 - [ ] No fake, fabricated, or temporary product surfaces remain. Marketplace listings, workflows, reputation, API keys, verifiers, agents, payments, and proofs must be backed by real records.
 - [ ] No em dashes exist anywhere.
 - [ ] Mobile layouts do not overflow.
@@ -2038,7 +2038,7 @@ Fabricated API keys
 Large analytics dashboard unrelated to proof/payment records
 ```
 
-The judge wow moment:
+The reviewer wow moment:
 
 ```text
 The payment starts blocked, the proof verifies, the Casper anchor appears, and the payment changes to unlocked.

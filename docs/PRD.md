@@ -43,7 +43,7 @@ Meaning: every verifiable agent proof should be tied to a payment intent, so the
 Primary hackathon user:
 
 ```text
-A judge or developer evaluating whether an AI agent output can be trusted and paid for.
+A reviewer or developer evaluating whether an AI agent output can be trusted and paid for.
 ```
 
 Real market users:
@@ -86,7 +86,7 @@ Real market users:
 | Custom WASM verifier | Compiles reproducibly and outputs invoice risk result |
 | Casper proof registry | Stores task ID, agent ID, output hash, attestation hash, status |
 | Backend API | Creates task, verifies attestation, anchors proof, returns status |
-| Dashboard | Shows a full judge-friendly proof trail |
+| Dashboard | Shows a full reviewer-friendly proof trail |
 | Honest mode labels | Clearly distinguishes schema + hash verification from pending hosted TEE execution |
 | README and product run script | Explains setup, proof flow, and upgrade path |
 
@@ -181,7 +181,7 @@ If time permits, integrate a stronger x402 Casper flow.
 | Blocky adapter plus local verifier | 5 | 5 | 5 | 2 | 62.5 |
 | Casper proof registry | 5 | 5 | 4 | 3 | 33.3 |
 | Backend task API | 5 | 4 | 5 | 2 | 50.0 |
-| Judge dashboard | 5 | 5 | 4 | 3 | 33.3 |
+| Reviewer dashboard | 5 | 5 | 4 | 3 | 33.3 |
 | x402-style payment state | 4 | 4 | 3 | 2 | 24.0 |
 | Agent registry | 3 | 4 | 4 | 2 | 24.0 |
 | Proof explorer | 4 | 3 | 4 | 2 | 24.0 |
@@ -198,7 +198,7 @@ If time permits, integrate a stronger x402 Casper flow.
 | Run too abstract | High | Use RWA invoice verification as concrete vertical |
 | Time pressure | High | Build backend and proof loop before UI polish |
 
-## 11. Judge story
+## 11. Reviewer story
 
 One-line pitch:
 
